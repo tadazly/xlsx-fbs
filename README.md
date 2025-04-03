@@ -63,3 +63,21 @@ Excel 转 [FlatBuffers](https://flatbuffers.dev/) 工具。
     每日上限|dailyLimit|number|每天最多获得数量限制
 
 ### 2. 使用 xlsx-fbs 转换
+
+- 转换单张表：
+
+```shell
+xlsx-fbs item.xlsx --cpp --csharp [-o /path/to/output]
+```
+
+- 批量转换目录下的表：
+
+```shell
+xlsx-fbs /path/to/xlsx/files --cpp --csharp [-o /path/to/output]
+```
+
+- 参数：
+
+    - 可转换的语言类型参考 flatc。 
+    
+    - -o 输出路径，可省略，默认输出到当前文件夹内。
