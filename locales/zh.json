@@ -1,0 +1,13 @@
+{
+    "description": "Excel 转 FlatBuffers 工具。\n仅列出部分选项，完整的选项列表请参考 https://flatbuffers.dev/flatc/",
+    "input": "Excel 文件路径或 Excel 所在的文件夹路径",
+    "output": "输出文件路径，默认输出到当前目录",
+    "namespace": "生成代码的命名空间，默认是 'xlsx'",
+    "allowNonUtf8": "允许非 UTF-8 输入通过解析器并发出非标准的 \\x 转义符。（默认情况下，在非 UTF-8 输入时引发解析错误）",
+    "naturalUtf8": "输出字符串时，将 UTF-8 作为人类可读的字符串输出。默认情况下，UTF-8 字符串会打印为 \\uXXXX 转义符",
+    "forceEmpty": "从对象API序列化时，强制字符串和向量为空而不是 null",
+    "generateFbsHash": "在输出的文件中添加 .fbs 文件的 hash 值，用于运行时校验表的数据结构是否匹配（仅支持 C# 和 TypeScript, 其他语言请自行扩展）",
+    "deleteFbs": "转换后删除生成的 .fbs 文件",
+    "errorInput": "输入参数错误，请检查输入参数",
+    "tablesConfigNotFound": "未找到打表配置文件 $tables.xlsx，默认打所有表"
+}

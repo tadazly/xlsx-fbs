@@ -1,0 +1,13 @@
+{
+    "description": "Excel to FlatBuffers tool.\nOnly list some options, the complete option list please refer to https://flatbuffers.dev/flatc/",
+    "input": "Excel file path or directory path",
+    "output": "Output file path, default to current directory",
+    "namespace": "Namespace for generated code, default to 'xlsx'",
+    "allowNonUtf8": "Pass non-UTF-8 input through parser and emit nonstandard \\x escapes in JSON. (Default is to raise parse error on non-UTF-8 input.)",
+    "naturalUtf8": "Output strings with UTF-8 as human-readable strings. By default, UTF-8 characters are printed as \\uXXXX escapes.",
+    "forceEmpty": "When serializing from object API representation, force strings and vectors to empty rather than null",
+    "deleteFbs": "Delete the generated .fbs file after conversion",
+    "generateFbsHash": "Generate the TableHashConfig class file for runtime verification (only supports C# and TypeScript, other languages please extend by yourself)",
+    "errorInput": "Input parameter error, please check the input parameter",
+    "tablesConfigNotFound": "Tables config file $tables.xlsx not found, default to convert all tables"
+}
