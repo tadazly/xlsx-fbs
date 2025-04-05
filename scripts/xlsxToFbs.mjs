@@ -1,11 +1,15 @@
 import xlsx from 'xlsx';
 
-export default function xlsxToFbs(filePath) { 
+/**
+ * 通过 xlsx 文件生成 fbs 文件
+ * @param {string} filePath 
+ */
+export function xlsxToFbs(filePath) {
     const workbook = xlsx.readFile(filePath);
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
 
-    console.log(sheet);
+    console.log(workbook.SheetNames);
 }
 
 /**

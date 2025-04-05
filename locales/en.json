@@ -8,6 +8,8 @@
     "forceEmpty": "When serializing from object API representation, force strings and vectors to empty rather than null",
     "deleteFbs": "Delete the generated .fbs file after conversion",
     "generateFbsHash": "Generate the TableHashConfig class file for runtime verification (only supports C# and TypeScript, other languages please extend by yourself)",
-    "errorInput": "Input parameter error, please check the input parameter",
-    "tablesConfigNotFound": "Tables config file $tables.xlsx not found, default to convert all tables"
+    "generateJson": "Generate JSON file from the output FlatBuffer",
+    "errorInvalidInput": "Input parameter error, please check the input parameter",
+    "errorTablesConfigNotFound": "Tables config file $tables.xlsx not found, default to convert all tables",
+    "errorTablesRootNotFound": "Tables root directory not found"
 }

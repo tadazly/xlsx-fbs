@@ -6,8 +6,10 @@
     "allowNonUtf8": "允许非 UTF-8 输入通过解析器并发出非标准的 \\x 转义符。（默认情况下，在非 UTF-8 输入时引发解析错误）",
     "naturalUtf8": "输出字符串时，将 UTF-8 作为人类可读的字符串输出。默认情况下，UTF-8 字符串会打印为 \\uXXXX 转义符",
     "forceEmpty": "从对象API序列化时，强制字符串和向量为空而不是 null",
-    "generateFbsHash": "在输出的文件中添加 .fbs 文件的 hash 值，用于运行时校验表的数据结构是否匹配（仅支持 C# 和 TypeScript, 其他语言请自行扩展）",
     "deleteFbs": "转换后删除生成的 .fbs 文件",
-    "errorInput": "输入参数错误，请检查输入参数",
-    "tablesConfigNotFound": "未找到打表配置文件 $tables.xlsx，默认打所有表"
+    "generateFbsHash": "在输出的文件中添加 .fbs 文件的 hash 值，用于运行时校验表的数据结构是否匹配（仅支持 C# 和 TypeScript, 其他语言请自行扩展）",
+    "generateJson": "通过输出的 FlatBuffer 生成 JSON 文件",
+    "errorInvalidInput": "输入参数错误，请检查输入参数",
+    "errorTablesConfigNotFound": "未找到打表配置文件 $tables.xlsx，默认打所有表",
+    "errorTablesRootNotFound": "批量打表的根目录不存在"
 }
