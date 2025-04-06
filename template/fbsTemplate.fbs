@@ -1,0 +1,13 @@
+// {{{ FILE_NAME }}}
+
+namespace {{{ NAMESPACE }}};
+
+table {{{ TABLE_NAME }}}Info {
+{{{ FIELDS }}}
+}
+
+table {{{ TABLE_NAME }}} {
+  {{{ TABLE_NAME.toLowerCamelCase() }}}_infos:[{{{ TABLE_NAME }}}Info];
+}
+
+root_type {{{ TABLE_NAME }}};

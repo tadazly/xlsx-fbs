@@ -63,55 +63,114 @@ item.xls:
     A|B|C|D|E|F
     -|-|-|-|-|-
     道具id|id|number|||一些功能注释
-    道具名|name|string|||
+    道具名|name|string||required|
     描述|desc|string|||
     策划偷偷删掉的|wtf|uint||deprecated|字段就算不用了也最好保留，手动标记废弃
-    最大数|max|number|9999|required|玩家可以拥有的最大数量
+    最大数|max|number|9999||玩家可以拥有的最大数量
     每日上限|dailyLimit|number|||每天最多获得数量限制
 
 - 生成的 .fbs 文件
 
     ```
+    // item.xlsx
+
     namespace Xlsx;
 
     table ItemInfo {
-    id:short;
-    name:string;
-    desc:string;
-    wtf:uint (deprecated);
-    max:uint (required);
-    dailyLimit:uint;
+      /// 道具id
+      id:short;
+      /// 道具名
+      name:string (required);
+      /// 描述
+      desc:string;
+      /// 策划偷偷删掉的
+      wtf:uint (deprecated);
+      /// 最大数
+      max:uint = 9999;
+      /// 每日上限
+      daily_limit:uint;
     }
 
     table Item {
-    itemList:[ItemInfo];
+      item_infos:[ItemInfo];
     }
 
     root_type Item;
     ```
 
-### 2. 使用 xlsx-fbs 转换
+    **注意：**.fbs 中的字段名变成了 `snake_case` 命名，这是其规范，最终代码中的字段名会根据代码规范生成对应的格式，比如 ts 中是 `lowerCamelCase` 而 C# 中是 `UpperCamelCase` 。
+
+### 2. 使用 `xlsx-fbs` 转换
+
+```shell
+xlsx-fbs [ input ] [ flatc options ] [ xlsx-fbs options ]
+```
+
+#### input 选项
+
+Excel 文件路径或 Excel 所在的文件夹路径，传入文件则转换单张表，传入路径则 **递归** 转换文件夹下的所有表，不传默认转换 `xlsx-fbs` 执行路径下的所有表。 
+
+#### flatc 选项
+
+可转换的代码语言和 **flatc** 的完整参数列表请参考 [FlatBuffers 文档](https://flatbuffers.dev/flatc/)，xlsx-fbs 会将参数传递给 **flatc**。以下列举一些常用的：
+
+- `--cpp --csharp --ts --java` 等，生成对应语言的代码。
+
+#### xlsx-fbs 选项
+
+- `-o, --output <path>` 输出路径，默认输出到执行 `xlsx-fbs` 的文件夹下。
+
+- `-n, --namespace <name>` 生成代码的命名空间，默认是 `Xlsx`。
+
+- `-k, --default-key <field>` 默认不使用 key 属性，传入后，若表里没有设置 key 属性的字段，则使用该字段作为 key。
+
+- `--binary-extension <ext>` 输出的二进制文件的后缀名，默认输出 .bin，你爱发疯可以填 .wtf.bytes。
+
+- `--empty-string` 表中字符串类型的字段在创建二进制时默认填充空字符串而不是 null。
+
+- `--generate-json` 通过输出的 FlatBuffer 生成 JSON 文件，用于版本控制对比字段的修改记录。
+
+- `--delete-fbs` 转换后删除生成的 .fbs 文件，建议保留用于版本控制。
+
+- `--property-order` 自定义属性页顺序，默认 ABCDE。可根据实际表格中列的顺序来定义，例如想直接用表格属性页中 A 列的字段名作为变量名，B列已经定义了类型，并且 C 列被注释占用，那就传入 AABDE，顺序与 **字段名->变量名->类型->默认值->属性** 对应即可。
+
+    >    属性页的默认值：
+    >    - A: 数据页的字段名（可随意填写，和属性页做映射关系，并作为生成的 .fbs 中的字段名注释）
+    >    - B: 字段对应的变量名（对应 .fbs 中的 field，和代码中的成员字段名）
+    >    - C: 字段对应的类型（`short`, `int`, `string` ... 等）
+    >    - D: 字段的默认值 （对应 .fbs 中的默认值）
+    >    - E: 字段的属性 （对应 .fbs 中的 Attribute）
+
+#### 示例
 
 - 转换单张表：
 
-```shell
-xlsx-fbs item.xlsx --cpp --csharp [-o /path/to/output]
+    ```shell
+    xlsx-fbs item.xlsx --cpp --csharp [-o /path/to/output]
+    ```
+
+- 批量转换目录下的表，使用 **xls** 作为命名空间， 使用 **id** 字段作为二分查找的 key：
+
+    ```shell
+    xlsx-fbs /path/to/xlsx/files --csharp --typescript -n xls -k id [-o /path/to/output]
+    ```
+
+### 3. 输出文件
+
+输出的目录结构如下：
+
 ```
-
-- 批量转换目录下的表：
-
-```shell
-xlsx-fbs /path/to/xlsx/files --cpp --csharp [-o /path/to/output]
+output/
+├── fbs/         # 生成的 .fbs 文件
+├── bin/         # 生成的二进制文件
+├── scripts/     # 生成的代码文件
+│   ├── cpp/     # C++ 代码
+│   ├── csharp/  # C# 代码
+│   └── ts/      # TypeScript 代码
+└── json/        # 由二进制文件生成的 json
 ```
-
-- 参数：
-
-    - 可转换的语言类型参考 flatc。 
-    
-    - -o 输出路径，可省略，默认输出到当前文件夹内。
 
 ## 重要：配表规范
-
 
 ### 数据页规范
 
@@ -177,7 +236,9 @@ xlsx-fbs /path/to/xlsx/files --cpp --csharp [-o /path/to/output]
 
 #### 默认值
 
-字段的 **默认值**（ D 列），如果不填，那么标量类型是 `0`，其他类型是 `null`。
+字段的 **默认值**（ D 列），如果不填，默认标量类型是 `0`，其他类型是 `null`。
+
+**重要：** 只有 **标量** 能设置默认值，你猜是为什么。
 
 #### 属性
 
@@ -186,8 +247,14 @@ xlsx-fbs /path/to/xlsx/files --cpp --csharp [-o /path/to/output]
 属性|用途
 -|-
 deprecated|废弃字段
-required|必填字段，如果没有数据会报错
+required|必填字段，非标量使用，没有数据就报错
 key|向量中排序和查找的关键字字段
 id|自定义字段编号（用于版本兼容）
 force_align|强制对齐
 bit_flags|枚举值可组合
+
+## 坑点记录
+
+- flatc 参数，如 --allow-non-utf8，--natural-utf8 只在二进制转 json 时有用，--force-empty 更是一点用都没，需要在构造二进制时自己处理该逻辑。
+
+- 使用 flatc 转换 bin 到 json 时，必须设置 --strict-json，否则就爆炸；-o 参数需要放在输入前，二进制文件要放在 -- 后，没有设置 file_indentifier 时，需要传入 --raw-binary。

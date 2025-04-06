@@ -259,3 +259,17 @@ export function sizeToString(bytes) {
     const megabytes = kilobytes / 1024;
     return `${megabytes.toFixed(2)} MB`
 }
+
+/**
+ * 写入文件，自动创建路径
+ * @param {string} filePath 
+ * @param {string} content 
+ * @param {string} encoding 
+ */
+export async function writeFile(filePath, content, encoding = 'utf-8') {
+    if (!await checkExist(filePath)) {
+        await fsAsync.mkdir(dirname(filePath), { recursive: true });
+    }
+    await fsAsync.writeFile(filePath, content, encoding);
+}
+

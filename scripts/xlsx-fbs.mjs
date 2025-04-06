@@ -1,15 +1,41 @@
 #!/usr/bin/env node
 // 👆Help to Link to Global
 
+import { projectPath } from './environment.mjs'
 import { program } from 'commander';
 import fsAsync from 'fs/promises';
 import * as fsUtil from './utils/fsUtil.mjs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { xlsxToFbs } from './xlsxToFbs.mjs';
+import { generateFbsHash, xlsxToFbs } from './xlsxToFbs.mjs';
+import { toUpperCamelCase } from './utils/stringUtil.mjs';
 
-const scriptPath = fileURLToPath(import.meta.url);
-const projectPath = path.dirname(path.dirname(scriptPath));
+export const xlsxFbsOptions = {
+    output: process.cwd(),
+    namespace: 'Xlsx',
+    defaultKey: null,
+    binaryExtension: null,
+    emptyString: false,
+    generateJson: false,
+    deleteFbs: false,
+    generateFbsHash: false,
+    propertyOrder: [ 'A', 'B', 'C', 'D', 'E' ],
+}
+
+const getTableName = (filePath) => {
+    return path.basename(filePath, path.extname(filePath));
+}
+const getFbsPath = (filePath) => {
+    return path.join(xlsxFbsOptions.output, 'fbs', `${getTableName(filePath)}.fbs`);
+}
+const getBinPath = (filePath) => {
+    return path.join(xlsxFbsOptions.output, 'bin', `${getTableName(filePath)}.bin`);
+}
+const getJsonPath = (filePath) => {
+    return path.join(xlsxFbsOptions.output, 'json', `${getTableName(filePath)}.json`);
+}
+const getScriptPath = (filePath, language) => {
+    return path.join(xlsxFbsOptions.output, 'scripts', language, `${toUpperCamelCase(getTableName(filePath))}.js`);
+}
 
 function getLocale() {
     const langEnv = Intl.DateTimeFormat().resolvedOptions().locale;
@@ -40,31 +66,49 @@ async function main() {
 
     program
         .name('xlsx-fbs')
+        .usage('[input] [flatc options] [options]')
         .description(i18n.description)
         .allowUnknownOption() // 允许未知选项，直接传递给 flatc
         .allowExcessArguments() // 开启后，多余的选项不会报错
-        .version('0.0.1');
+        .version('0.0.1', '-V, --version', i18n.versionOption + '\n');
 
+    // input
     program
-        .argument('[input]', i18n.input)
+        .argument('[input]', i18n.input);
+
+    // flatc options
+    program
+        .option('--👇[flatc options]', i18n.commonFlatcOptions)
         .option('--cpp', 'C++')
         .option('--csharp', 'C#')
         .option('--ts', 'TypeScript')
         .option('--rust', 'Rust')
         .option('--go', 'Golang')
         .option('--python', 'Python')
-        .option('--allow-non-utf8', i18n.allowNonUtf8)
-        .option('--natural-utf8', i18n.naturalUtf8)
-        .option('--force-empty', i18n.forceEmpty)
+        .option('--...', '\n');
+
+    // options
+    program
+        .option('--👇[options]', i18n.xlsxFbsOptions)
+        .option('-o, --output <path>', i18n.output)
+        .option('-n, --namespace <name>', i18n.namespace)
+        .option('-k, --default-key <field>', i18n.defaultKey)
+        .option('--binary-extension <ext>', i18n.binaryExtension)
+        .option('--empty-string', i18n.emptyString)
         .option('--delete-fbs', i18n.deleteFbs)
         .option('--generate-fbs-hash', i18n.generateFbsHash)
         .option('--generate-json', i18n.generateJson)
-        .option('-n, --namespace <name>', i18n.namespace)
-        .option('-o, --output <path>', i18n.output)
-        .parse();
+        .option('--property-order <order>', i18n.propertyOrder, (value) => {
+            if (value.length !== 5) {
+                console.error(i18n.errorInvalidPropertyOrder);
+                process.exit(1);
+            }
+            return value.toUpperCase().split('');
+        })
+        .helpOption('-h, --help', i18n.helpOption);
 
-    // 获取定义的选项
-    const options = program.opts();
+    program.parse();
+
     // 获取定义的参数
     const args = program.args;
     if (args.length > 1 && !args[1].startsWith('-')) {
@@ -72,27 +116,42 @@ async function main() {
         process.exit(1);
     }
 
+    // 获取定义的选项
+    const options = program.opts();
+    Object.keys(xlsxFbsOptions)
+        .forEach(key => xlsxFbsOptions[key] = options[key] || xlsxFbsOptions[key]);
+
+    xlsxFbsOptions.output = path.resolve(xlsxFbsOptions.output);
+
+    console.log('xlsx-fbs 参数：', xlsxFbsOptions);
+
     // 获取未定义的选项
     const parsed = program.parseOptions(process.argv);
     const unknownArgs = parsed.unknown;
 
-    // 排除不传递给 flatc 的选项
-    const excludeOptions = ['namespace', 'output'];
-
     // 拼接 flatc 参数
     const flatcArgs = [
         ...Object.entries(options)
-            .filter(([key]) => !excludeOptions.includes(key))
+            .filter(([key]) => !Object.keys(xlsxFbsOptions).includes(key)) // 排除不传递给 flatc 的选项
             .map(([key, value]) => typeof value === 'boolean' ? `--${key}` : `--${key} ${value}`),
         ...unknownArgs,
     ].join(' ');
 
-    console.log(`传递给 flatc 的参数：${flatcArgs}`);
+    console.log(`flatc 参数：${flatcArgs}`);
 
     const input = !args[0] || args[0].startsWith('-') ? process.cwd() : args[0];
     if (input.endsWith('.xlsx') || input.endsWith('.xls')) {
         // 单个 excel 文件
-        xlsxToFbs(input);
+        try {
+            const fbs = await xlsxToFbs(input);
+            const fbsOutputPath = getFbsPath(input);
+            await fsUtil.writeFile(fbsOutputPath, fbs);
+            console.log(i18n.successGenerateFbs + `: ${getFbsPath(input)}`);
+        } catch (error) {
+            console.error(`${i18n.errorGenerateFbs}: ${input}`);
+            console.error(error);
+            process.exit(1);
+        }
     } else {
         // 批量转换路径下的所有 excel 文件
         const tablesConfig = await getTablesConfig(input);
