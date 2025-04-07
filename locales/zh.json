@@ -17,6 +17,7 @@
     "successGenerateFbs": "成功生成 .fbs 文件",
     "successGenerateBin": "成功生成 .bin 文件",
     "successGenerateJson": "成功生成 .json 文件",
+    "successGenerateCode": "成功生成脚本",
     "warningSignedNumberType": "Warning: 表格中存在有符号数，请检查表格数据",
     "warningFloatNumberType": "Warning: 表格中存在浮点数，请检查表格数据",
     "warningNumberTypeRange": "Warning: 数字类型范围过大，请检查表格数据",
@@ -27,5 +28,9 @@
     "errorTableNotFound": "Error: 要打的表不存在",
     "errorTableInvalid": "Error: 表格不符合规范，请检查表格格式是否正确，表格必须包含数据页和属性页",
     "errorGenerateFbs": "Error: 生成 .fbs 文件失败，请检查表格属性页(顺序)是否符合规范",
-    "errorInvalidDefaultValue": "Error: 默认值错误，请检查默认值是否符合规范"
+    "errorInvalidDefaultValue": "Error: 默认值错误，请检查默认值是否符合规范",
+    "errorFbsNotFound": "Error: 要转换的 .fbs 文件不存在",
+    "errorGenerateCode": "Error: fbs 生成脚本失败",
+    "errorUnsupportedPlatform": "Error: 不支持当前平台",
+    "errorScriptNotFound": "Error: 脚本文件不存在",
 }

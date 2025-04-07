@@ -1,69 +1,16 @@
 #!/usr/bin/env node
 // 👆Help to Link to Global
 
-import { projectPath } from './environment.mjs'
+import { i18n } from './environment.mjs'
 import { program } from 'commander';
 import fsAsync from 'fs/promises';
 import * as fsUtil from './utils/fsUtil.mjs';
 import path from 'path';
-import { generateFbsHash, xlsxToFbs } from './xlsxToFbs.mjs';
-import { toUpperCamelCase } from './utils/stringUtil.mjs';
-
-export const xlsxFbsOptions = {
-    output: process.cwd(),
-    namespace: 'Xlsx',
-    defaultKey: null,
-    binaryExtension: null,
-    emptyString: false,
-    generateJson: false,
-    deleteFbs: false,
-    generateFbsHash: false,
-    propertyOrder: [ 'A', 'B', 'C', 'D', 'E' ],
-}
-
-const getTableName = (filePath) => {
-    return path.basename(filePath, path.extname(filePath));
-}
-const getFbsPath = (filePath) => {
-    return path.join(xlsxFbsOptions.output, 'fbs', `${getTableName(filePath)}.fbs`);
-}
-const getBinPath = (filePath) => {
-    return path.join(xlsxFbsOptions.output, 'bin', `${getTableName(filePath)}.bin`);
-}
-const getJsonPath = (filePath) => {
-    return path.join(xlsxFbsOptions.output, 'json', `${getTableName(filePath)}.json`);
-}
-const getScriptPath = (filePath, language) => {
-    return path.join(xlsxFbsOptions.output, 'scripts', language, `${toUpperCamelCase(getTableName(filePath))}.js`);
-}
-
-function getLocale() {
-    const langEnv = Intl.DateTimeFormat().resolvedOptions().locale;
-    if (langEnv.startsWith('zh')) {
-        return 'zh';
-    }
-    return 'en';
-}
-
-async function loadLocaleStrings(locale) {
-    const filePath = path.join(projectPath, 'locales', `${locale}.json`);
-    try {
-        const file = await fsAsync.readFile(filePath, 'utf-8');
-        return JSON.parse(file);
-    } catch (error) {
-        console.error(`Failed to load locale file: ${filePath}`);
-        if (locale === 'en') {
-            process.exit(1);
-        } else {
-            return loadLocaleStrings('en');
-        }
-    }
-}
+import { xlsxToFbs } from './xlsxToFbs.mjs';
+import { fbsToCode } from './fbsToCode.mjs';
+import { xlsxFbsOptions, getFbsPath, getBinPath, getJsonPath, getGenerateScriptPath, getOrganizedScriptPath } from './environment.mjs';
 
 async function main() {
-    const locale = getLocale();
-    global.i18n = await loadLocaleStrings(locale);
-
     program
         .name('xlsx-fbs')
         .usage('[input] [flatc options] [options]')
@@ -135,7 +82,7 @@ async function main() {
             .filter(([key]) => !Object.keys(xlsxFbsOptions).includes(key)) // 排除不传递给 flatc 的选项
             .map(([key, value]) => typeof value === 'boolean' ? `--${key}` : `--${key} ${value}`),
         ...unknownArgs,
-    ].join(' ');
+    ];
 
     console.log(`flatc 参数：${flatcArgs}`);
 
@@ -143,12 +90,15 @@ async function main() {
     if (input.endsWith('.xlsx') || input.endsWith('.xls')) {
         // 单个 excel 文件
         try {
-            const fbs = await xlsxToFbs(input);
+            const { fbs, xlsxData } = await xlsxToFbs(input);
             const fbsOutputPath = getFbsPath(input);
             await fsUtil.writeFile(fbsOutputPath, fbs);
-            console.log(i18n.successGenerateFbs + `: ${getFbsPath(input)}`);
+            console.log(`${i18n.successGenerateFbs}: ${getFbsPath(input)}`);
+
+            flatcArgs.push(`-o ${getGenerateScriptPath()}`);
+            await fbsToCode(fbsOutputPath, flatcArgs);
+            console.log(`${i18n.successGenerateCode}: ${getOrganizedScriptPath()}`);
         } catch (error) {
-            console.error(`${i18n.errorGenerateFbs}: ${input}`);
             console.error(error);
             process.exit(1);
         }

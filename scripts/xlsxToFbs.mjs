@@ -1,7 +1,8 @@
 import xlsx from 'xlsx';
 import fsAsync from 'fs/promises';
+import { i18n } from './environment.mjs';
 import { checkExist } from './utils/fsUtil.mjs';
-import { xlsxFbsOptions } from './xlsx-fbs.mjs';
+import { xlsxFbsOptions } from './environment.mjs';
 import { toLowerCamelCase, toUpperCamelCase, toSnakeCase } from './utils/stringUtil.mjs';
 import path from 'path';
 import { fbsFieldTemplate, fbsTemplate, fillTemplate } from './template.mjs';
@@ -76,8 +77,9 @@ function inferNumberTypeRange(min, max) {
 }
 
 /**
- * 通过 xlsx 文件生成 fbs 文件
+ * 通过 xlsx 文件生成 fbs 文本和对应的表格数据对象
  * @param {string} filePath xlsx 文件路径
+ * @returns {Promise<{fbs: string, xlsxData: Record<string, any>}>}
  */
 export async function xlsxToFbs(filePath) {
     console.log(`xlsxToFbs: ${filePath}`);
@@ -111,7 +113,17 @@ export async function xlsxToFbs(filePath) {
         };
     });
 
+    // 生成一份替换成 fbs 字段名的数据
+    const xlsxData = dataJson.map(row =>
+        Object.fromEntries(
+            properties
+                .filter(({ comment }) => row[comment] !== undefined)
+                .map(({ comment, field }) => [toSnakeCase(field), row[comment]])
+        )
+    );
+
     // console.log(dataJson);
+    // console.log(xlsxData);
     // console.log(properties);
 
     const fileName = path.basename(filePath);
@@ -121,7 +133,10 @@ export async function xlsxToFbs(filePath) {
 
     const fbs = formatFbs({ fileName, namespace, tableName, fields });
 
-    return fbs;
+    return {
+        fbs,
+        xlsxData,
+    };
 }
 
 /**
@@ -132,6 +147,7 @@ export async function xlsxToFbs(filePath) {
 function formatFbsField(property) {
     let { comment, field, type, defaultValue, attribute, values } = property;
 
+    // 将字段名转换为蛇形命名
     field = toSnakeCase(field);
 
     if (type === 'number') {

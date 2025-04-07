@@ -17,11 +17,20 @@
     "successGenerateFbs": "Successfully generate .fbs file",
     "successGenerateBin": "Successfully generate .bin file",
     "successGenerateJson": "Successfully generate .json file",
+    "successGenerateCode": "Successfully generate script",
+    "warningSignedNumberType": "Warning: There are signed numbers in the table, please check the table data",
+    "warningFloatNumberType": "Warning: There are floating-point numbers in the table, please check the table data",
+    "warningNumberTypeRange": "Warning: The range of number types is too large, please check the table data",
     "errorInvalidInput": "Error: Input parameter error, please check the input parameter",
     "errorInvalidPropertyOrder": "Error: --property-order parameter must be a 5-character string representing table columns, like ABCDE",
     "errorTablesConfigNotFound": "Warning: Tables config file $tables.xlsx not found, default to convert all tables",
     "errorTablesRootNotFound": "Error: Tables root directory not found",
     "errorTableNotFound": "Error: Table not found !",
     "errorTableInvalid": "Error: Invalid table format, please check if the table format is correct, the table must contain data sheet and property sheet",
-    "errorGenerateFbs": "Error: Failed to generate .fbs file, please check if the table property sheet (order) is correct"
+    "errorGenerateFbs": "Error: Failed to generate .fbs file, please check if the table property sheet (order) is correct",
+    "errorInvalidDefaultValue": "Error: Invalid default value, please check if the default value is correct",
+    "errorFbsNotFound": "Error: The .fbs file to be converted does not exist",
+    "errorGenerateCode": "Error: Failed to generate script from fbs",
+    "errorUnsupportedPlatform": "Error: Unsupported platform",
+    "errorScriptNotFound": "Error: Script file not found"
 }
