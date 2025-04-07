@@ -42,6 +42,9 @@ async function main() {
         .option('-n, --namespace <name>', i18n.namespace)
         .option('-k, --default-key <field>', i18n.defaultKey)
         .option('--binary-extension <ext>', i18n.binaryExtension)
+        .option('--censored-fields <fields>', i18n.censoredFields, (value) => {
+            return value.split(',').map(field => field.trim()).filter(Boolean);
+        })
         .option('--empty-string', i18n.emptyString)
         .option('--delete-fbs', i18n.deleteFbs)
         .option('--generate-fbs-hash', i18n.generateFbsHash)
@@ -88,10 +91,10 @@ async function main() {
     console.log(`flatc 参数：${flatcArgs}`);
 
     const input = !args[0] || args[0].startsWith('-') ? process.cwd() : args[0];
-    if (input.endsWith('.xlsx') || input.endsWith('.xls')) {
+    const stat = await fsAsync.stat(input);
+    if (stat.isFile()) {
         // 单个 excel 文件
-        try {
-            const { fbs, xlsxData } = await xlsxToFbs(input);
+        async function generateOutput(input, fbs, xlsxData) {
             const fbsOutputPath = getFbsPath(input);
             await fsUtil.writeFile(fbsOutputPath, fbs);
             console.log(`${i18n.successGenerateFbs}: ${getFbsPath(input)}`);
@@ -107,6 +110,21 @@ async function main() {
             const binOutputPath = getBinPath();
             await jsonToBin(fbsOutputPath, jsonOutputPath, binOutputPath);
             console.log(`${i18n.successGenerateBinary}: ${binOutputPath}`);
+        }
+        try {
+            const { fbs, xlsxData, fbsCensored, xlsxDataCensored } = await xlsxToFbs(input, xlsxFbsOptions.censoredFields);
+
+            await generateOutput(input, fbs, xlsxData);
+
+            if (fbsCensored) {
+                // 由于修改了全局变量 xlsxFbsOptions.output，所以需要在最后执行
+                console.log('generate censored output ...');
+                const outputDirname = path.basename(xlsxFbsOptions.output) + '_censored';
+                xlsxFbsOptions.output = path.join(path.dirname(xlsxFbsOptions.output), outputDirname);
+                await generateOutput(input, fbsCensored, xlsxDataCensored);
+            }
+
+            console.log('finished ...');
         } catch (error) {
             console.error(error);
             process.exit(1);

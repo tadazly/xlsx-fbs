@@ -7,6 +7,7 @@
     "input": "Excel 文件路径或 Excel 所在的文件夹路径",
     "output": "输出文件路径，默认输出到当前目录",
     "namespace": "生成代码的命名空间，默认是 'xlsx'",
+    "censoredFields": "删减字段，使用 `,` 连接，会生成一份删减版本的文件到 `output_censored/` 目录",
     "defaultKey": "若表里没有设置 key 属性的字段，则使用该字段作为 key，不传入则不使用 key 属性",
     "propertyOrder": "自定义属性页顺序，默认 ABCDE",
     "emptyString": "表中字符串类型的字段在创建二进制时默认填充空字符串而不是 null",

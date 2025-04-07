@@ -126,6 +126,8 @@ Excel 文件路径或 Excel 所在的文件夹路径，传入文件则转换单�
 
 - `--binary-extension <ext>` 输出的二进制文件的后缀名，默认输出 .bin，你爱发疯可以填 .wtf.bytes。
 
+- `--censored-fields <fields>` 删减字段，使用 `,` 连接，会生成一份删减版本的文件到 `output_censored/` 目录。（注意不是删除数据，而是把整个字段从 .fbs 中删除！）
+
 - `--empty-string` 表中字符串类型的字段在创建二进制时默认填充空字符串而不是 null。
 
 - `--generate-json` 通过输出的 FlatBuffer 生成 JSON 文件，用于版本控制对比字段的修改记录。
@@ -160,7 +162,7 @@ Excel 文件路径或 Excel 所在的文件夹路径，传入文件则转换单�
 输出的目录结构如下：
 
 ```
-output/
+output[_censored]/
 ├── fbs/         # 生成的 .fbs 文件
 ├── bin/         # 生成的二进制文件
 ├── scripts/     # 生成的代码文件

@@ -79,9 +79,10 @@ function inferNumberTypeRange(min, max) {
 /**
  * 通过 xlsx 文件生成 fbs 文本和对应的表格数据对象
  * @param {string} filePath xlsx 文件路径
+ * @param {string[]} censoredFields 删减字段
  * @returns {Promise<{fbs: string, xlsxData: Record<string, any>}>}
  */
-export async function xlsxToFbs(filePath) {
+export async function xlsxToFbs(filePath, censoredFields = []) {
     console.log(`xlsxToFbs: ${filePath}`);
     if (!await checkExist(filePath)) {
         throw new Error(`${i18n.errorTableNotFound}: ${filePath}`);
@@ -123,9 +124,10 @@ export async function xlsxToFbs(filePath) {
 
     const fbs = formatFbs({ fileName, namespace, tableName, fields });
 
+    const tableInfosFiled = `${toLowerCamelCase(tableName)}_infos`;
     // 生成一份用于转换 bin 的 json 文件。
     const xlsxData = {};
-    xlsxData[`${toLowerCamelCase(tableName)}_infos`] = dataJson.map(row =>
+    xlsxData[tableInfosFiled] = dataJson.map(row =>
         Object.fromEntries(
             properties
                 .filter(({ comment }) => {
@@ -147,6 +149,26 @@ export async function xlsxToFbs(filePath) {
                 })
         )
     );
+
+    if (censoredFields.length) {
+        const propertiesCensored = properties.filter(({ field }) => !censoredFields.includes(field));
+        const fieldsCensored = propertiesCensored.map(formatFbsField).join('\n');
+        const fbsCensored = formatFbs({ fileName, namespace, tableName, fields: fieldsCensored });
+
+        const xlsxDataCensored = {};
+        xlsxDataCensored[tableInfosFiled] = xlsxData[tableInfosFiled].map(row => {
+            const censoredRow = { ...row };
+            censoredFields.map(field => toSnakeCase(field)).forEach(field => {
+                delete censoredRow[field];
+            });
+            return censoredRow;
+        });
+
+        return {
+            fbs, xlsxData,
+            fbsCensored, xlsxDataCensored,
+        }
+    }
 
     return {
         fbs,

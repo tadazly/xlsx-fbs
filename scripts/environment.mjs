@@ -39,6 +39,7 @@ export const xlsxFbsOptions = {
     namespace: 'Xlsx',
     defaultKey: null,
     binaryExtension: null,
+    censoredFields: [],
     emptyString: false,
     generateJson: false,
     deleteFbs: false,

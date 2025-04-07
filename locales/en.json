@@ -7,6 +7,7 @@
     "input": "Excel file path or directory path",
     "output": "Output file path, default to current directory",
     "namespace": "Namespace for generated code, default to 'xlsx'",
+    "censoredFields": "Censored fields, use `,` to connect, will generate a censored version of the file to the `output_censored/` directory",
     "defaultKey": "If the table does not set the key property, use this field as the key, not set then not use key attribute",
     "propertyOrder": "Custom property sheet order, default ABCDE",
     "emptyString": "The string type field in the table will be filled with an empty string instead of null when creating a binary",
