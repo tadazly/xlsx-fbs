@@ -1,4 +1,5 @@
 import xlsx from 'xlsx';
+import fsAsync from 'fs/promises';
 import { checkExist } from './utils/fsUtil.mjs';
 import { xlsxFbsOptions } from './xlsx-fbs.mjs';
 import { toLowerCamelCase, toUpperCamelCase, toSnakeCase } from './utils/stringUtil.mjs';
@@ -76,14 +77,15 @@ function inferNumberTypeRange(min, max) {
 
 /**
  * 通过 xlsx 文件生成 fbs 文件
- * @param {string} filePath 
+ * @param {string} filePath xlsx 文件路径
  */
 export async function xlsxToFbs(filePath) {
     console.log(`xlsxToFbs: ${filePath}`);
     if (!await checkExist(filePath)) {
         throw new Error(`${i18n.errorTableNotFound}: ${filePath}`);
     }
-    const workbook = xlsx.readFile(filePath);
+    const xlsxFileData = await fsAsync.readFile(filePath);
+    const workbook = xlsx.read(xlsxFileData, { type: 'buffer' });
 
     const dataSheetName = workbook.SheetNames[0];
     const propertySheetName = workbook.SheetNames[1];
@@ -110,7 +112,7 @@ export async function xlsxToFbs(filePath) {
     });
 
     // console.log(dataJson);
-    console.log(properties);
+    // console.log(properties);
 
     const fileName = path.basename(filePath);
     const tableName = toUpperCamelCase(path.basename(filePath, path.extname(filePath)));
@@ -140,7 +142,8 @@ function formatFbsField(property) {
         if (allIntegers) {
             const maxValue = Math.max(...uniqueValues);
             const minValue = Math.min(...uniqueValues);
-            type = inferNumberTypeRange(minValue, maxValue);
+            type = inferNumberTypeRange(minValue, maxValue * 2); // 最大值乘以2，避免未来配表溢出
+            // console.log(`${comment} => type: ${type} min: ${minValue} max: ${maxValue}`);
         } else {
             type = 'float32'; // 'double' 类型请在表里配，我可不想背锅
         }
