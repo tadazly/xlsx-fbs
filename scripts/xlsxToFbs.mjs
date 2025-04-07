@@ -173,7 +173,7 @@ function formatFbsField(property) {
         defaultValue = '';
     }
 
-    attribute = attribute ? ` (${attribute})` : '';
+    attribute = formatAttribute(attribute, xlsxFbsOptions.defaultKey === field);
 
     return fillTemplate(fbsFieldTemplate, {
         COMMENT: comment,
@@ -199,6 +199,33 @@ function formatFbs(property) {
         TABLE_NAME_LOWER_CAMEL_CASE: toLowerCamelCase(tableName),
         FIELDS: fields,
     });
+}
+
+/**
+ * 格式化字段的属性
+ * @param {string} attributeStr 属性字符串
+ * @param {boolean} isKeyField 是否是主键字段
+ * @returns 
+ */
+function formatAttribute(attributeStr, isKeyField) {
+    const attrs = [];
+
+    if (attributeStr) {
+        // 以逗号拆分后 trim，每项保留参数
+        const parsed = attributeStr
+            .split(',')
+            .map(attr => attr.trim())
+            .filter(Boolean); // 避免空字符串
+
+        attrs.push(...parsed);
+    }
+
+    if (isKeyField && !attrs.includes('key')) {
+        // 放前面，防止 key 被埋
+        attrs.unshift('key');
+    }
+
+    return attrs.length ? ` (${attrs.join(', ')})` : '';
 }
 
 /**
