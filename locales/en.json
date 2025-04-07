@@ -15,7 +15,7 @@
     "generateFbsHash": "Generate the TableHashConfig class file for runtime verification (only supports C# and TypeScript, other languages please extend by yourself)",
     "generateJson": "Generate JSON file from the output FlatBuffer",
     "successGenerateFbs": "Successfully generate .fbs file",
-    "successGenerateBin": "Successfully generate .bin file",
+    "successGenerateBinary": "Successfully generate .bin file",
     "successGenerateJson": "Successfully generate .json file",
     "successGenerateCode": "Successfully generate script",
     "warningSignedNumberType": "Warning: There are signed numbers in the table, please check the table data",
@@ -32,5 +32,6 @@
     "errorFbsNotFound": "Error: The .fbs file to be converted does not exist",
     "errorGenerateCode": "Error: Failed to generate script from fbs",
     "errorUnsupportedPlatform": "Error: Unsupported platform",
-    "errorScriptNotFound": "Error: Script file not found"
+    "errorScriptNotFound": "Error: Script file not found",
+    "errorInvalidNumberValue": "Error: Invalid number value, please check the table data"
 }

@@ -3,9 +3,10 @@ import { getGenerateScriptPath, getOrganizedScriptPath, i18n, projectPath } from
 import { execAsync } from './utils/processUtil.mjs';
 import path from 'path';
 import fsAsync from 'fs/promises';
+import { flatcAsync } from './utils/flatcUtil.mjs';
 
 /**
- * 
+ * 通过 .fbs 文件生成对应的代码
  * @param {string} fbsPath 
  * @param {string[]} flatcOptions 
  */
@@ -15,25 +16,8 @@ export async function fbsToCode(fbsPath, flatcOptions) {
         throw new Error(`${i18n.errorFbsNotFound}: ${fbsPath}`);
     }
 
-    await execFlatcAsync(flatcOptions, fbsPath);
+    await flatcAsync(flatcOptions, [fbsPath]);
     await organizeCodeFiles(getGenerateScriptPath(), getOrganizedScriptPath());
-}
-
-async function execFlatcAsync(flatcOptions, fbsPath) {
-    let flatcBin;
-    if (process.platform === 'win32') {
-        flatcBin = path.join(projectPath, 'bin', 'flatc.exe');
-    } else if (process.platform === 'darwin') {
-        flatcBin = path.join(projectPath, 'bin', 'flatc');
-    } else {
-        throw new Error(`${i18n.errorUnsupportedPlatform}: ${process.platform}`);
-    }
-    try {
-        await execAsync(`${flatcBin} ${flatcOptions.join(' ')} ${fbsPath}`);
-    } catch (error) {
-        console.error(`${i18n.errorGenerateCode}: ${fbsPath}`);
-        console.error(error);
-    }
 }
 
 const LANGUAGE_EXTENSIONS = {

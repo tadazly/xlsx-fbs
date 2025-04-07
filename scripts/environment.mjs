@@ -30,8 +30,10 @@ function loadLocaleStrings(locale) {
     }
 }
 
+/** 国际化 */
 export const i18n = loadLocaleStrings(getLocale());
 
+/** xlsx-fbs 输入选项 */
 export const xlsxFbsOptions = {
     output: path.join(process.cwd(), 'output'),
     namespace: 'Xlsx',
@@ -44,21 +46,30 @@ export const xlsxFbsOptions = {
     propertyOrder: [ 'A', 'B', 'C', 'D', 'E' ],
 }
 
+/** 获取表名 */
 export const getTableName = (filePath) => {
     return path.basename(filePath, path.extname(filePath));
 }
+/** .fbs 输出路径 */
 export const getFbsPath = (filePath) => {
     return path.join(xlsxFbsOptions.output, 'fbs', `${getTableName(filePath)}.fbs`);
 }
+/** .bin 输出路径 */
 export const getBinPath = (filePath) => {
-    return path.join(xlsxFbsOptions.output, 'bin', `${getTableName(filePath)}.bin`);
+    if (filePath) {
+        return path.join(xlsxFbsOptions.output, 'bin', `${getTableName(filePath)}.bin`);
+    }
+    return path.join(xlsxFbsOptions.output, 'bin');
 }
+/** .json 输出路径 */
 export const getJsonPath = (filePath) => {
     return path.join(xlsxFbsOptions.output, 'json', `${getTableName(filePath)}.json`);
 }
+/** flatc 生成的脚本路径 */
 export const getGenerateScriptPath = () => {
     return path.join(xlsxFbsOptions.output, 'generate-scripts');
 }
+/** 根据语言组织后的脚本路径 */
 export const getOrganizedScriptPath = () => {
     return path.join(xlsxFbsOptions.output, 'scripts');
 }

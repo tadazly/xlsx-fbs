@@ -15,7 +15,7 @@
     "generateFbsHash": "在输出的文件中添加 .fbs 文件的 hash 值，用于运行时校验表的数据结构是否匹配（仅支持 C# 和 TypeScript, 其他语言请自行扩展）",
     "generateJson": "通过输出的 FlatBuffer 生成 JSON 文件",
     "successGenerateFbs": "成功生成 .fbs 文件",
-    "successGenerateBin": "成功生成 .bin 文件",
+    "successGenerateBinary": "成功生成 .bin 文件",
     "successGenerateJson": "成功生成 .json 文件",
     "successGenerateCode": "成功生成脚本",
     "warningSignedNumberType": "Warning: 表格中存在有符号数，请检查表格数据",
@@ -33,4 +33,5 @@
     "errorGenerateCode": "Error: fbs 生成脚本失败",
     "errorUnsupportedPlatform": "Error: 不支持当前平台",
     "errorScriptNotFound": "Error: 脚本文件不存在",
+    "errorInvalidNumberValue": "Error: 数字类型值错误，请检查表格数据"
 }

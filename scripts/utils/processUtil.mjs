@@ -8,10 +8,13 @@ import { exec, spawn } from 'child_process'
  * @returns {Promise<string>} 输出文本
  */
 export function execAsync(command, cwd, showLog) {
-    console.info(`% ${command} (cwd: ${cwd})`)
+    if (showLog !== false) {
+        console.info(`% ${command} (cwd: ${cwd})`)
+    }
     return new Promise((resolve, reject) => {
         exec(command, { cwd }, (error, stdout, stderr) => {
             if (error) {
+                console.info(`% ${command} (cwd: ${cwd})`)
                 console.error(stderr)
                 reject(stderr)
             } else {

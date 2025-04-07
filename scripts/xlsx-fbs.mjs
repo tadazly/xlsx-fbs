@@ -9,6 +9,7 @@ import path from 'path';
 import { xlsxToFbs } from './xlsxToFbs.mjs';
 import { fbsToCode } from './fbsToCode.mjs';
 import { xlsxFbsOptions, getFbsPath, getBinPath, getJsonPath, getGenerateScriptPath, getOrganizedScriptPath } from './environment.mjs';
+import { jsonToBin } from './generateFbsBin.mjs';
 
 async function main() {
     program
@@ -98,6 +99,14 @@ async function main() {
             flatcArgs.push(`-o ${getGenerateScriptPath()}`);
             await fbsToCode(fbsOutputPath, flatcArgs);
             console.log(`${i18n.successGenerateCode}: ${getOrganizedScriptPath()}`);
+
+            const jsonOutputPath = getJsonPath(input);
+            await fsUtil.writeFile(jsonOutputPath, JSON.stringify(xlsxData, null, 2), 'utf-8');
+            console.log(`${i18n.successGenerateJson}: ${jsonOutputPath}`);
+
+            const binOutputPath = getBinPath();
+            await jsonToBin(fbsOutputPath, jsonOutputPath, binOutputPath);
+            console.log(`${i18n.successGenerateBinary}: ${binOutputPath}`);
         } catch (error) {
             console.error(error);
             process.exit(1);

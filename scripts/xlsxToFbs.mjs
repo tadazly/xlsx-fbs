@@ -99,7 +99,7 @@ export async function xlsxToFbs(filePath) {
         throw new Error(i18n.errorTableInvalid);
     }
 
-    const dataJson = xlsx.utils.sheet_to_json(dataSheet, { header: 2 });
+    const dataJson = xlsx.utils.sheet_to_json(dataSheet, { header: 2, raw: true });
     const propertyJson = xlsx.utils.sheet_to_json(propertySheet, { header: 'A' });
     const properties = propertyJson.map(property => {
         const [comment, field, type, defaultValue, attribute] = xlsxFbsOptions.propertyOrder.map(order => property[order]);
@@ -113,17 +113,7 @@ export async function xlsxToFbs(filePath) {
         };
     });
 
-    // 生成一份替换成 fbs 字段名的数据
-    const xlsxData = dataJson.map(row =>
-        Object.fromEntries(
-            properties
-                .filter(({ comment }) => row[comment] !== undefined)
-                .map(({ comment, field }) => [toSnakeCase(field), row[comment]])
-        )
-    );
-
     // console.log(dataJson);
-    // console.log(xlsxData);
     // console.log(properties);
 
     const fileName = path.basename(filePath);
@@ -132,6 +122,31 @@ export async function xlsxToFbs(filePath) {
     const fields = properties.map(formatFbsField).join('\n');
 
     const fbs = formatFbs({ fileName, namespace, tableName, fields });
+
+    // 生成一份用于转换 bin 的 json 文件。
+    const xlsxData = {};
+    xlsxData[`${toLowerCamelCase(tableName)}_infos`] = dataJson.map(row =>
+        Object.fromEntries(
+            properties
+                .filter(({ comment }) => {
+                    const value = row[comment];
+                    return value !== undefined && !(typeof value === 'string' && value.trim() === '');
+                })
+                .map(({ comment, field, type }) => {
+                    let value = row[comment];
+                    if (type === 'string' && typeof value === 'number') {
+                        value = value.toString();
+                    } else if ((scalarTypes.includes(type) || type === 'number') && typeof value === 'string') {
+                        value = +value;
+                        if (isNaN(value)) {
+                            value = 0;
+                            console.warn(`${i18n.errorInvalidNumberValue} field: ${comment}[${field}]:[${type}] => value: ${row[comment]}`);
+                        }
+                    }
+                    return [toSnakeCase(field), value];
+                })
+        )
+    );
 
     return {
         fbs,
@@ -152,6 +167,9 @@ function formatFbsField(property) {
 
     if (type === 'number') {
         // 根据表中的数据自动推导类型
+        // 过滤掉无法转换为数字的值
+        values = values.map(value => +value)
+            .filter(value => !isNaN(value));
         const uniqueValues = [...new Set(values)];
         const allIntegers = uniqueValues.every(Number.isInteger);
 
@@ -168,6 +186,7 @@ function formatFbsField(property) {
         if (field === 'id' && scalarTypeSize[type] < scalarTypeSize['uint32']) {
             type = 'uint32';
         }
+        property.type = type; // 更新类型，用于构造 json 时的判断
     }
 
     if (largeScalarTypes.includes(type)) { // 配表用这么大数据，确定 ok 吗？
