@@ -7,7 +7,7 @@ table {{{ TABLE_NAME }}}Info {
 }
 
 table {{{ TABLE_NAME }}} {
-  {{{ TABLE_NAME.toLowerCamelCase() }}}_infos:[{{{ TABLE_NAME }}}Info];
+  {{{ TABLE_NAME_LOWER_CAMEL_CASE }}}_infos:[{{{ TABLE_NAME }}}Info];
 }
 
 root_type {{{ TABLE_NAME }}};

@@ -1,11 +1,9 @@
 import xlsx from 'xlsx';
 import { checkExist } from './utils/fsUtil.mjs';
-import { projectPath } from './environment.mjs'
 import { xlsxFbsOptions } from './xlsx-fbs.mjs';
-import fsAsync from 'fs/promises';
 import { toLowerCamelCase, toUpperCamelCase, toSnakeCase } from './utils/stringUtil.mjs';
 import path from 'path';
-import { fbsFieldTemplate, fbsTemplate } from './template.mjs';
+import { fbsFieldTemplate, fbsTemplate, fillTemplate } from './template.mjs';
 
 /**
  * @typedef {Object} FbsFieldProperty
@@ -36,13 +34,45 @@ const scalarTypes = [
     'long', 'ulong', 'int64', 'uint64', 'double', 'float64',
 ];
 
+const scalarTypeSize = {
+    // 1 byte
+    bool: 1, byte: 1, ubyte: 1, int8: 1, uint8: 1,
+
+    // 2 bytes
+    short: 2, ushort: 2, int16: 2, uint16: 2,
+
+    // 4 bytes
+    int: 4, uint: 4, int32: 4, uint32: 4, float: 4, float32: 4,
+
+    // 8 bytes
+    long: 8, ulong: 8, int64: 8, uint64: 8, double: 8, float64: 8,
+};
+
 /**
  * 大范围标量类型
  * @type {string[]}
  */
 const largeScalarTypes = [
-    'long', 'ulong', 'int64', 'uint64', 'double', 'float64',
+    'long', 'ulong', 'int64', 'uint64', 'double', 'float64'
 ];
+
+
+/**
+ * 推导数字类型范围
+ * @param {number} min 最小值
+ * @param {number} max 最大值
+ * @returns {string} 推导出的类型
+ */
+function inferNumberTypeRange(min, max) {
+    if (min >= 0 && max <= 255) return 'uint8';
+    if (min >= -128 && max <= 127) return 'int8';
+    if (min >= 0 && max <= 65535) return 'uint16';
+    if (min >= -32768 && max <= 32767) return 'int16';
+    if (min >= 0 && max <= 4294967295) return 'uint32';
+    if (min >= -2147483648 && max <= 2147483647) return 'int32';
+    if (min >= 0 && max <= 18446744073709551615n) return 'uint64';
+    return 'int64';
+}
 
 /**
  * 通过 xlsx 文件生成 fbs 文件
@@ -112,7 +142,12 @@ function formatFbsField(property) {
             const minValue = Math.min(...uniqueValues);
             type = inferNumberTypeRange(minValue, maxValue);
         } else {
-            type = 'float'; // 'double' 类型请在表里配，我可不想背锅
+            type = 'float32'; // 'double' 类型请在表里配，我可不想背锅
+        }
+
+        // 如果是自动推导的 id 字段，且类型小于 uint，则强制预留为 uint
+        if (field === 'id' && scalarTypeSize[type] < scalarTypeSize['uint32']) {
+            type = 'uint32';
         }
     }
 
@@ -137,12 +172,13 @@ function formatFbsField(property) {
 
     attribute = attribute ? ` (${attribute})` : '';
 
-    return fbsFieldTemplate
-        .replaceAll('{{{ COMMENT }}}', comment)
-        .replaceAll('{{{ FIELD }}}', field)
-        .replaceAll('{{{ TYPE }}}', type)
-        .replaceAll('{{{ DEFAULT_VALUE }}}', defaultValue)
-        .replaceAll('{{{ ATTRIBUTE }}}', attribute);
+    return fillTemplate(fbsFieldTemplate, {
+        COMMENT: comment,
+        FIELD: field,
+        TYPE: type,
+        DEFAULT_VALUE: defaultValue,
+        ATTRIBUTE: attribute,
+    });
 }
 
 /**
@@ -153,23 +189,13 @@ function formatFbsField(property) {
 function formatFbs(property) {
     const { fileName, namespace, tableName, fields } = property;
 
-    return fbsTemplate
-        .replaceAll('{{{ FILE_NAME }}}', fileName)
-        .replaceAll('{{{ NAMESPACE }}}', namespace)
-        .replaceAll('{{{ TABLE_NAME }}}', tableName)
-        .replaceAll('{{{ TABLE_NAME.toLowerCamelCase() }}}', toLowerCamelCase(tableName))
-        .replaceAll('{{{ FIELDS }}}', fields);
-}
-
-function inferNumberTypeRange(min, max) {
-    if (min >= 0 && max <= 255) return 'ubyte';
-    if (min >= -128 && max <= 127) return 'byte';
-    if (min >= 0 && max <= 65535) return 'ushort';
-    if (min >= -32768 && max <= 32767) return 'short';
-    if (min >= 0 && max <= 4294967295) return 'uint';
-    if (min >= -2147483648 && max <= 2147483647) return 'int';
-    if (min >= 0 && max <= 18446744073709551615n) return 'ulong';
-    return 'long';
+    return fillTemplate(fbsTemplate, {
+        FILE_NAME: fileName,
+        NAMESPACE: namespace,
+        TABLE_NAME: tableName,
+        TABLE_NAME_LOWER_CAMEL_CASE: toLowerCamelCase(tableName),
+        FIELDS: fields,
+    });
 }
 
 /**

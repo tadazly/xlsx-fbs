@@ -99,7 +99,7 @@ async function main() {
         .option('--generate-fbs-hash', i18n.generateFbsHash)
         .option('--generate-json', i18n.generateJson)
         .option('--property-order <order>', i18n.propertyOrder, (value) => {
-            if (value.length !== 5) {
+            if (!/^[A-Za-z]{5}$/.test(value)) {
                 console.error(i18n.errorInvalidPropertyOrder);
                 process.exit(1);
             }
