@@ -1,0 +1,69 @@
+# ─────────────────────────────────────────────
+# TEXT FILE NORMALIZATION
+# ─────────────────────────────────────────────
+
+# Normalize all text files to LF line endings
+* text=auto eol=lf
+
+# ─────────────────────────────────────────────
+# LANGUAGE-SPECIFIC OVERRIDES
+# ─────────────────────────────────────────────
+
+# Source code files
+*.js     text eol=lf
+*.ts     text eol=lf
+*.jsx    text eol=lf
+*.tsx    text eol=lf
+*.json   text eol=lf
+*.yaml   text eol=lf
+*.yml    text eol=lf
+*.html   text eol=lf
+*.css    text eol=lf
+*.scss   text eol=lf
+*.md     text eol=lf
+*.sh     text eol=lf
+*.mjs    text eol=lf
+*.cjs    text eol=lf
+*.fbs    text eol=lf
+
+# Scripts / config / dotfiles
+*.env       text eol=lf
+*.gitignore text eol=lf
+*.gitattributes text eol=lf
+*.editorconfig text eol=lf
+*.eslintrc  text eol=lf
+*.prettierrc text eol=lf
+
+# ─────────────────────────────────────────────
+# BINARY FILES (do NOT normalize)
+# ─────────────────────────────────────────────
+
+# Prevent line-ending normalization on binaries
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.svg binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz  binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+
+# ─────────────────────────────────────────────
+# SPECIAL HANDLING (optional, expand as needed)
+# ─────────────────────────────────────────────
+
+# Treat lockfiles strictly as LF
+package-lock.json text eol=lf
+yarn.lock         text eol=lf
+pnpm-lock.yaml    text eol=lf
+
+# Make shell scripts always use LF (important for Linux shebangs)
+*.sh text eol=lf
+
+# For FlatBuffers Schema, force text merge/diff
+*.fbs diff
+*.fbs merge
