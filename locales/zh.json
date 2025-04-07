@@ -17,11 +17,15 @@
     "successGenerateFbs": "成功生成 .fbs 文件",
     "successGenerateBin": "成功生成 .bin 文件",
     "successGenerateJson": "成功生成 .json 文件",
+    "warningSignedNumberType": "Warning: 表格中存在有符号数，请检查表格数据",
+    "warningFloatNumberType": "Warning: 表格中存在浮点数，请检查表格数据",
+    "warningNumberTypeRange": "Warning: 数字类型范围过大，请检查表格数据",
     "errorInvalidInput": "Error: 输入参数错误，请检查输入参数",
     "errorInvalidPropertyOrder": "Error: --property-order 传入的参数必须是长度为5的字符串表格列，比如 ABCDE",
     "errorTablesConfigNotFound": "Warning: 未找到打表配置文件 $tables.xlsx，默认打所有表",
     "errorTablesRootNotFound": "Error: 批量打表的根目录不存在",
     "errorTableNotFound": "Error: 要打的表不存在",
     "errorTableInvalid": "Error: 表格不符合规范，请检查表格格式是否正确，表格必须包含数据页和属性页",
-    "errorGenerateFbs": "Error: 生成 .fbs 文件失败，请检查表格属性页(顺序)是否符合规范"
+    "errorGenerateFbs": "Error: 生成 .fbs 文件失败，请检查表格属性页(顺序)是否符合规范",
+    "errorInvalidDefaultValue": "Error: 默认值错误，请检查默认值是否符合规范"
 }
