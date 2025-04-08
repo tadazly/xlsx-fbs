@@ -19,7 +19,7 @@ import xlsx from 'xlsx';
  * @property {string} name 表名
  * @property {string} filePath 表路径
  * @property {boolean} isMerge 是否将多张表合并到一个二进制文件
- * @property {string[]} deleteFields 需要删除的敏感字段(会单独生成一份阉割版的到另一个文件夹)
+ * @property {string[]} censoredFields 需要删除的敏感字段(会单独生成一份阉割版的到另一个文件夹)
  */
 
 async function main() {
@@ -215,7 +215,7 @@ async function getTablesConfig(filePath) {
                 name: tableConfig.name,
                 filePath: tableConfig.filePath,
                 isMerge: tableConfig.isMerge,
-                deleteFields: tableConfig.deleteFields,
+                censoredFields: tableConfig.censoredFields,
             });
         });
     }
@@ -234,7 +234,7 @@ async function getTablesConfig(filePath) {
                 name,
                 filePath: table,
                 isMerge: false,
-                deleteFields: [],
+                censoredFields: [],
             });
         } else if (tablesConfigMap.has(name)) {
             const tableConfig = tablesConfigMap.get(name);

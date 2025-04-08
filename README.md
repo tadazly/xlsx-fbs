@@ -283,9 +283,9 @@ bit_flags|枚举值可组合
 
 - **tableName**: 需要打表的表名，是文件名不需要后缀，若不配置将不会打表。
 - **merge**: 是否合并到一张大表中，方便预加载。
-- **deleteTable**: 删除该表，将不会输出到 `output_censored/` 目录中，但是会输出到 `output/` 中。一般用于前后端共用一套打表逻辑时，从前端目录中删除后端表。
+- **censoredTable**: 敏感表，将不会输出到 `output_censored/` 目录中，但是会输出到 `output/` 中。一般用于前后端共用一套打表逻辑时，从前端目录中删除后端表。
 - **censoredField**: 敏感字段，使用 `,` 连接表中的指定字段（变量名），会删除这些字段后输出到 `output_censored/` 目录中，同时未删减版会输出到 `output/` 中。也是起到将后端使用数据从前端表中移除的作用。
-- **constField**: 常量字段，会使用表中的指定字段作为常量，并转换到独立的 Xlsx.tableNameConst 类中，配置方式为 `[{"key":"","value":"","comment":""},{"key":"","value":"","comment:"""},...]`。例如想使用 **NPC名** 作为常量获取到 **NPC的id** 时，可以这样配置 `[{"key":"npcName","value":"id","comment":"npcDesc"}]`。
+- **constField**: 常量字段，会使用表中的指定字段作为常量，并转换到独立的 Xlsx.tableNameConst 类中，配置方式为 `[{"key":"","value":"","desc":""},{"key":"","value":"","desc:"""},...]`。例如想使用 **NPC名** 作为常量获取到 **NPC的id** 时，可以这样配置 `[{"key":"npcName","value":"id","desc":"npcDesc"}]`。
 
 当没有在批量打表目录中放置 $tables.xlsx 时，会默认打目录下的所有表。
 
