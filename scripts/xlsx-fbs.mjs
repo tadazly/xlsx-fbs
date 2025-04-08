@@ -112,7 +112,7 @@ async function main() {
             console.log(`${i18n.successGenerateBinary}: ${binOutputPath}`);
         }
         try {
-            const { fbs, xlsxData, fbsCensored, xlsxDataCensored } = await xlsxToFbs(input, xlsxFbsOptions.censoredFields);
+            const { fbs, xlsxData, fbsCensored, xlsxDataCensored } = await xlsxToFbs(input, xlsxFbsOptions);
 
             await generateOutput(input, fbs, xlsxData);
 

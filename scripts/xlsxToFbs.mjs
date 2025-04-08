@@ -8,6 +8,14 @@ import path from 'path';
 import { fbsFieldTemplate, fbsTemplate, fillTemplate } from './template.mjs';
 
 /**
+ * @typedef {Object} XlsxToFbsOptions
+ * @property {string[]} [propertyOrder] 属性顺序
+ * @property {string[]} [censoredFields] 删减字段
+ * @property {string} [namespace] 命名空间
+ * @property {string} [defaultKey] 默认主键
+ */
+
+/**
  * @typedef {Object} FbsFieldProperty
  * @property {string} comment 字段注释（数据页的字段名）
  * @property {string} field 字段名
@@ -79,14 +87,45 @@ function inferNumberTypeRange(min, max) {
 /**
  * 通过 xlsx 文件生成 fbs 文本和对应的表格数据对象
  * @param {string} filePath xlsx 文件路径
- * @param {string[]} censoredFields 删减字段
+ * @param {XlsxToFbsOptions} options 选项
  * @returns {Promise<{fbs: string, xlsxData: Record<string, any>}>}
  */
-export async function xlsxToFbs(filePath, censoredFields = []) {
+export async function xlsxToFbs(filePath, options = {}) {
     console.log(`xlsxToFbs: ${filePath}`);
     if (!await checkExist(filePath)) {
         throw new Error(`${i18n.errorTableNotFound}: ${filePath}`);
     }
+
+    // 如果未指定选项，则使用默认选项
+    if (!options.propertyOrder) {
+        options.propertyOrder = xlsxFbsOptions.propertyOrder;
+    }
+    if (!options.censoredFields) {
+        options.censoredFields = xlsxFbsOptions.censoredFields;
+    }
+    if (!options.namespace) {
+        options.namespace = xlsxFbsOptions.namespace;
+    }
+
+    const extname = path.extname(filePath);
+    if (extname === '.xls') {
+        // 使用 xlsx 加载完整 xls 文件
+        return internalXlsToFbs(filePath, options);
+    } else if (extname === '.xlsx') {
+        // 使用 exceljs 流式加载 xlsx 文件
+        return internalXlsxToFbs(filePath, options);
+    } else {
+        throw new Error(`${i18n.errorTableNotSupport}: ${filePath}`);
+    }
+}
+
+/**
+ * 使用 xlsx 加载完整 xls 文件
+ * @param {string} filePath xlsx 文件路径
+ * @param {XlsxToFbsOptions} options 选项
+ * @returns {Promise<{fbs: string, xlsxData: Record<string, any>}>}
+ */
+async function internalXlsToFbs(filePath, options = {}) {
     const xlsxFileData = await fsAsync.readFile(filePath);
     const workbook = xlsx.read(xlsxFileData, { type: 'buffer' });
 
@@ -103,7 +142,24 @@ export async function xlsxToFbs(filePath, censoredFields = []) {
     const dataJson = xlsx.utils.sheet_to_json(dataSheet, { header: 2, raw: true });
     const propertyJson = xlsx.utils.sheet_to_json(propertySheet, { header: 'A' });
     const properties = propertyJson.map(property => {
-        const [comment, field, type, defaultValue, attribute] = xlsxFbsOptions.propertyOrder.map(order => property[order]);
+        let [comment, field, type, defaultValue, attribute] = options.propertyOrder.map(order => property[order]);
+        if (options.defaultKey === field) {
+            if (attribute) {
+                // 以逗号拆分后 trim，每项保留参数
+                const parsed = attribute
+                    .split(',')
+                    .map(attr => attr.trim())
+                    .filter(Boolean); // 避免空字符串
+        
+                attrs.push(...parsed);
+                if (!attrs.includes('key')) {
+                    attrs.unshift('key');
+                }
+                attribute = attrs.join(',');
+            } else {
+                attribute = 'key';
+            }
+        }
         return {
             comment,
             field,
@@ -119,7 +175,7 @@ export async function xlsxToFbs(filePath, censoredFields = []) {
 
     const fileName = path.basename(filePath);
     const tableName = toUpperCamelCase(path.basename(filePath, path.extname(filePath)));
-    const namespace = xlsxFbsOptions.namespace;
+    const namespace = options.namespace;
     const fields = properties.map(formatFbsField).join('\n');
 
     const fbs = formatFbs({ fileName, namespace, tableName, fields });
@@ -150,15 +206,15 @@ export async function xlsxToFbs(filePath, censoredFields = []) {
         )
     );
 
-    if (censoredFields.length) {
-        const propertiesCensored = properties.filter(({ field }) => !censoredFields.includes(field));
+    if (options.censoredFields.length) {
+        const propertiesCensored = properties.filter(({ field }) => !options.censoredFields.includes(field));
         const fieldsCensored = propertiesCensored.map(formatFbsField).join('\n');
         const fbsCensored = formatFbs({ fileName, namespace, tableName, fields: fieldsCensored });
 
         const xlsxDataCensored = {};
         xlsxDataCensored[tableInfosFiled] = xlsxData[tableInfosFiled].map(row => {
             const censoredRow = { ...row };
-            censoredFields.map(field => toSnakeCase(field)).forEach(field => {
+            options.censoredFields.map(field => toSnakeCase(field)).forEach(field => {
                 delete censoredRow[field];
             });
             return censoredRow;
@@ -174,6 +230,16 @@ export async function xlsxToFbs(filePath, censoredFields = []) {
         fbs,
         xlsxData,
     };
+}
+
+/**
+ * 使用 exceljs 流式加载 xlsx 文件
+ * @param {string} filePath xlsx 文件路径
+ * @param {XlsxToFbsOptions} options 选项
+ * @returns {Promise<{fbs: string, xlsxData: Record<string, any>}>}
+ */
+async function internalXlsxToFbs(filePath, options = {}) {
+
 }
 
 /**
@@ -230,7 +296,7 @@ function formatFbsField(property) {
         defaultValue = '';
     }
 
-    attribute = formatAttribute(attribute, xlsxFbsOptions.defaultKey === field);
+    attribute = formatAttribute(attribute);
 
     return fillTemplate(fbsFieldTemplate, {
         COMMENT: comment,
@@ -261,10 +327,9 @@ function formatFbs(property) {
 /**
  * 格式化字段的属性
  * @param {string} attributeStr 属性字符串
- * @param {boolean} isKeyField 是否是主键字段
  * @returns 
  */
-function formatAttribute(attributeStr, isKeyField) {
+function formatAttribute(attributeStr) {
     const attrs = [];
 
     if (attributeStr) {
@@ -275,11 +340,6 @@ function formatAttribute(attributeStr, isKeyField) {
             .filter(Boolean); // 避免空字符串
 
         attrs.push(...parsed);
-    }
-
-    if (isKeyField && !attrs.includes('key')) {
-        // 放前面，防止 key 被埋
-        attrs.unshift('key');
     }
 
     return attrs.length ? ` (${attrs.join(', ')})` : '';

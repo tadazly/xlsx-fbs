@@ -28,6 +28,7 @@
     "errorTablesRootNotFound": "Error: Tables root directory not found",
     "errorTableNotFound": "Error: Table not found !",
     "errorTableInvalid": "Error: Invalid table format, please check if the table format is correct, the table must contain data sheet and property sheet",
+    "errorTableNotSupport": "Error: Table format not supported, please check if the input is correct",
     "errorGenerateFbs": "Error: Failed to generate .fbs file, please check if the table property sheet (order) is correct",
     "errorInvalidDefaultValue": "Error: Invalid default value, please check if the default value is correct",
     "errorFbsNotFound": "Error: The .fbs file to be converted does not exist",

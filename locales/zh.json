@@ -28,6 +28,7 @@
     "errorTablesRootNotFound": "Error: 批量打表的根目录不存在",
     "errorTableNotFound": "Error: 要打的表不存在",
     "errorTableInvalid": "Error: 表格不符合规范，请检查表格格式是否正确，表格必须包含数据页和属性页",
+    "errorTableNotSupport": "Error: 不支持该表格格式，请检查输入是否正确",
     "errorGenerateFbs": "Error: 生成 .fbs 文件失败，请检查表格属性页(顺序)是否符合规范",
     "errorInvalidDefaultValue": "Error: 默认值错误，请检查默认值是否符合规范",
     "errorFbsNotFound": "Error: 要转换的 .fbs 文件不存在",
