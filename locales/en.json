@@ -11,6 +11,7 @@
     "defaultKey": "If the table does not set the key property, use this field as the key, not set then not use key attribute",
     "propertyOrder": "Custom property sheet order, default ABCDE",
     "emptyString": "The string type field in the table will be filled with an empty string instead of null when creating a binary",
+    "enableStreamingRead": "Enable streaming read of .xlsx format, fast, small memory, but Not OK for Chinese",
     "binaryExtension": "The extension of output binary file, default to .bin",
     "deleteFbs": "Delete the generated .fbs file after conversion",
     "generateFbsHash": "Generate the TableHashConfig class file for runtime verification (only supports C# and TypeScript, other languages please extend by yourself)",

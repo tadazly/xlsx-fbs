@@ -4,9 +4,21 @@ Excel 转 [FlatBuffers](https://flatbuffers.dev/) 工具。
 
 批量读取 xlsx 生成 .fbs 文件，并生成指定语言的代码，如 .cs, .h 等。
 
-## 工具依赖
+## 依赖库
 
-- **flatc**: 请参照文档[自行编译](https://flatbuffers.dev/building/)或者下载编译好的[二进制文件](https://github.com/google/flatbuffers/releases)。
+### FlatBuffer
+
+- **flatc**: FlatBuffers 的官方编译器，专门用来把 .fbs 文件变成一堆你不愿维护的代码。
+
+> 如果仓库里的二进制你跑不动，请参照文档[自行编译](https://flatbuffers.dev/building/)或者下载编译好的[二进制文件](https://github.com/google/flatbuffers/releases)。
+
+### 打表三贱客
+
+- [commander](https://www.npmjs.com/package/commander): 一个觉得自己是终端救世主的命令行库，实际只是个语法糖堆砌出来的参数解析器，连个花活都没有。
+
+- [xlsx](https://www.npmjs.com/package/xlsx): 功能一大堆，文档能把人写晕，代码写起来像在和 Excel 怪兽打回合制，读个表格都能血压飙升。
+
+- [ExcelJS](https://www.npmjs.com/package/exceljs): 想做全能 Excel 工匠，结果又慢又啰嗦，样式处理像搬砖，一不小心你就在为边框对齐浪费青春。
 
 ## 安装 xlsx-fbs 
 
@@ -129,6 +141,8 @@ Excel 文件路径或 Excel 所在的文件夹路径，传入文件则转换单�
 - `--censored-fields <fields>` 删减字段，使用 `,` 连接，会生成一份删减版本的文件到 `output_censored/` 目录。（注意不是删除数据，而是把整个字段从 .fbs 中删除！）
 
 - `--empty-string` 表中字符串类型的字段在创建二进制时默认填充空字符串而不是 null。
+
+- `--enable-streaming-read` 开启 .xlsx 格式的流式读取，速度快，内存小，中文可能会乱码😠，如果是英文表格，建议启用流式加载来处理更快。
 
 - `--generate-json` 通过输出的 FlatBuffer 生成 JSON 文件，用于版本控制对比字段的修改记录。
 
@@ -264,3 +278,5 @@ bit_flags|枚举值可组合
 - flatc 参数，如 --allow-non-utf8，--natural-utf8 只在二进制转 json 时有用，--force-empty 更是一点用都没，需要在构造二进制时自己处理该逻辑。
 
 - 使用 flatc 转换 bin 到 json 时，必须设置 --strict-json，否则就爆炸；-o 参数需要放在输入前，二进制文件要放在 -- 后，没有设置 file_indentifier 时，需要传入 --raw-binary。
+
+- exceljs 流式读取较大的中文表格时，会不稳定出现乱码��。

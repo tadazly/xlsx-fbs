@@ -46,6 +46,7 @@ async function main() {
             return value.split(',').map(field => field.trim()).filter(Boolean);
         })
         .option('--empty-string', i18n.emptyString)
+        .option('--enable-streaming-read', i18n.enableStreamingRead)
         .option('--delete-fbs', i18n.deleteFbs)
         .option('--generate-fbs-hash', i18n.generateFbsHash)
         .option('--generate-json', i18n.generateJson)
@@ -112,6 +113,7 @@ async function main() {
             console.log(`${i18n.successGenerateBinary}: ${binOutputPath}`);
         }
         try {
+            const startTime = performance.now();
             const { fbs, xlsxData, fbsCensored, xlsxDataCensored } = await xlsxToFbs(input, xlsxFbsOptions);
 
             await generateOutput(input, fbs, xlsxData);
@@ -124,7 +126,8 @@ async function main() {
                 await generateOutput(input, fbsCensored, xlsxDataCensored);
             }
 
-            console.log('finished ...');
+            const endTime = performance.now();
+            console.log(`finished: ${input} 耗时: ${endTime - startTime}ms`);
         } catch (error) {
             console.error(error);
             process.exit(1);

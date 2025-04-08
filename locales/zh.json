@@ -11,6 +11,7 @@
     "defaultKey": "若表里没有设置 key 属性的字段，则使用该字段作为 key，不传入则不使用 key 属性",
     "propertyOrder": "自定义属性页顺序，默认 ABCDE",
     "emptyString": "表中字符串类型的字段在创建二进制时默认填充空字符串而不是 null",
+    "enableStreamingRead": "开启 .xlsx 格式的流式读取，速度快，内存小，中文可能会乱码",
     "binaryExtension": "输出的二进制文件的扩展名，默认是 .bin",
     "deleteFbs": "转换后删除生成的 .fbs 文件",
     "generateFbsHash": "在输出的文件中添加 .fbs 文件的 hash 值，用于运行时校验表的数据结构是否匹配（仅支持 C# 和 TypeScript, 其他语言请自行扩展）",

@@ -41,6 +41,7 @@ export const xlsxFbsOptions = {
     binaryExtension: null,
     censoredFields: [],
     emptyString: false,
+    enableStreamingRead: false,
     generateJson: false,
     deleteFbs: false,
     generateFbsHash: false,
