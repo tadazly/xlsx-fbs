@@ -21,8 +21,8 @@ import { fbsFieldTemplate, fbsTemplate, fillTemplate } from './template.mjs';
  * @typedef {Object} XlsxToFbsResult
  * @property {string} fbs 生成的 fbs 文件内容
  * @property {Record<string, any>} xlsxData 生成的表格数据对象
- * @property {string} fbsCensored 生成的删减字段的 fbs 文件内容
- * @property {Record<string, any>} xlsxDataCensored 生成的删减字段的表格数据对象
+ * @property {string} [fbsCensored] 生成的删减字段的 fbs 文件内容
+ * @property {Record<string, any>} [xlsxDataCensored] 生成的删减字段的表格数据对象
  */
 
 /**

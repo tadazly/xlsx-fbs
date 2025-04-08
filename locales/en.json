@@ -16,6 +16,7 @@
     "deleteFbs": "Delete the generated .fbs file after conversion",
     "generateFbsHash": "Generate the TableHashConfig class file for runtime verification (only supports C# and TypeScript, other languages please extend by yourself)",
     "generateJson": "Generate JSON file from the output FlatBuffer",
+    "legacyMode": "Legacy mode, only output the original JSON file",
     "successGenerateFbs": "Successfully generate .fbs file",
     "successGenerateBinary": "Successfully generate .bin file",
     "successGenerateJson": "Successfully generate .json file",

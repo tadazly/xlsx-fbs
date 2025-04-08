@@ -7,9 +7,11 @@ import fsAsync from 'fs/promises';
 import * as fsUtil from './utils/fsUtil.mjs';
 import path from 'path';
 import { xlsxToFbs } from './xlsxToFbs.mjs';
+import { xlsxToJson } from './xlsxToJson.mjs';
 import { fbsToCode } from './fbsToCode.mjs';
 import { xlsxFbsOptions, getFbsPath, getBinPath, getJsonPath, getGenerateScriptPath, getOrganizedScriptPath } from './environment.mjs';
 import { jsonToBin } from './generateFbsBin.mjs';
+import { encodeHtml } from './utils/stringUtil.mjs';
 
 async function main() {
     program
@@ -50,6 +52,7 @@ async function main() {
         .option('--delete-fbs', i18n.deleteFbs)
         .option('--generate-fbs-hash', i18n.generateFbsHash)
         .option('--generate-json', i18n.generateJson)
+        .option('--legacy-mode', i18n.legacyMode)
         .option('--property-order <order>', i18n.propertyOrder, (value) => {
             if (!/^[A-Za-z]{5}$/.test(value)) {
                 console.error(i18n.errorInvalidPropertyOrder);
@@ -92,8 +95,45 @@ async function main() {
     console.log(`flatc 参数：${flatcArgs}`);
 
     const input = !args[0] || args[0].startsWith('-') ? process.cwd() : args[0];
-    const stat = await fsAsync.stat(input);
-    if (stat.isFile()) {
+    
+    let isFile = false;
+
+    try {
+        const stat = await fsAsync.stat(input);
+        isFile = stat.isFile();
+    } catch (err) {
+        console.error(i18n.errorTableNotFound + `: ${input}`);
+        process.exit(1);
+    }
+    if (isFile && xlsxFbsOptions.legacyMode) {
+        // 传统打表，只输出原始的 JSON 文件
+        async function generateLegacyOutput(input, xlsxData) {
+            for (const content of xlsxData) {
+                for (const key in content) {
+                    if (typeof content[key] === 'string') {
+                        content[key] = encodeHtml(content[key])
+                    }
+                }
+            }
+            const jsonOutputPath = getJsonPath(input);
+            const output = JSON.stringify(xlsxData, null, '\t').replace(/: /g, ":")
+            await fsUtil.writeFile(jsonOutputPath, output, 'utf-8');
+            console.log(`${i18n.successGenerateJson}: ${jsonOutputPath}`);
+        }
+        const startTime = performance.now();
+        const { xlsxData, xlsxDataCensored } = await xlsxToJson(input, xlsxFbsOptions);
+        await generateLegacyOutput(input, xlsxData);
+
+        if (xlsxDataCensored) {
+            console.log('generate censored output ...');
+            const outputDirname = path.basename(xlsxFbsOptions.output) + '_censored';
+            xlsxFbsOptions.output = path.join(path.dirname(xlsxFbsOptions.output), outputDirname);
+            await generateLegacyOutput(input, xlsxDataCensored);
+        }
+        const endTime = performance.now();
+        console.log(`finished: ${input} 耗时: ${endTime - startTime}ms`);
+    }
+    else if (isFile) {
         // 单个 excel 文件
         async function generateOutput(input, fbs, xlsxData) {
             const fbsOutputPath = getFbsPath(input);

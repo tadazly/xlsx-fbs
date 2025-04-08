@@ -43,6 +43,7 @@ export const xlsxFbsOptions = {
     emptyString: false,
     enableStreamingRead: false,
     generateJson: false,
+    legacyMode: false,
     deleteFbs: false,
     generateFbsHash: false,
     propertyOrder: [ 'A', 'B', 'C', 'D', 'E' ],

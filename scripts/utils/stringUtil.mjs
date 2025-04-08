@@ -28,3 +28,12 @@ export function toSnakeCase(str) {
         .toLowerCase()
         .replace(/^_/, '');
 }
+
+export function encodeHtml(str = "") {
+    return str.replace(/[&<>\"]/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;"
+    })[char]);
+}
