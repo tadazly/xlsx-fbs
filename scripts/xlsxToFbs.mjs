@@ -18,6 +18,14 @@ import { fbsFieldTemplate, fbsTemplate, fillTemplate } from './template.mjs';
  */
 
 /**
+ * @typedef {Object} XlsxToFbsResult
+ * @property {string} fbs 生成的 fbs 文件内容
+ * @property {Record<string, any>} xlsxData 生成的表格数据对象
+ * @property {string} fbsCensored 生成的删减字段的 fbs 文件内容
+ * @property {Record<string, any>} xlsxDataCensored 生成的删减字段的表格数据对象
+ */
+
+/**
  * @typedef {Object} FbsFieldProperty
  * @property {string} comment 字段注释（数据页的字段名）
  * @property {string} field 字段名
@@ -90,7 +98,7 @@ function inferNumberTypeRange(min, max) {
  * 通过 xlsx 文件生成 fbs 文本和对应的表格数据对象
  * @param {string} filePath xlsx 文件路径
  * @param {XlsxToFbsOptions} options 选项
- * @returns {Promise<{fbs: string, xlsxData: Record<string, any>}>}
+ * @returns {Promise<XlsxToFbsResult>}
  */
 export async function xlsxToFbs(filePath, options = {}) {
     console.log(`xlsxToFbs: ${filePath}`);
@@ -125,7 +133,7 @@ export async function xlsxToFbs(filePath, options = {}) {
  * 使用 xlsx 加载完整 xls 文件
  * @param {string} filePath xlsx 文件路径
  * @param {XlsxToFbsOptions} options 选项
- * @returns {Promise<{fbs: string, xlsxData: Record<string, any>}>}
+ * @returns {Promise<XlsxToFbsResult>}
  */
 async function internalXlsToFbs(filePath, options = {}) {
     const xlsxFileData = await fsAsync.readFile(filePath);
@@ -243,7 +251,7 @@ async function internalXlsToFbs(filePath, options = {}) {
  * 使用 exceljs 流式加载 xlsx 文件
  * @param {string} filePath xlsx 文件路径
  * @param {XlsxToFbsOptions} options 选项
- * @returns {Promise<{fbs: string, xlsxData: Record<string, any>}>}
+ * @returns {Promise<XlsxToFbsResult>}
  */
 async function internalXlsxToFbs(filePath, options = {}) {
     const workbookReader = new ExcelJS.stream.xlsx.WorkbookReader(filePath);
