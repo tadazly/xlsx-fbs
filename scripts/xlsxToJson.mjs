@@ -4,9 +4,7 @@ import fsAsync from 'fs/promises';
 import { i18n } from './environment.mjs';
 import { checkExist } from './utils/fsUtil.mjs';
 import { xlsxFbsOptions } from './environment.mjs';
-import { toLowerCamelCase, toUpperCamelCase, toSnakeCase } from './utils/stringUtil.mjs';
 import path from 'path';
-import { fbsFieldTemplate, fbsTemplate, fillTemplate } from './template.mjs';
 
 /**
  * @typedef {Object} XlsxToJsonOptions

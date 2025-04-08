@@ -12,6 +12,15 @@ import { fbsToCode } from './fbsToCode.mjs';
 import { xlsxFbsOptions, getFbsPath, getBinPath, getJsonPath, getGenerateScriptPath, getOrganizedScriptPath } from './environment.mjs';
 import { jsonToBin } from './generateFbsBin.mjs';
 import { encodeHtml } from './utils/stringUtil.mjs';
+import xlsx from 'xlsx';
+
+/**
+ * @typedef {Object} TableConfig
+ * @property {string} name 表名
+ * @property {string} filePath 表路径
+ * @property {boolean} isMerge 是否将多张表合并到一个二进制文件
+ * @property {string[]} deleteFields 需要删除的敏感字段(会单独生成一份阉割版的到另一个文件夹)
+ */
 
 async function main() {
     program
@@ -174,18 +183,14 @@ async function main() {
         }
     } else {
         // 批量转换路径下的所有 excel 文件
-        const tablesConfig = await getTablesConfig(input);
-        console.log(tablesConfig);
+        await batchConvert(input);
     }
 }
 
-/**
- * @typedef {Object} TableConfig
- * @property {string} name 表名
- * @property {string} filePath 表路径
- * @property {boolean} isMerge 是否将多张表合并到一个二进制文件
- * @property {string[]} deleteFields 需要删除的敏感字段(会单独生成一份阉割版的到另一个文件夹)
- */
+async function batchConvert(filePath) {
+    const tablesConfig = await getTablesConfig(filePath);
+    console.log(tablesConfig);
+}
 
 /**
  * 若是批量转换表，读取根目录下的 $tables.xlsx 文件，获取打表配置（只打配置在该表中的表，是否将多张表合并到一个二进制文件方便预加载，需要删除的敏感字段(会单独生成一份阉割版的到另一个文件夹)）
@@ -220,7 +225,8 @@ async function getTablesConfig(filePath) {
         console.error(i18n.errorTablesRootNotFound + `: ${rootDir}`);
         return [];
     }
-    const tables = await findAllTables(rootDir);
+    const tables = await fsUtil.findFiles(rootDir, /\.xlsx|\.xls$/);
+
     for (const table of tables) {
         const name = path.basename(table, path.extname(table));
         if (!tablesConfigMap) {
@@ -237,27 +243,6 @@ async function getTablesConfig(filePath) {
     }
 
     return tablesConfig;
-}
-
-/**
- * 递归找出目录中的所有表
- * @param {string} filePath 
- * @returns 
- */
-async function findAllTables(filePath) {
-    const tables = [];
-    const stat = await fsAsync.stat(filePath);
-    if (stat.isDirectory()) {
-        const files = await fsAsync.readdir(filePath);
-        for (const file of files) {
-            const fullPath = path.join(filePath, file);
-            const subTables = await findAllTables(fullPath);
-            tables.push(...subTables);
-        }
-    } else if (filePath.endsWith('.xlsx') || filePath.endsWith('.xls')) {
-        tables.push(filePath);
-    }
-    return tables;
 }
 
 main().catch(console.error);
