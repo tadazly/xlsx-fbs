@@ -81,18 +81,7 @@ async function internalXlsToJson(filePath, options = {}) {
 
     const dataJson = xlsx.utils.sheet_to_json(dataSheet, { header: 2, raw: true });
     const propertyJson = xlsx.utils.sheet_to_json(propertySheet, { header: 'A' });
-    const properties = [];
-    propertyJson.forEach(property => {
-        let [comment, field, type] = options.propertyOrder.map(order => property[order]);
-        if (!comment || !field || !type) {
-            return;
-        }
-        properties.push({
-            comment,
-            field,
-            type,
-        });
-    });
+    const properties = getProperties(propertyJson);
 
     // 生成一份用于转换 bin 的 json 文件。
     const xlsxData = dataJson.map(row =>
@@ -198,18 +187,7 @@ async function internalXlsxToJson(filePath, options = {}) {
         return obj;
     });
 
-    const properties = [];
-    propertyJson.forEach(property => {
-        let [comment, field, type] = options.propertyOrder.map(order => property[order]);
-        if (!comment || !field || !type) {
-            return;
-        }
-        properties.push({
-            comment,
-            field,
-            type,
-        });
-    });
+    const properties = getProperties(propertyJson);
 
     const xlsxData = dataJson.map(row =>
         Object.fromEntries(
@@ -268,4 +246,20 @@ function extractCellText(cell) {
         return cell.richText.map(part => part.text).join('');
     }
     return cell?.toString?.() ?? '';
+}
+
+function getProperties(propertyJson) {
+    const properties = [];
+    propertyJson.forEach(property => {
+        let [comment, field, type] = options.propertyOrder.map(order => property[order]);
+        if (!comment || !field || !type) {
+            return;
+        }
+        properties.push({
+            comment,
+            field,
+            type,
+        });
+    });
+    return properties;
 }

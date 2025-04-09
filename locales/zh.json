@@ -30,6 +30,7 @@
     "warningSignedNumberType": "Warning: 表格中存在有符号数，请检查表格数据",
     "warningFloatNumberType": "Warning: 表格中存在浮点数，请检查表格数据",
     "warningNumberTypeRange": "Warning: 数字类型范围过大，请检查表格数据",
+    "warningNumberTypeOverflow": "Warning: 数字范围超出给定类型，请检查表格数据",
     "warningWildTable": "Warning: 打野表（$tables.xlsx中未配置的表）",
     "warningDuplicateTable": "Warning: 路径中存在重复的表，你到底要打哪张表？",
     "errorInvalidInput": "Error: 输入参数错误，请检查输入参数",

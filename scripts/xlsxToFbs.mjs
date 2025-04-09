@@ -35,7 +35,6 @@ import { info, warn } from './utils/logUtil.mjs';
  * @property {string} type 字段类型
  * @property {string} defaultValue 默认值
  * @property {string} attribute 属性
- * @property {number[]|string[]} values 数据页的值
  */
 
 /**
@@ -58,10 +57,10 @@ const scalarTypes = [
 ];
 
 /**
- * FlatBuffers 内置类型
+ * 内置类型，非自定义类型的类型
  * @type {string[]}
  */
-const builtinTypes = [ 'string', ...scalarTypes ];
+const builtinTypes = ['string', 'number', ...scalarTypes];
 
 const scalarTypeSize = {
     // 1 byte
@@ -101,6 +100,26 @@ function inferNumberTypeRange(min, max) {
     if (min >= -2147483648 && max <= 2147483647) return 'int32';
     if (min >= 0 && max <= 18446744073709551615n) return 'uint64';
     return 'int64';
+}
+
+/**
+ * 根据数组推断类型
+ * @param {number[]} values 
+ * @returns 
+ */
+function inferNumberType(values) {
+    const uniqueValues = [...new Set(values)];
+    const allIntegers = uniqueValues.every(Number.isInteger);
+
+    let type;
+    if (allIntegers) {
+        const maxValue = Math.max(...uniqueValues);
+        const minValue = Math.min(...uniqueValues);
+        type = inferNumberTypeRange(minValue, maxValue * 2); // 最大值乘以2，避免未来配表溢出
+    } else {
+        type = 'float32'; // 'double' 类型请在表里配，我可不想背锅
+    }
+    return type;
 }
 
 /**
@@ -160,51 +179,8 @@ async function internalXlsToFbs(filePath, options = {}) {
 
     const dataJson = xlsx.utils.sheet_to_json(dataSheet, { header: 2, raw: true });
     const propertyJson = xlsx.utils.sheet_to_json(propertySheet, { header: 'A' });
-    /** @type {FbsFieldProperty[]} */
-    const properties = [];
-    propertyJson.forEach(property => {
-        let [comment, field, type, defaultValue, attribute] = options.propertyOrder.map(order => property[order]);
-        if (!comment || !field || !type) {
-            return;
-        }
-        if (options.defaultKey === field) {
-            if (attribute) {
-                // 以逗号拆分后 trim，每项保留参数
-                const parsed = attribute
-                    .split(',')
-                    .map(attr => attr.trim())
-                    .filter(Boolean); // 避免空字符串
 
-                attrs.push(...parsed);
-                if (!attrs.includes('key')) {
-                    attrs.unshift('key');
-                }
-                attribute = attrs.join(',');
-            } else {
-                attribute = 'key';
-            }
-        }
-        if (builtinTypes.includes(type.toLowerCase())) {
-            type = type.toLowerCase();
-        }
-        let values;
-        if (type.toLowerCase() === 'number') {
-            // 只有 number 类型需要根据表中的数据自动推导类型
-            values = dataJson.map(data => data[comment]).filter(value => value !== undefined);
-        }
-        properties.push({
-            comment,
-            field,
-            type,
-            defaultValue,
-            attribute,
-            values,
-        });
-    });
-
-    // console.log(dataJson);
-    // console.log(properties);
-
+    const properties = getProperties(propertyJson);
     const fileName = path.basename(filePath);
     const tableName = toUpperCamelCase(path.basename(filePath, path.extname(filePath)));
     const namespace = options.namespace;
@@ -326,47 +302,7 @@ async function internalXlsxToFbs(filePath, options = {}) {
         return obj;
     });
 
-    /** @type {FbsFieldProperty[]} */
-    const properties = [];
-    propertyJson.forEach(property => {
-        let [comment, field, type, defaultValue, attribute] = options.propertyOrder.map(order => property[order]);
-        if (!comment || !field || !type) {
-            return;
-        }
-        if (options.defaultKey === field) {
-            const attrs = [];
-            if (attribute) {
-                const parsed = attribute
-                    .split(',')
-                    .map(attr => attr.trim())
-                    .filter(Boolean);
-                attrs.push(...parsed);
-                if (!attrs.includes('key')) {
-                    attrs.unshift('key');
-                }
-                attribute = attrs.join(',');
-            } else {
-                attribute = 'key';
-            }
-        }
-        if (builtinTypes.includes(type.toLowerCase())) {
-            type = type.toLowerCase();
-        }
-        let values;
-        if (type.toLowerCase() === 'number') {
-            // 只有 number 类型需要根据表中的数据自动推导类型
-            values = dataJson.map(data => data[comment]).filter(value => value !== undefined);
-        }
-        properties.push({
-            comment,
-            field,
-            type,
-            defaultValue,
-            attribute,
-            values,
-        });
-    });
-
+    const properties = getProperties(propertyJson);
     const fileName = path.basename(filePath);
     const tableName = toUpperCamelCase(path.basename(filePath, path.extname(filePath)));
     const namespace = options.namespace;
@@ -442,55 +378,113 @@ function extractCellText(cell) {
 }
 
 /**
+ * 获取属性页的属性数据，并在这里就预处理好错误数据
+ * @param {any} propertyJson 
+ * @returns {FbsFieldProperty[]}
+ */
+function getProperties(propertyJson) {
+    const properties = [];
+    propertyJson.forEach(property => {
+        let [comment, field, type, defaultValue, attribute] = options.propertyOrder.map(order => property[order]);
+        if (!comment || !field || !type) {
+            return;
+        }
+        // type: 预防大小写错误
+        if (builtinTypes.includes(type.toLowerCase())) {
+            type = type.toLowerCase();
+        }
+
+        // type: 动态推断类型
+        if (type === 'number') {
+            // 根据表中的数据自动推导类型
+            // 过滤掉无法转换为数字的值
+            const values = dataJson
+                .map(data => +data[comment])
+                .filter(value => !isNaN(value));
+
+            let type = inferNumberType(values);
+
+            // 如果是自动推导的 id 字段，且类型小于 uint，则强制预留为 uint
+            if (field.toLowerCase() === 'id' && scalarTypeSize[type] < scalarTypeSize['uint32']) {
+                type = 'uint32';
+            }
+        } else if (scalarTypes.includes(type)) {
+            // 根据表中的数值验证类型，若溢出则报错
+            const values = dataJson
+                .map(data => +data[comment])
+                .filter(value => !isNaN(value));
+
+            let inferType = inferNumberType(values);
+            if (scalarTypeSize[type] < scalarTypeSize[inferType]) {
+                warn(`${i18n.warningNumberTypeOverflow} field: ${comment}[${field}] => type: ${type} < inferType: ${inferType}`);
+            }
+        }
+
+        if (largeScalarTypes.includes(type)) { // 配表用这么大数据，确定 ok 吗？
+            warn(`${i18n.warningNumberTypeRange} field: ${comment}[${field}] => type: ${type}`);
+        }
+
+        // defaultValue: 预防非数字
+        if (defaultValue && scalarTypes.includes(type)) {
+            const parsedValue = +defaultValue;
+            if (isNaN(parsedValue)) {
+                warn(`${i18n.errorInvalidDefaultValue} field: ${comment}[${field}] => defaultValue: ${defaultValue}`);
+                defaultValue = 0;
+            }
+            defaultValue = parsedValue;
+        } else {
+            defaultValue = null;
+        }
+
+        // attribute: 预防非英文字符
+        if (attribute) {
+            // 正则表达式：仅允许英文字符、空格、下划线和等号
+            const regex = /^[A-Za-z _=]+$/;
+            attribute = regex.test(attribute) ? attribute : '';
+        }
+
+        // attribute 填充命令行传入的默认主键
+        if (options.defaultKey === field) {
+            const attrs = [];
+            if (attribute) {
+                const parsed = attribute
+                    .split(',')
+                    .map(attr => attr.trim())
+                    .filter(Boolean);
+                attrs.push(...parsed);
+                if (!attrs.includes('key')) {
+                    attrs.unshift('key');
+                }
+                attribute = attrs.join(',');
+            } else {
+                attribute = 'key';
+            }
+        }
+
+        properties.push({
+            comment,
+            field,
+            type,
+            defaultValue,
+            attribute,
+        });
+    });
+    return properties;
+}
+
+/**
  * 格式化 fbs 字段
  * @param {FbsFieldProperty} property 
  * @returns 
  */
 function formatFbsField(property) {
-    let { comment, field, type, defaultValue, attribute, values } = property;
+    let { comment, field, type, defaultValue, attribute } = property;
 
     // 将字段名转换为蛇形命名
     field = toSnakeCase(field);
 
-    if (type === 'number') {
-        // 根据表中的数据自动推导类型
-        // 过滤掉无法转换为数字的值
-        values = values.map(value => +value)
-            .filter(value => !isNaN(value));
-        const uniqueValues = [...new Set(values)];
-        const allIntegers = uniqueValues.every(Number.isInteger);
-
-        if (allIntegers) {
-            const maxValue = Math.max(...uniqueValues);
-            const minValue = Math.min(...uniqueValues);
-            type = inferNumberTypeRange(minValue, maxValue * 2); // 最大值乘以2，避免未来配表溢出
-            // console.log(`${comment} => type: ${type} min: ${minValue} max: ${maxValue}`);
-        } else {
-            type = 'float32'; // 'double' 类型请在表里配，我可不想背锅
-        }
-
-        // 如果是自动推导的 id 字段，且类型小于 uint，则强制预留为 uint
-        if (field === 'id' && scalarTypeSize[type] < scalarTypeSize['uint32']) {
-            type = 'uint32';
-        }
-        property.type = type; // 更新类型，用于构造 json 时的判断
-    }
-
-    if (largeScalarTypes.includes(type)) { // 配表用这么大数据，确定 ok 吗？
-        warn(`${i18n.warningNumberTypeRange} field: ${comment} => type: ${type}`);
-    }
-
     if (defaultValue) {
-        if (!scalarTypes.includes(type)) {
-            // 非标量不能设置默认值
-            defaultValue = '';
-        } else {
-            const parsedValue = +defaultValue;
-            if (isNaN(parsedValue)) {
-                throw new Error(`${i18n.errorInvalidDefaultValue} field: ${comment} => defaultValue: ${defaultValue}`);
-            }
-            defaultValue = ` = ${parsedValue}`;
-        }
+        defaultValue = ` = ${parsedValue}`;
     } else {
         defaultValue = '';
     }
