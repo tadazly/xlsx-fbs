@@ -1,4 +1,5 @@
 import { exec, spawn } from 'child_process'
+import * as logUtil from './logUtil.mjs'
 
 /**
  * 异步执行命令行
@@ -8,18 +9,16 @@ import { exec, spawn } from 'child_process'
  * @returns {Promise<string>} 输出文本
  */
 export function execAsync(command, cwd, showLog) {
-    if (showLog !== false) {
-        console.info(`% ${command} (cwd: ${cwd})`)
-    }
+    logUtil.log(`% ${command} (cwd: ${cwd})`)
     return new Promise((resolve, reject) => {
         exec(command, { cwd }, (error, stdout, stderr) => {
             if (error) {
-                console.info(`% ${command} (cwd: ${cwd})`)
-                console.error(stderr)
+                logUtil.info(`% ${command} (cwd: ${cwd})`)
+                logUtil.error(stderr)
                 reject(stderr)
             } else {
                 if (showLog !== false) {
-                    console.log(stdout)
+                    logUtil.info(stdout)
                 }
                 resolve(stdout)
             }
@@ -37,26 +36,26 @@ export function execAsync(command, cwd, showLog) {
  * @returns {Promise<string>} 输出文本
  */
 export function spawnAsync(command, args, options, showLog) {
-    console.info(`% ${command} ${args ? args.join(' ') : ''}`)
+    logUtil.log(`% ${command} ${args ? args.join(' ') : ''}`)
     return new Promise((resolve, reject) => {
         const process = spawn(command, args, options)
         process.on("error", (err) => {
-            console.error(`Error 无法执行 ${command}: ${err.message}`);
+            logUtil.error(`Error 无法执行 ${command}: ${err.message}`);
         });
         process.stdout.on('data', msg => {
             if (showLog !== false) {
-                console.log(`${msg.toString().trim()}`)
+                logUtil.info(`${msg.toString().trim()}`)
             }
         })
         process.stderr.on('data', msg => {
-            console.error(`${msg}`)
+            logUtil.error(`${msg}`)
         })
         process.on('close', code => {
             if (code === 0) {
                 resolve()
             } else {
                 const errorMessage = `ERROR：${command} 执行失败 code:${code}`
-                console.error(errorMessage)
+                logUtil.error(errorMessage)
                 reject(errorMessage)
             }
         })

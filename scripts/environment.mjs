@@ -36,17 +36,22 @@ export const i18n = loadLocaleStrings(getLocale());
 /** xlsx-fbs 输入选项 */
 export const xlsxFbsOptions = {
     output: path.join(process.cwd(), 'output'),
+    censoredOutput: null,
     namespace: 'Xlsx',
     defaultKey: null,
     binaryExtension: null,
     censoredFields: [],
+    censoredTable: false,
     emptyString: false,
     enableStreamingRead: false,
     generateJson: false,
     legacyMode: false,
     deleteFbs: false,
     generateFbsHash: false,
+    allowWildTable: false,
     propertyOrder: [ 'A', 'B', 'C', 'D', 'E' ],
+    multiThread: 4,
+    minimalInfo: 'log',
 }
 
 /** 获取表名 */
@@ -69,8 +74,8 @@ export const getJsonPath = (filePath) => {
     return path.join(xlsxFbsOptions.output, 'json', `${getTableName(filePath)}.json`);
 }
 /** flatc 生成的脚本路径 */
-export const getGenerateScriptPath = () => {
-    return path.join(xlsxFbsOptions.output, 'generate-scripts');
+export const getGenerateScriptPath = (filePath) => {
+    return path.join(xlsxFbsOptions.output, `generate-scripts-${getTableName(filePath)}`);
 }
 /** 根据语言组织后的脚本路径 */
 export const getOrganizedScriptPath = () => {

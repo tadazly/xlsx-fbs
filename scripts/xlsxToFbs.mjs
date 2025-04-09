@@ -7,11 +7,14 @@ import { xlsxFbsOptions } from './environment.mjs';
 import { toLowerCamelCase, toUpperCamelCase, toSnakeCase } from './utils/stringUtil.mjs';
 import path from 'path';
 import { fbsFieldTemplate, fbsTemplate, fillTemplate } from './template.mjs';
+import { info, warn } from './utils/logUtil.mjs';
 
 /**
  * @typedef {Object} XlsxToFbsOptions
  * @property {string[]} [propertyOrder] 属性顺序
  * @property {string[]} [censoredFields] 删减字段
+ * @property {boolean} [censoredTable] 是否删减表
+ * @property {string} [censoredOutput] 删减输出目录
  * @property {string} [namespace] 命名空间
  * @property {string} [defaultKey] 默认主键
  * @property {boolean} [enableStreamingRead] 是否开启流式读取，仅支持 xlsx 格式
@@ -53,6 +56,12 @@ const scalarTypes = [
     'int', 'uint', 'int32', 'uint32', 'float', 'float32',
     'long', 'ulong', 'int64', 'uint64', 'double', 'float64',
 ];
+
+/**
+ * FlatBuffers 内置类型
+ * @type {string[]}
+ */
+const builtinTypes = [ 'string', ...scalarTypes ];
 
 const scalarTypeSize = {
     // 1 byte
@@ -101,7 +110,7 @@ function inferNumberTypeRange(min, max) {
  * @returns {Promise<XlsxToFbsResult>}
  */
 export async function xlsxToFbs(filePath, options = {}) {
-    console.log(`xlsxToFbs: ${filePath}`);
+    info(`xlsxToFbs: ${filePath}`);
     if (!await checkExist(filePath)) {
         throw new Error(`${i18n.errorTableNotFound}: ${filePath}`);
     }
@@ -151,8 +160,13 @@ async function internalXlsToFbs(filePath, options = {}) {
 
     const dataJson = xlsx.utils.sheet_to_json(dataSheet, { header: 2, raw: true });
     const propertyJson = xlsx.utils.sheet_to_json(propertySheet, { header: 'A' });
-    const properties = propertyJson.map(property => {
+    /** @type {FbsFieldProperty[]} */
+    const properties = [];
+    propertyJson.forEach(property => {
         let [comment, field, type, defaultValue, attribute] = options.propertyOrder.map(order => property[order]);
+        if (!comment || !field || !type) {
+            return;
+        }
         if (options.defaultKey === field) {
             if (attribute) {
                 // 以逗号拆分后 trim，每项保留参数
@@ -170,19 +184,22 @@ async function internalXlsToFbs(filePath, options = {}) {
                 attribute = 'key';
             }
         }
+        if (builtinTypes.includes(type.toLowerCase())) {
+            type = type.toLowerCase();
+        }
         let values;
-        if (type === 'number') {
+        if (type.toLowerCase() === 'number') {
             // 只有 number 类型需要根据表中的数据自动推导类型
             values = dataJson.map(data => data[comment]).filter(value => value !== undefined);
         }
-        return {
+        properties.push({
             comment,
             field,
             type,
             defaultValue,
             attribute,
             values,
-        };
+        });
     });
 
     // console.log(dataJson);
@@ -213,7 +230,7 @@ async function internalXlsToFbs(filePath, options = {}) {
                         value = +value;
                         if (isNaN(value)) {
                             value = 0;
-                            console.warn(`${i18n.errorInvalidNumberValue} field: ${comment}[${field}]:[${type}] => value: ${row[comment]}`);
+                            warn(`${i18n.errorInvalidNumberValue} field: ${comment}[${field}]:[${type}] => value: ${row[comment]}`);
                         }
                     }
                     return [toSnakeCase(field), value];
@@ -221,7 +238,7 @@ async function internalXlsToFbs(filePath, options = {}) {
         )
     );
 
-    if (options.censoredFields.length) {
+    if (options.censoredFields.length && !options.censoredTable) {
         const propertiesCensored = properties.filter(({ field }) => !options.censoredFields.includes(field));
         const fieldsCensored = propertiesCensored.map(formatFbsField).join('\n');
         const fbsCensored = formatFbs({ fileName, namespace, tableName, fields: fieldsCensored });
@@ -239,6 +256,13 @@ async function internalXlsToFbs(filePath, options = {}) {
             fbs, xlsxData,
             fbsCensored, xlsxDataCensored,
         }
+    }
+
+    if (options.censoredOutput && !options.censoredTable) {
+        return {
+            fbs, xlsxData,
+            fbsCensored: fbs, xlsxDataCensored: xlsxData,
+        };
     }
 
     return {
@@ -302,8 +326,13 @@ async function internalXlsxToFbs(filePath, options = {}) {
         return obj;
     });
 
-    const properties = propertyJson.map(property => {
+    /** @type {FbsFieldProperty[]} */
+    const properties = [];
+    propertyJson.forEach(property => {
         let [comment, field, type, defaultValue, attribute] = options.propertyOrder.map(order => property[order]);
+        if (!comment || !field || !type) {
+            return;
+        }
         if (options.defaultKey === field) {
             const attrs = [];
             if (attribute) {
@@ -320,20 +349,22 @@ async function internalXlsxToFbs(filePath, options = {}) {
                 attribute = 'key';
             }
         }
-
+        if (builtinTypes.includes(type.toLowerCase())) {
+            type = type.toLowerCase();
+        }
         let values;
-        if (type === 'number') {
+        if (type.toLowerCase() === 'number') {
             // 只有 number 类型需要根据表中的数据自动推导类型
             values = dataJson.map(data => data[comment]).filter(value => value !== undefined);
         }
-        return {
+        properties.push({
             comment,
             field,
             type,
             defaultValue,
             attribute,
             values,
-        };
+        });
     });
 
     const fileName = path.basename(filePath);
@@ -362,7 +393,7 @@ async function internalXlsxToFbs(filePath, options = {}) {
                         value = +value;
                         if (isNaN(value)) {
                             value = 0;
-                            console.warn(`${i18n.errorInvalidNumberValue} field: ${comment}[${field}]:[${type}] => value: ${row[comment]}`);
+                            warn(`${i18n.errorInvalidNumberValue} field: ${comment}[${field}]:[${type}] => value: ${row[comment]}`);
                         }
                     }
                     return [toSnakeCase(field), value];
@@ -370,7 +401,7 @@ async function internalXlsxToFbs(filePath, options = {}) {
         )
     );
 
-    if (options.censoredFields.length) {
+    if (options.censoredFields.length && !options.censoredTable) {
         const propertiesCensored = properties.filter(({ field }) => !options.censoredFields.includes(field));
         const fieldsCensored = propertiesCensored.map(formatFbsField).join('\n');
         const fbsCensored = formatFbs({ fileName, namespace, tableName, fields: fieldsCensored });
@@ -388,6 +419,13 @@ async function internalXlsxToFbs(filePath, options = {}) {
             fbs, xlsxData,
             fbsCensored, xlsxDataCensored,
         }
+    }
+
+    if (options.censoredOutput && !options.censoredTable) {
+        return {
+            fbs, xlsxData,
+            fbsCensored: fbs, xlsxDataCensored: xlsxData,
+        };
     }
 
     return {
@@ -439,7 +477,7 @@ function formatFbsField(property) {
     }
 
     if (largeScalarTypes.includes(type)) { // 配表用这么大数据，确定 ok 吗？
-        console.warn(`${i18n.warningNumberTypeRange} field: ${comment} => type: ${type}`);
+        warn(`${i18n.warningNumberTypeRange} field: ${comment} => type: ${type}`);
     }
 
     if (defaultValue) {

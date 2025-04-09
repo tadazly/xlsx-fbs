@@ -130,7 +130,7 @@ Excel 文件路径或 Excel 所在的文件夹路径，传入文件则转换单�
 
 #### xlsx-fbs 选项
 
-- `-o, --output <path>` 输出路径，默认输出到执行 `xlsx-fbs` 的文件夹下。
+- `-o, --output <path>` 输出路径，默认输出到执行 `xlsx-fbs` 的文件夹的 `output/` 下。
 
 - `-n, --namespace <name>` 生成代码的命名空间，默认是 `Xlsx`。
 
@@ -140,6 +140,8 @@ Excel 文件路径或 Excel 所在的文件夹路径，传入文件则转换单�
 
 - `--censored-fields <fields>` 删减字段，使用 `,` 连接，会生成一份删减版本的文件到 `output_censored/` 目录。（注意不是删除数据，而是把整个字段从 .fbs 中删除！）
 
+- `--censored-output` 指定删减表的输出路径，默认是 `${output}_censored/`。
+
 - `--empty-string` 表中字符串类型的字段在创建二进制时默认填充空字符串而不是 null。
 
 - `--enable-streaming-read` 开启 .xlsx 格式的流式读取，速度快，内存小，中文可能会乱码😠，如果是英文表格，建议启用流式加载来处理更快。
@@ -147,6 +149,12 @@ Excel 文件路径或 Excel 所在的文件夹路径，传入文件则转换单�
 - `--generate-json` 通过输出的 FlatBuffer 生成 JSON 文件，用于版本控制对比字段的修改记录。
 
 - `--delete-fbs` 转换后删除生成的 .fbs 文件，建议保留用于版本控制。
+
+- `--multi-thread <number>` 批量打表时的多线程数量，默认 4 。
+
+- `--minimal-info` 最小化输出信息，可选范围 `log < info < warn < error`。
+
+- `--allow-wild-table` 批量打表时允许打野表（$tables.xlsx中未配置的表）。慎用，确保不会把奇怪的东西打出来。
 
 - `--property-order` 自定义属性页顺序，默认 ABCDE。可根据实际表格中列的顺序来定义，例如想直接用表格属性页中 A 列的字段名作为变量名，B列已经定义了类型，并且 C 列被注释占用，那就传入 AABDE，顺序与 **字段名->变量名->类型->默认值->属性** 对应即可。
 
@@ -293,7 +301,9 @@ bit_flags|枚举值可组合
 
 - 打单张表时，若传入 `--censored-fields <fields>` 时，会同时生成 **删减版** 和 **完整版** 两份输出文件，分别对应在 `output_censored/` 和 `output/` 目录中。
 
-- 批量打表时，若 $tables.xlsx 中配置了 `censoredTable` 或 `censoredFields` 字段，会同时生成 **删减版** 和 **完整版** 两份输出文件，其中 `censoredTable` 中的表，将 **不会** 输出到 `output_censored/` 目录中。
+- 批量打表时，若 $tables.xlsx 中配置了 `censoredTable` 或 `censoredFields` 字段，会同时生成 **删减版** 和 **完整版** 两份输出文件，其中标记 `censoredTable` 的表，将 **不会** 输出到 `output_censored/` 目录中，只会输出到 `output/` 中。
+
+- 没有配置 `censoredTable` 或 `censoredFields` 字段，只会输出一份 `output/`。
 
 ## 坑点记录
 

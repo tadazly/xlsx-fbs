@@ -10,8 +10,10 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "chalk": "^5.4.1",
     "commander": "^13.1.0",
     "exceljs": "^4.4.0",
+    "p-limit": "^6.2.0",
     "xlsx": "^0.18.5"
   }
 }

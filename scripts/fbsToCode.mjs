@@ -1,9 +1,9 @@
 import { checkExist } from './utils/fsUtil.mjs'
 import { getGenerateScriptPath, getOrganizedScriptPath, i18n, projectPath } from './environment.mjs';
-import { execAsync } from './utils/processUtil.mjs';
 import path from 'path';
 import fsAsync from 'fs/promises';
 import { flatcAsync } from './utils/flatcUtil.mjs';
+import { info, warn } from './utils/logUtil.mjs';
 
 /**
  * 通过 .fbs 文件生成对应的代码
@@ -11,13 +11,13 @@ import { flatcAsync } from './utils/flatcUtil.mjs';
  * @param {string[]} flatcOptions 
  */
 export async function fbsToCode(fbsPath, flatcOptions) {
-    console.log(`fbsToCode: ${fbsPath}`);
+    info(`fbsToCode: ${fbsPath}`);
     if (!await checkExist(fbsPath)) {
         throw new Error(`${i18n.errorFbsNotFound}: ${fbsPath}`);
     }
 
     await flatcAsync(flatcOptions, [fbsPath]);
-    await organizeCodeFiles(getGenerateScriptPath(), getOrganizedScriptPath());
+    await organizeCodeFiles(getGenerateScriptPath(fbsPath), getOrganizedScriptPath());
 }
 
 const LANGUAGE_EXTENSIONS = {
@@ -63,7 +63,11 @@ async function organizeCodeFiles(sourceDir, destDir) {
         if (!await checkExist(dirPath)) {
             const parentDir = path.dirname(dirPath);
             await mkdirRecursive(parentDir);
-            await fsAsync.mkdir(dirPath);
+            try {
+                await fsAsync.mkdir(dirPath);
+            } catch (error) {
+                warn(`WARN: Skip exist dir: ${dirPath}`);
+            }
         }
     }
 

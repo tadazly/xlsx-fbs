@@ -5,11 +5,14 @@ import { i18n } from './environment.mjs';
 import { checkExist } from './utils/fsUtil.mjs';
 import { xlsxFbsOptions } from './environment.mjs';
 import path from 'path';
+import { info, warn } from './utils/logUtil.mjs';
 
 /**
  * @typedef {Object} XlsxToJsonOptions
  * @property {string[]} [propertyOrder] 属性顺序
  * @property {string[]} [censoredFields] 删减字段
+ * @property {boolean} [censoredTable] 是否删减表
+ * @property {string} [censoredOutput] 删减输出目录
  * @property {string} [namespace] 命名空间
  * @property {string} [defaultKey] 默认主键
  * @property {boolean} [enableStreamingRead] 是否开启流式读取，仅支持 xlsx 格式
@@ -28,7 +31,7 @@ import path from 'path';
  * @returns {Promise<XlsxToJsonResult>} `{xlsxData: Array<any>, xlsxDataCensored: Array<any>}` 返回的 xlsxData 是原始表格数据对象，xlsxDataCensored 是删减字段的表格数据对象
  */
 export async function xlsxToJson(filePath, options = {}) {
-    console.log(`xlsxToJson: ${filePath}`);
+    info(`xlsxToJson: ${filePath}`);
     if (!await checkExist(filePath)) {
         throw new Error(`${i18n.errorTableNotFound}: ${filePath}`);
     }
@@ -78,13 +81,17 @@ async function internalXlsToJson(filePath, options = {}) {
 
     const dataJson = xlsx.utils.sheet_to_json(dataSheet, { header: 2, raw: true });
     const propertyJson = xlsx.utils.sheet_to_json(propertySheet, { header: 'A' });
-    const properties = propertyJson.map(property => {
+    const properties = [];
+    propertyJson.forEach(property => {
         let [comment, field, type] = options.propertyOrder.map(order => property[order]);
-        return {
+        if (!comment || !field || !type) {
+            return;
+        }
+        properties.push({
             comment,
             field,
             type,
-        };
+        });
     });
 
     // 生成一份用于转换 bin 的 json 文件。
@@ -102,7 +109,7 @@ async function internalXlsToJson(filePath, options = {}) {
                         value = +value;
                         if (isNaN(value)) {
                             value = 0;
-                            console.warn(`${i18n.errorInvalidNumberValue} field: ${comment}[${field}]:[${type}] => value: ${row[comment]}`);
+                            warn(`${i18n.errorInvalidNumberValue} field: ${comment}[${field}]:[${type}] => value: ${row[comment]}`);
                         }
                     }
                     return [field, value];
@@ -110,7 +117,7 @@ async function internalXlsToJson(filePath, options = {}) {
         )
     );
 
-    if (options.censoredFields.length) {
+    if (options.censoredFields.length && !options.censoredTable) {
         const xlsxDataCensored = xlsxData.map(row => {
             const censoredRow = { ...row };
             options.censoredFields.forEach(field => {
@@ -122,6 +129,13 @@ async function internalXlsToJson(filePath, options = {}) {
         return {
             xlsxData, xlsxDataCensored,
         }
+    }
+
+    if (options.censoredOutput && !options.censoredTable) {
+        return {
+            xlsxData,
+            xlsxDataCensored: xlsxData,
+        };
     }
 
     return {
@@ -184,13 +198,17 @@ async function internalXlsxToJson(filePath, options = {}) {
         return obj;
     });
 
-    const properties = propertyJson.map(property => {
+    const properties = [];
+    propertyJson.forEach(property => {
         let [comment, field, type] = options.propertyOrder.map(order => property[order]);
-        return {
+        if (!comment || !field || !type) {
+            return;
+        }
+        properties.push({
             comment,
             field,
             type,
-        };
+        });
     });
 
     const xlsxData = dataJson.map(row =>
@@ -210,7 +228,7 @@ async function internalXlsxToJson(filePath, options = {}) {
                         value = +value;
                         if (isNaN(value)) {
                             value = 0;
-                            console.warn(`${i18n.errorInvalidNumberValue} field: ${comment}[${field}]:[${type}] => value: ${row[comment]}`);
+                            warn(`${i18n.errorInvalidNumberValue} field: ${comment}[${field}]:[${type}] => value: ${row[comment]}`);
                         }
                     }
                     return [field, value];
@@ -218,7 +236,7 @@ async function internalXlsxToJson(filePath, options = {}) {
         )
     );
 
-    if (options.censoredFields.length) {
+    if (options.censoredFields.length && !options.censoredTable) {
         const xlsxDataCensored = xlsxData.map(row => {
             const censoredRow = { ...row };
             options.censoredFields.forEach(field => {
@@ -231,6 +249,13 @@ async function internalXlsxToJson(filePath, options = {}) {
             xlsxData,
             xlsxDataCensored,
         }
+    }
+
+    if (options.censoredOutput && !options.censoredTable) {
+        return {
+            xlsxData,
+            xlsxDataCensored: xlsxData,
+        };
     }
 
     return {
