@@ -273,3 +273,30 @@ export async function writeFile(filePath, content, encoding = 'utf-8') {
     await fsAsync.writeFile(filePath, content, encoding);
 }
 
+/**
+ * 检查是否是文件
+ * @param {string} filePath 
+ * @returns {Promise<boolean>}
+ */
+export async function isFile(filePath) {
+    try {
+        const stat = await fsAsync.stat(filePath);
+        return stat.isFile();
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * 检查是否是文件夹
+ * @param {string} dirPath 
+ * @returns {Promise<boolean>}
+ */
+export async function isDirectory(dirPath) {
+    try {
+        const stat = await fsAsync.stat(dirPath);
+        return stat.isDirectory();
+    } catch {
+        return false;
+    }
+}

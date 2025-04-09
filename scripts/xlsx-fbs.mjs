@@ -12,15 +12,6 @@ import { fbsToCode } from './fbsToCode.mjs';
 import { xlsxFbsOptions, getFbsPath, getBinPath, getJsonPath, getGenerateScriptPath, getOrganizedScriptPath } from './environment.mjs';
 import { jsonToBin } from './generateFbsBin.mjs';
 import { encodeHtml } from './utils/stringUtil.mjs';
-import xlsx from 'xlsx';
-
-/**
- * @typedef {Object} TableConfig
- * @property {string} name 表名
- * @property {string} filePath 表路径
- * @property {boolean} isMerge 是否将多张表合并到一个二进制文件
- * @property {string[]} censoredFields 需要删除的敏感字段(会单独生成一份阉割版的到另一个文件夹)
- */
 
 async function main() {
     program
@@ -193,38 +184,74 @@ async function batchConvert(filePath) {
 }
 
 /**
+ * @typedef {Object} TableConfig
+ * @property {string} tableName 表名
+ * @property {string} filePath 表路径
+ * @property {boolean} merge 是否将多张表合并到一个二进制文件
+ * @property {boolean} censoredTable 是否在 output_censored 目录中剔除该表
+ * @property {string[]} censoredFields 需要删除的敏感字段(会单独生成一份阉割版的到另一个文件夹)
+ * @property {{key: string, value: string, desc: string}[]} constFields 需要生产常量定义的字段
+ */
+
+/**
  * 若是批量转换表，读取根目录下的 $tables.xlsx 文件，获取打表配置（只打配置在该表中的表，是否将多张表合并到一个二进制文件方便预加载，需要删除的敏感字段(会单独生成一份阉割版的到另一个文件夹)）
- * @param {string} filePath 
+ * @param {string} rootDir 批量打表的根路径 
  * @returns {Promise<TableConfig[]>}
  */
-async function getTablesConfig(filePath) {
-    if (!filePath.endsWith('.xlsx') && !filePath.endsWith('.xls')) {
-        filePath = path.join(filePath, '$tables.xlsx');
+async function getTablesConfig(rootDir) {
+    if (!await fsUtil.checkExist(rootDir)) {
+        // 如果根目录不存在，则抛出错误
+        throw new Error(`${i18n.errorInvalidRootDir}: ${rootDir}`);
+    }
+    if (await fsUtil.isFile(rootDir)) {
+        // 如果传入的是文件，则获取文件的根目录
+        const rootDir = path.resolve(path.dirname(rootDir));
+        return getTablesConfig(path.resolve(path.dirname(rootDir)));
     }
 
-    const tablesConfig = [];
-    let tablesConfigMap;
+    /**
+     * 返回的结果，包含路径，且剔除了不存在的表
+     * @type {TableConfig[]}
+     */
+    let tablesConfig = [];
 
-    if (!await fsUtil.checkExist(filePath)) {
+    /**
+     *  $tables.xlsx 中的表配置，不包含路径
+     * @type {Map<string, TableConfig>} 
+     */
+    let tablesConfigMap = new Map();
+
+    // 遍历根目录中的文件，找到 $tables.xlsx
+    const files = await fsAsync.readdir(rootDir, {withFileTypes: false, recursive: false});
+    const matched = files.filter(name => 
+        /^\$.*\.(xls|xlsx)$/i.test(name)
+    );
+    if (matched.length === 0) {
+        // 找不到文件则默认打根目录中的所有表
         console.warn(i18n.errorTablesConfigNotFound);
     } else {
-        tablesConfigMap = new Map();
-        const tablesConfigArray = [];
-        tablesConfigArray.forEach(tableConfig => {
-            tablesConfigMap.set(tableConfig.name, {
-                name: tableConfig.name,
-                filePath: tableConfig.filePath,
-                isMerge: tableConfig.isMerge,
-                censoredFields: tableConfig.censoredFields,
+        const tablesXlsxPath = path.join(rootDir, matched[0]);
+        const { xlsxData: tablesXlsxJson } = await xlsxToJson(tablesXlsxPath, xlsxFbsOptions);
+        tablesXlsxJson.forEach(row => {
+            // 一些魔法字段😜
+            const tableName = (row.tableName || row.name).trim();
+            const merge = row.merge == 1;
+            const censoredTable = row.censoredTable == 1 || row.deleteTable == 1 || row.deletePublish == 1;
+            const censoredFieldsStr = (row.censoredFields || row.censoredField || row.sensitiveField || '').trim();
+            const censoredFields = censoredFieldsStr ? censoredFieldsStr.split(',').map(field => field.trim()).filter(Boolean) : [];
+            const constFieldStr = (row.constFields || row.constField || '').trim();
+            const constFields = constFieldStr ? JSON.parse(constFieldStr) : [];
+            tablesConfigMap.set(tableName, {
+                tableName,
+                merge,
+                censoredTable,
+                censoredFields,
+                constFields,
             });
         });
+        console.log(`${i18n.successReadTablesConfig}: ${matched[0]}`);
     }
 
-    const rootDir = path.resolve(path.dirname(filePath));
-    if (!await fsUtil.checkExist(rootDir)) {
-        console.error(i18n.errorTablesRootNotFound + `: ${rootDir}`);
-        return [];
-    }
     const tables = await fsUtil.findFiles(rootDir, /\.xlsx|\.xls$/);
 
     for (const table of tables) {
@@ -233,11 +260,14 @@ async function getTablesConfig(filePath) {
             tablesConfig.push({
                 name,
                 filePath: table,
-                isMerge: false,
+                merge: false,
+                censoredTable: false,
                 censoredFields: [],
+                constFields: [],
             });
         } else if (tablesConfigMap.has(name)) {
             const tableConfig = tablesConfigMap.get(name);
+            tableConfig.filePath = table;
             tablesConfig.push(tableConfig);
         }
     }

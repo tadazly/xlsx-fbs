@@ -118,14 +118,14 @@ export async function xlsxToFbs(filePath, options = {}) {
     }
 
     const extname = path.extname(filePath);
-    if (extname === '.xls' || !options.enableStreamingRead) {
+    if (extname !== '.xls' && extname !== '.xlsx') {
+        throw new Error(`${i18n.errorTableNotSupport}: ${filePath}`);
+    } else if (extname === '.xls' || !options.enableStreamingRead) {
         // 使用 xlsx 加载完整 .xls 文件，未开启流式加载时也使用 xlsx 加载完整的 .xlsx 文件
         return internalXlsToFbs(filePath, options);
     } else if (extname === '.xlsx') {
         // 使用 ExcelJS 流式加载 .xlsx 文件
         return internalXlsxToFbs(filePath, options);
-    } else {
-        throw new Error(`${i18n.errorTableNotSupport}: ${filePath}`);
     }
 }
 

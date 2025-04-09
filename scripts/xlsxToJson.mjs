@@ -17,15 +17,15 @@ import path from 'path';
 
 /**
  * @typedef {Object} XlsxToJsonResult
- * @property {Record<string, any>} xlsxData 生成的表格数据对象
- * @property {Record<string, any>} [xlsxDataCensored] 生成的删减字段的表格数据对象
+ * @property {Array<any>} xlsxData 生成的表格数据对象
+ * @property {Array<any>} [xlsxDataCensored] 生成的删减字段的表格数据对象
  */
 
 /**
- * 通过 xlsx 文件生成 fbs 文本和对应的表格数据对象
+ * 通过 xlsx 文件生成原始 json 对象，注意不是 fbs 用的 json 对象哦，所有字段都保留表格中的字段名，不会转换成 snake_case 哦
  * @param {string} filePath xlsx 文件路径
  * @param {XlsxToJsonOptions} options 选项
- * @returns {Promise<XlsxToJsonResult>}
+ * @returns {Promise<XlsxToJsonResult>} `{xlsxData: Array<any>, xlsxDataCensored: Array<any>}` 返回的 xlsxData 是原始表格数据对象，xlsxDataCensored 是删减字段的表格数据对象
  */
 export async function xlsxToJson(filePath, options = {}) {
     console.log(`xlsxToJson: ${filePath}`);
@@ -45,14 +45,14 @@ export async function xlsxToJson(filePath, options = {}) {
     }
 
     const extname = path.extname(filePath);
-    if (extname === '.xls' || !options.enableStreamingRead) {
+    if (extname !== '.xls' && extname !== '.xlsx') {
+        throw new Error(`${i18n.errorTableNotSupport}: ${filePath}`);
+    } else if (extname === '.xls' || !options.enableStreamingRead) {
         // 使用 xlsx 加载完整 .xls 文件，未开启流式加载时也使用 xlsx 加载完整的 .xlsx 文件
         return internalXlsToJson(filePath, options);
     } else if (extname === '.xlsx') {
         // 使用 ExcelJS 流式加载 .xlsx 文件
         return internalXlsxToJson(filePath, options);
-    } else {
-        throw new Error(`${i18n.errorTableNotSupport}: ${filePath}`);
     }
 }
 
