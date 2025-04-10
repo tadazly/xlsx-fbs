@@ -32,6 +32,7 @@
     "warningNumberTypeRange": "Warning: The range of number types is too large, please check the table data",
     "warningWildTable": "Warning: Wild table (tables not configured in $tables.xlsx)",
     "warningDuplicateTable": "Warning: Duplicate table name in the path, which table do you want to convert?",
+    "warningNumberTypeOverflow": "Warning: The number type overflows the given type, please check the table data",
     "errorInvalidInput": "Error: Input parameter error, please check the input parameter",
     "errorInvalidPropertyOrder": "Error: --property-order parameter must be a 5-character string representing table columns, like ABCDE",
     "errorInvalidRootDir": "Error: Tables root directory not found",

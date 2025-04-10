@@ -12,13 +12,6 @@ import { xlsxFbsOptions, getBinPath, getTableName } from './environment.mjs';
  */
 export async function jsonToBin(fbsPath, jsonPath, binPath) {
     await flatcToBinaryAsync(fbsPath, jsonPath, binPath);
-    if (xlsxFbsOptions.binaryExtension) {
-        const srcPath = getBinPath(fbsPath);
-        const baseName = path.basename(srcPath, path.extname(srcPath));
-        const dir = path.dirname(srcPath);
-        const destPath = path.join(dir, `${baseName}${xlsxFbsOptions.binaryExtension}`);
-        await fsUtil.moveFile(srcPath, destPath);
-    }
 }
 
 /**

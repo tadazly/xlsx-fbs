@@ -47,64 +47,20 @@ export async function xlsxToJson(filePath, options = {}) {
         options.namespace = xlsxFbsOptions.namespace;
     }
 
+    let parsedResult;
     const extname = path.extname(filePath);
     if (extname !== '.xls' && extname !== '.xlsx') {
         throw new Error(`${i18n.errorTableNotSupport}: ${filePath}`);
     } else if (extname === '.xls' || !options.enableStreamingRead) {
         // 使用 xlsx 加载完整 .xls 文件，未开启流式加载时也使用 xlsx 加载完整的 .xlsx 文件
-        return internalXlsToJson(filePath, options);
+        parsedResult = await parseWithXlsx(filePath, options);
     } else if (extname === '.xlsx') {
         // 使用 ExcelJS 流式加载 .xlsx 文件
-        return internalXlsxToJson(filePath, options);
-    }
-}
-
-/**
- * 使用 xlsx 加载完整 xls 文件
- * @param {string} filePath xlsx 文件路径
- * @param {XlsxToJsonOptions} options 选项
- * @returns {Promise<XlsxToJsonResult>}
- */
-async function internalXlsToJson(filePath, options = {}) {
-    const xlsxFileData = await fsAsync.readFile(filePath);
-    const workbook = xlsx.read(xlsxFileData, { type: 'buffer' });
-
-    const dataSheetName = workbook.SheetNames[0];
-    const propertySheetName = workbook.SheetNames[1];
-
-    const dataSheet = workbook.Sheets[dataSheetName];
-    const propertySheet = workbook.Sheets[propertySheetName];
-
-    if (!dataSheet || !propertySheet) {
-        throw new Error(i18n.errorTableInvalid);
+        parsedResult = await parseWithExcelJS(filePath, options);
     }
 
-    const dataJson = xlsx.utils.sheet_to_json(dataSheet, { header: 2, raw: true });
-    const propertyJson = xlsx.utils.sheet_to_json(propertySheet, { header: 'A' });
-    const properties = getProperties(propertyJson);
-
-    // 生成一份用于转换 bin 的 json 文件。
-    const xlsxData = dataJson.map(row =>
-        Object.fromEntries(
-            properties
-                .map(({ comment, field, type }) => {
-                    let value = row[comment];
-                    if (value === undefined || (typeof value === 'string' && value.trim() === '')) {
-                        value = type === 'string' ? '' : 0;
-                    }
-                    if (type === 'string' && typeof value === 'number') {
-                        value = value.toString();
-                    } else if (type === 'number' && typeof value === 'string') {
-                        value = +value;
-                        if (isNaN(value)) {
-                            value = 0;
-                            warn(`${i18n.errorInvalidNumberValue} field: ${comment}[${field}]:[${type}] => value: ${row[comment]}`);
-                        }
-                    }
-                    return [field, value];
-                })
-        )
-    );
+    const properties = formatProperties(parsedResult.propertyJson, options);
+    const xlsxData = formatDataJson(parsedResult.dataJson, properties);
 
     if (options.censoredFields.length && !options.censoredTable) {
         const xlsxDataCensored = xlsxData.map(row => {
@@ -133,12 +89,39 @@ async function internalXlsToJson(filePath, options = {}) {
 }
 
 /**
- * 使用 exceljs 流式加载 xlsx 文件
+ * 使用 xlsx 加载完整 xls 文件
  * @param {string} filePath xlsx 文件路径
- * @param {XlsxToJsonOptions} options 选项
  * @returns {Promise<XlsxToJsonResult>}
  */
-async function internalXlsxToJson(filePath, options = {}) {
+async function parseWithXlsx(filePath) {
+    const xlsxFileData = await fsAsync.readFile(filePath);
+    const workbook = xlsx.read(xlsxFileData, { type: 'buffer' });
+
+    const dataSheetName = workbook.SheetNames[0];
+    const propertySheetName = workbook.SheetNames[1];
+
+    const dataSheet = workbook.Sheets[dataSheetName];
+    const propertySheet = workbook.Sheets[propertySheetName];
+
+    if (!dataSheet || !propertySheet) {
+        throw new Error(i18n.errorTableInvalid);
+    }
+
+    const dataJson = xlsx.utils.sheet_to_json(dataSheet, { header: 2, raw: true });
+    const propertyJson = xlsx.utils.sheet_to_json(propertySheet, { header: 'A' });
+
+    return {
+        dataJson,
+        propertyJson,
+    }
+}
+
+/**
+ * 使用 exceljs 流式加载 xlsx 文件
+ * @param {string} filePath xlsx 文件路径
+ * @returns {Promise<XlsxToJsonResult>}
+ */
+async function parseWithExcelJS(filePath) {
     const workbookReader = new ExcelJS.stream.xlsx.WorkbookReader(filePath);
     const sheetData = {};
     const sheetNames = [];
@@ -187,9 +170,37 @@ async function internalXlsxToJson(filePath, options = {}) {
         return obj;
     });
 
-    const properties = getProperties(propertyJson);
+    return {
+        dataJson,
+        propertyJson,
+    }
+}
 
-    const xlsxData = dataJson.map(row =>
+function extractCellText(cell) {
+    if (cell && typeof cell === 'object' && Array.isArray(cell.richText)) {
+        return cell.richText.map(part => part.text).join('');
+    }
+    return cell?.toString?.() ?? '';
+}
+
+function formatProperties(propertyJson, options) {
+    const properties = [];
+    propertyJson.forEach(property => {
+        let [comment, field, type] = options.propertyOrder.map(order => property[order]);
+        if (!comment || !field || !type) {
+            return;
+        }
+        properties.push({
+            comment,
+            field,
+            type,
+        });
+    });
+    return properties;
+}
+
+function formatDataJson(dataJson, properties) {
+    return dataJson.map(row =>
         Object.fromEntries(
             properties
                 .map(({ comment, field, type }) => {
@@ -213,53 +224,4 @@ async function internalXlsxToJson(filePath, options = {}) {
                 })
         )
     );
-
-    if (options.censoredFields.length && !options.censoredTable) {
-        const xlsxDataCensored = xlsxData.map(row => {
-            const censoredRow = { ...row };
-            options.censoredFields.forEach(field => {
-                delete censoredRow[field];
-            });
-            return censoredRow;
-        });
-
-        return {
-            xlsxData,
-            xlsxDataCensored,
-        }
-    }
-
-    if (options.censoredOutput && !options.censoredTable) {
-        return {
-            xlsxData,
-            xlsxDataCensored: xlsxData,
-        };
-    }
-
-    return {
-        xlsxData,
-    };
-}
-
-function extractCellText(cell) {
-    if (cell && typeof cell === 'object' && Array.isArray(cell.richText)) {
-        return cell.richText.map(part => part.text).join('');
-    }
-    return cell?.toString?.() ?? '';
-}
-
-function getProperties(propertyJson) {
-    const properties = [];
-    propertyJson.forEach(property => {
-        let [comment, field, type] = options.propertyOrder.map(order => property[order]);
-        if (!comment || !field || !type) {
-            return;
-        }
-        properties.push({
-            comment,
-            field,
-            type,
-        });
-    });
-    return properties;
 }

@@ -32,6 +32,7 @@ import { info, warn } from './utils/logUtil.mjs';
  * @typedef {Object} FbsFieldProperty
  * @property {string} comment 字段注释（数据页的字段名）
  * @property {string} field 字段名
+ * @property {string} fbsField 生成的 fbs 字段
  * @property {string} type 字段类型
  * @property {string} defaultValue 默认值
  * @property {string} attribute 属性
@@ -43,67 +44,100 @@ import { info, warn } from './utils/logUtil.mjs';
  * @property {string} namespace 命名空间
  * @property {string} tableName 表名
  * @property {FbsFieldProperty[]} fields 字段
+ * @property {string} fileExtension 文件扩展名
  */
+
+const scalarTypeDefs = {
+    int8:    { min: -128, max: 127, size: 1 },
+    uint8:   { min: 0, max: 255, size: 1 },
+    int16:   { min: -32768, max: 32767, size: 2 },
+    uint16:  { min: 0, max: 65535, size: 2 },
+    int32:   { min: -2147483648, max: 2147483647, size: 4 },
+    uint32:  { min: 0, max: 4294967295, size: 4 },
+    float32: { min: -3.4028235e38, max: 3.4028235e38, size: 4 },
+    int64:   { min: -9223372036854775808n, max: 9223372036854775807n, size: 8 },
+    uint64:  { min: 0n, max: 18446744073709551615n, size: 8 },
+    float64: { min: -Number.MAX_VALUE, max: Number.MAX_VALUE, size: 8 },
+    bool:    { min: 0, max: 1, size: 1 },
+};
 
 /**
  * 标量类型
- * @type {string[]}
  */
-const scalarTypes = [
-    'bool', 'byte', 'ubyte', 'int8', 'uint8',
-    'short', 'ushort', 'int16', 'uint16',
-    'int', 'uint', 'int32', 'uint32', 'float', 'float32',
-    'long', 'ulong', 'int64', 'uint64', 'double', 'float64',
-];
+const scalarTypes = {
+    // 1 byte
+    bool:   scalarTypeDefs.bool,
+    byte:   scalarTypeDefs.int8,
+    ubyte:  scalarTypeDefs.uint8,
+    int8:   scalarTypeDefs.int8,
+    uint8:  scalarTypeDefs.uint8,
+  
+    // 2 bytes
+    short:   scalarTypeDefs.int16,
+    ushort:  scalarTypeDefs.uint16,
+    int16:   scalarTypeDefs.int16,
+    uint16:  scalarTypeDefs.uint16,
+  
+    // 4 bytes
+    int:     scalarTypeDefs.int32,
+    uint:    scalarTypeDefs.uint32,
+    int32:   scalarTypeDefs.int32,
+    uint32:  scalarTypeDefs.uint32,
+    float:   scalarTypeDefs.float32,
+    float32: scalarTypeDefs.float32,
+  
+    // 8 bytes
+    long:    scalarTypeDefs.int64,
+    ulong:   scalarTypeDefs.uint64,
+    int64:   scalarTypeDefs.int64,
+    uint64:  scalarTypeDefs.uint64,
+    double:  scalarTypeDefs.float64,
+    float64: scalarTypeDefs.float64,
+};
+
+const floatTypes = ['float', 'float32', 'double', 'float64'];
 
 /**
  * 内置类型，非自定义类型的类型
  * @type {string[]}
  */
-const builtinTypes = ['string', 'number', ...scalarTypes];
-
-const scalarTypeSize = {
-    // 1 byte
-    bool: 1, byte: 1, ubyte: 1, int8: 1, uint8: 1,
-
-    // 2 bytes
-    short: 2, ushort: 2, int16: 2, uint16: 2,
-
-    // 4 bytes
-    int: 4, uint: 4, int32: 4, uint32: 4, float: 4, float32: 4,
-
-    // 8 bytes
-    long: 8, ulong: 8, int64: 8, uint64: 8, double: 8, float64: 8,
-};
+const builtinTypes = ['string', 'number', ...Object.keys(scalarTypes)];
 
 /**
- * 大范围标量类型
- * @type {string[]}
+ * 是否是大范围标量类型
+ * @param {string} type 类型
+ * @returns {boolean}
  */
-const largeScalarTypes = [
-    'long', 'ulong', 'int64', 'uint64', 'double', 'float64'
-];
+const isLargeScalarType = (type) => scalarTypes[type] && scalarTypes[type].size > scalarTypes.uint32.size;
 
-
+const scalarTypeOrder = [
+    'bool',
+    'uint8', 'int8',
+    'uint16', 'int16',
+    'uint32', 'int32',
+    'uint64', 'int64',
+  ];
 /**
- * 推导数字类型范围
+ * 推导数字类型范围，不考虑浮点数，所以需要在外部判断是否所有数字是整数
  * @param {number} min 最小值
  * @param {number} max 最大值
  * @returns {string} 推导出的类型
  */
 function inferNumberTypeRange(min, max) {
-    if (min >= 0 && max <= 255) return 'uint8';
-    if (min >= -128 && max <= 127) return 'int8';
-    if (min >= 0 && max <= 65535) return 'uint16';
-    if (min >= -32768 && max <= 32767) return 'int16';
-    if (min >= 0 && max <= 4294967295) return 'uint32';
-    if (min >= -2147483648 && max <= 2147483647) return 'int32';
-    if (min >= 0 && max <= 18446744073709551615n) return 'uint64';
-    return 'int64';
+    for (const type of scalarTypeOrder) {
+        const def = scalarTypeDefs[type];
+        const minVal = typeof def.min === 'bigint' ? BigInt(min) : Number(min);
+        const maxVal = typeof def.max === 'bigint' ? BigInt(max) : Number(max);
+    
+        if (minVal >= def.min && maxVal <= def.max) {
+            return type;
+        }
+    }
+    return 'int64'; // 没匹配到，你可能在做核弹计算
 }
 
 /**
- * 根据数组推断类型
+ * 根据数组推断类型，仅推断整数类型
  * @param {number[]} values 
  * @returns 
  */
@@ -120,6 +154,44 @@ function inferNumberType(values) {
         type = 'float32'; // 'double' 类型请在表里配，我可不想背锅
     }
     return type;
+}
+
+/**
+ * 校验数据是否符合指定标量类型
+ * @param {string} type FlatBuffers 标量类型
+ * @param {number[]} values 数值数组
+ * @returns {boolean} 是否符合类型限制
+ */
+function validateNumberType(type, values) {
+    const def = scalarTypes[type];
+    if (!def) {
+        throw new Error(`未知类型：${type}。你是不是手滑了？`);
+    }
+
+    const isFloatType = type.includes('float') || type === 'double';
+
+    const min = def.min;
+    const max = def.max;
+
+    // 特殊处理 BigInt 范围的 uint64/int64
+    if (typeof min === 'bigint' || typeof max === 'bigint') {
+        return values.every(v => {
+            try {
+                const bv = BigInt(v);
+                return bv >= min && bv <= max;
+            } catch {
+                return false;
+            }
+        });
+    }
+
+    return values.every(v =>
+        typeof v === 'number' &&
+        Number.isFinite(v) &&
+        v >= min &&
+        v <= max &&
+        (isFloatType || Number.isInteger(v))
+    );
 }
 
 /**
@@ -145,86 +217,46 @@ export async function xlsxToFbs(filePath, options = {}) {
         options.namespace = xlsxFbsOptions.namespace;
     }
 
+    let parsedResult;
     const extname = path.extname(filePath);
     if (extname !== '.xls' && extname !== '.xlsx') {
         throw new Error(`${i18n.errorTableNotSupport}: ${filePath}`);
     } else if (extname === '.xls' || !options.enableStreamingRead) {
         // 使用 xlsx 加载完整 .xls 文件，未开启流式加载时也使用 xlsx 加载完整的 .xlsx 文件
-        return internalXlsToFbs(filePath, options);
+        parsedResult = await parseWithXlsx(filePath);
     } else if (extname === '.xlsx') {
         // 使用 ExcelJS 流式加载 .xlsx 文件
-        return internalXlsxToFbs(filePath, options);
-    }
-}
-
-/**
- * 使用 xlsx 加载完整 xls 文件
- * @param {string} filePath xlsx 文件路径
- * @param {XlsxToFbsOptions} options 选项
- * @returns {Promise<XlsxToFbsResult>}
- */
-async function internalXlsToFbs(filePath, options = {}) {
-    const xlsxFileData = await fsAsync.readFile(filePath);
-    const workbook = xlsx.read(xlsxFileData, { type: 'buffer' });
-
-    const dataSheetName = workbook.SheetNames[0];
-    const propertySheetName = workbook.SheetNames[1];
-
-    const dataSheet = workbook.Sheets[dataSheetName];
-    const propertySheet = workbook.Sheets[propertySheetName];
-
-    if (!dataSheet || !propertySheet) {
-        throw new Error(i18n.errorTableInvalid);
+        parsedResult = await parseWithExcelJS(filePath, options);
     }
 
-    const dataJson = xlsx.utils.sheet_to_json(dataSheet, { header: 2, raw: true });
-    const propertyJson = xlsx.utils.sheet_to_json(propertySheet, { header: 'A' });
+    const properties = formatProperties(parsedResult.propertyJson, parsedResult.dataJson, options);
+    const fullDataJson = formatDataJson(parsedResult.dataJson, properties); // 生成一份用于转换 bin 的 json 文件。
 
-    const properties = getProperties(propertyJson);
+    const fileExtension = options.binaryExtension
+        ? `file_extension "${options.binaryExtension.replace(/^\./, '')}";`
+        : undefined;
     const fileName = path.basename(filePath);
     const tableName = toUpperCamelCase(path.basename(filePath, path.extname(filePath)));
     const namespace = options.namespace;
     const fields = properties.map(formatFbsField).join('\n');
-
-    const fbs = formatFbs({ fileName, namespace, tableName, fields });
-
+    const fbs = formatFbs({ fileName, namespace, tableName, fields, fileExtension });
     const tableInfosFiled = `${toLowerCamelCase(tableName)}_infos`;
-    // 生成一份用于转换 bin 的 json 文件。
     const xlsxData = {};
-    xlsxData[tableInfosFiled] = dataJson.map(row =>
-        Object.fromEntries(
-            properties
-                .filter(({ comment }) => {
-                    const value = row[comment];
-                    return value !== undefined && !(typeof value === 'string' && value.trim() === '');
-                })
-                .map(({ comment, field, type }) => {
-                    let value = row[comment];
-                    if (type === 'string' && typeof value === 'number') {
-                        value = value.toString();
-                    } else if ((scalarTypes.includes(type) || type === 'number') && typeof value === 'string') {
-                        value = +value;
-                        if (isNaN(value)) {
-                            value = 0;
-                            warn(`${i18n.errorInvalidNumberValue} field: ${comment}[${field}]:[${type}] => value: ${row[comment]}`);
-                        }
-                    }
-                    return [toSnakeCase(field), value];
-                })
-        )
-    );
+    xlsxData[tableInfosFiled] = fullDataJson;
 
     if (options.censoredFields.length && !options.censoredTable) {
         const propertiesCensored = properties.filter(({ field }) => !options.censoredFields.includes(field));
         const fieldsCensored = propertiesCensored.map(formatFbsField).join('\n');
-        const fbsCensored = formatFbs({ fileName, namespace, tableName, fields: fieldsCensored });
+        const fbsCensored = formatFbs({ fileName, namespace, tableName, fields: fieldsCensored, fileExtension });
 
         const xlsxDataCensored = {};
-        xlsxDataCensored[tableInfosFiled] = xlsxData[tableInfosFiled].map(row => {
+        xlsxDataCensored[tableInfosFiled] = fullDataJson.map(row => {
             const censoredRow = { ...row };
-            options.censoredFields.map(field => toSnakeCase(field)).forEach(field => {
-                delete censoredRow[field];
-            });
+            options.censoredFields
+                .map(field => toSnakeCase(field))   // 转换为 fbs 字段名
+                .forEach(fbsField => {
+                    delete censoredRow[fbsField];
+                });
             return censoredRow;
         });
 
@@ -248,12 +280,39 @@ async function internalXlsToFbs(filePath, options = {}) {
 }
 
 /**
- * 使用 exceljs 流式加载 xlsx 文件
+ * 使用 xlsx 加载完整 xls 文件
  * @param {string} filePath xlsx 文件路径
- * @param {XlsxToFbsOptions} options 选项
  * @returns {Promise<XlsxToFbsResult>}
  */
-async function internalXlsxToFbs(filePath, options = {}) {
+async function parseWithXlsx(filePath) {
+    const xlsxFileData = await fsAsync.readFile(filePath);
+    const workbook = xlsx.read(xlsxFileData, { type: 'buffer' });
+
+    const dataSheetName = workbook.SheetNames[0];
+    const propertySheetName = workbook.SheetNames[1];
+
+    const dataSheet = workbook.Sheets[dataSheetName];
+    const propertySheet = workbook.Sheets[propertySheetName];
+
+    if (!dataSheet || !propertySheet) {
+        throw new Error(i18n.errorTableInvalid);
+    }
+
+    const dataJson = xlsx.utils.sheet_to_json(dataSheet, { header: 2 });
+    const propertyJson = xlsx.utils.sheet_to_json(propertySheet, { header: 'A' });
+
+    return {
+        dataJson,
+        propertyJson,
+    }
+}
+
+/**
+ * 使用 exceljs 流式加载 xlsx 文件
+ * @param {string} filePath xlsx 文件路径
+ * @returns {Promise<XlsxToFbsResult>}
+ */
+async function parseWithExcelJS(filePath) {
     const workbookReader = new ExcelJS.stream.xlsx.WorkbookReader(filePath);
     const sheetData = {};
     const sheetNames = [];
@@ -302,93 +361,35 @@ async function internalXlsxToFbs(filePath, options = {}) {
         return obj;
     });
 
-    const properties = getProperties(propertyJson);
-    const fileName = path.basename(filePath);
-    const tableName = toUpperCamelCase(path.basename(filePath, path.extname(filePath)));
-    const namespace = options.namespace;
-    const fields = properties.map(formatFbsField).join('\n');
-    const fbs = formatFbs({ fileName, namespace, tableName, fields });
-    const tableInfosFiled = `${toLowerCamelCase(tableName)}_infos`;
-
-    const xlsxData = {};
-    xlsxData[tableInfosFiled] = dataJson.map(row =>
-        Object.fromEntries(
-            properties
-                .filter(({ comment }) => {
-                    const value = row[comment];
-                    return value !== undefined && !(typeof value === 'string' && value.trim() === '');
-                })
-                .map(({ comment, field, type }) => {
-                    let value = row[comment];
-                    if (typeof value === 'object') {
-                        value = extractCellText(value);
-                    }
-                    if (type === 'string' && typeof value === 'number') {
-                        value = value.toString();
-                    } else if ((scalarTypes.includes(type) || type === 'number') && typeof value === 'string') {
-                        value = +value;
-                        if (isNaN(value)) {
-                            value = 0;
-                            warn(`${i18n.errorInvalidNumberValue} field: ${comment}[${field}]:[${type}] => value: ${row[comment]}`);
-                        }
-                    }
-                    return [toSnakeCase(field), value];
-                })
-        )
-    );
-
-    if (options.censoredFields.length && !options.censoredTable) {
-        const propertiesCensored = properties.filter(({ field }) => !options.censoredFields.includes(field));
-        const fieldsCensored = propertiesCensored.map(formatFbsField).join('\n');
-        const fbsCensored = formatFbs({ fileName, namespace, tableName, fields: fieldsCensored });
-
-        const xlsxDataCensored = {};
-        xlsxDataCensored[tableInfosFiled] = xlsxData[tableInfosFiled].map(row => {
-            const censoredRow = { ...row };
-            options.censoredFields.map(field => toSnakeCase(field)).forEach(field => {
-                delete censoredRow[field];
-            });
-            return censoredRow;
-        });
-
-        return {
-            fbs, xlsxData,
-            fbsCensored, xlsxDataCensored,
-        }
-    }
-
-    if (options.censoredOutput && !options.censoredTable) {
-        return {
-            fbs, xlsxData,
-            fbsCensored: fbs, xlsxDataCensored: xlsxData,
-        };
-    }
-
     return {
-        fbs,
-        xlsxData,
-    };
-}
-
-function extractCellText(cell) {
-    if (cell && typeof cell === 'object' && Array.isArray(cell.richText)) {
-        return cell.richText.map(part => part.text).join('');
+        dataJson,
+        propertyJson,
     }
-    return cell?.toString?.() ?? '';
 }
 
 /**
  * 获取属性页的属性数据，并在这里就预处理好错误数据
  * @param {any} propertyJson 
+ * @param {any} dataJson 
+ * @param {XlsxToFbsOptions} options 
  * @returns {FbsFieldProperty[]}
  */
-function getProperties(propertyJson) {
+function formatProperties(propertyJson, dataJson, options) {
     const properties = [];
     propertyJson.forEach(property => {
         let [comment, field, type, defaultValue, attribute] = options.propertyOrder.map(order => property[order]);
         if (!comment || !field || !type) {
             return;
         }
+        
+        // 都 trim 一下
+        comment = comment.trim();
+        field = field.trim();
+        type = type.trim();
+
+        // field: 直接处理好 fbs 使用的 蛇形命名
+        const fbsField = toSnakeCase(field);
+
         // type: 预防大小写错误
         if (builtinTypes.includes(type.toLowerCase())) {
             type = type.toLowerCase();
@@ -402,68 +403,64 @@ function getProperties(propertyJson) {
                 .map(data => +data[comment])
                 .filter(value => !isNaN(value));
 
-            let type = inferNumberType(values);
+            type = inferNumberType(values);
 
             // 如果是自动推导的 id 字段，且类型小于 uint，则强制预留为 uint
-            if (field.toLowerCase() === 'id' && scalarTypeSize[type] < scalarTypeSize['uint32']) {
+            if (field.toLowerCase() === 'id' && scalarTypes[type].size < scalarTypes.uint32.size) {
                 type = 'uint32';
             }
-        } else if (scalarTypes.includes(type)) {
+        } else if (scalarTypes[type]) {
             // 根据表中的数值验证类型，若溢出则报错
             const values = dataJson
                 .map(data => +data[comment])
                 .filter(value => !isNaN(value));
-
-            let inferType = inferNumberType(values);
-            if (scalarTypeSize[type] < scalarTypeSize[inferType]) {
-                warn(`${i18n.warningNumberTypeOverflow} field: ${comment}[${field}] => type: ${type} < inferType: ${inferType}`);
+            let validateResult = validateNumberType(type, values);
+            if (!validateResult) {
+                warn(`${i18n.warningNumberTypeOverflow} field: ${comment}[${field}] => type: ${type}`);
             }
         }
 
-        if (largeScalarTypes.includes(type)) { // 配表用这么大数据，确定 ok 吗？
+        if (isLargeScalarType(type)) { // 配表用这么大数据，确定 ok 吗？
             warn(`${i18n.warningNumberTypeRange} field: ${comment}[${field}] => type: ${type}`);
         }
 
         // defaultValue: 预防非数字
-        if (defaultValue && scalarTypes.includes(type)) {
+        if (defaultValue && scalarTypes[type]) {
             const parsedValue = +defaultValue;
             if (isNaN(parsedValue)) {
-                warn(`${i18n.errorInvalidDefaultValue} field: ${comment}[${field}] => defaultValue: ${defaultValue}`);
+                if (typeof defaultValue === 'string') {
+                    warn(`${i18n.errorInvalidDefaultValue} field: ${comment}[${field}] => defaultValue: ${defaultValue.slice(0, 10)}...`);
+                } else {
+                    warn(`${i18n.errorInvalidDefaultValue} field: ${comment}[${field}] => defaultValue: ${defaultValue}`);
+                }
                 defaultValue = 0;
             }
-            defaultValue = parsedValue;
         } else {
             defaultValue = null;
         }
 
+        const attrs = [];
         // attribute: 预防非英文字符
         if (attribute) {
             // 正则表达式：仅允许英文字符、空格、下划线和等号
             const regex = /^[A-Za-z _=]+$/;
             attribute = regex.test(attribute) ? attribute : '';
+            const parsed = attribute
+                .split(',')
+                .map(attr => attr.trim())
+                .filter(Boolean);
+            attrs.push(...parsed);
         }
-
         // attribute 填充命令行传入的默认主键
-        if (options.defaultKey === field) {
-            const attrs = [];
-            if (attribute) {
-                const parsed = attribute
-                    .split(',')
-                    .map(attr => attr.trim())
-                    .filter(Boolean);
-                attrs.push(...parsed);
-                if (!attrs.includes('key')) {
-                    attrs.unshift('key');
-                }
-                attribute = attrs.join(',');
-            } else {
-                attribute = 'key';
-            }
+        if (options.defaultKey === field && !attrs.includes('key')) {
+            attrs.unshift('key');
         }
+        attribute = attrs.join(', ');
 
         properties.push({
             comment,
             field,
+            fbsField,
             type,
             defaultValue,
             attribute,
@@ -473,27 +470,62 @@ function getProperties(propertyJson) {
 }
 
 /**
+ * 格式化数据页的数据
+ * @param {any} dataJson 
+ * @param {FbsFieldProperty[]} properties 
+ * @returns 
+ */
+function formatDataJson(dataJson, properties) {
+    return dataJson.map(row =>
+        Object.fromEntries(
+            properties
+                .filter(({ comment }) => {
+                    const value = row[comment];
+                    return value !== undefined && !(typeof value === 'string' && value.trim() === '');
+                })
+                .map(({ comment, field, fbsField, type }) => {
+                    let value = row[comment];
+                    // 如果单元格是对象，则提取文本（ExcelJS特有处理）
+                    if (typeof value === 'object') {
+                        if (value && typeof value === 'object' && Array.isArray(value.richText)) {
+                            value = value.richText.map(part => part.text).join('');
+                        } else {
+                            value = value?.toString?.() ?? '';
+                        }
+                    }
+                    // 字符串类型必须保证为字符串，否则 flatc 会报错
+                    // 标量类型的不需要转换成数字，只需要验证是否能转换为数字。如 int64 类型 "9007199254740993" 存储字符串让 flatc 转换以保留精度
+                    // 其他类型（如数组和结构）暂未处理
+                    if (type === 'string' && typeof value === 'number') {
+                        value = value.toString();
+                    } else if ((scalarTypes[type] || type === 'number') && typeof value === 'string') {
+                        const parsedValue = +value;
+                        if (isNaN(parsedValue)) {
+                            warn(`${i18n.errorInvalidNumberValue} field: ${comment}[${field}]:[${type}] => value: ${value}`);
+                            value = 0; // 转换失败，则设置为 0，否则保留原字符串以保留精度
+                        }
+                    }
+                    return [fbsField, value];
+                })
+        )
+    );
+}
+
+/**
  * 格式化 fbs 字段
  * @param {FbsFieldProperty} property 
  * @returns 
  */
 function formatFbsField(property) {
-    let { comment, field, type, defaultValue, attribute } = property;
+    let { comment, fbsField, type, defaultValue, attribute } = property;
 
-    // 将字段名转换为蛇形命名
-    field = toSnakeCase(field);
+    defaultValue = defaultValue ? ` = ${defaultValue}` : '';
 
-    if (defaultValue) {
-        defaultValue = ` = ${parsedValue}`;
-    } else {
-        defaultValue = '';
-    }
-
-    attribute = formatAttribute(attribute);
+    attribute = attribute ? ` (${attribute})` : '';
 
     return fillTemplate(fbsFieldTemplate, {
         COMMENT: comment,
-        FIELD: field,
+        FIELD: fbsField,
         TYPE: type,
         DEFAULT_VALUE: defaultValue,
         ATTRIBUTE: attribute,
@@ -506,36 +538,16 @@ function formatFbsField(property) {
  * @returns 
  */
 function formatFbs(property) {
-    const { fileName, namespace, tableName, fields } = property;
+    const { fileName, namespace, tableName, fields, fileExtension } = property;
 
     return fillTemplate(fbsTemplate, {
         FILE_NAME: fileName,
         NAMESPACE: namespace,
         TABLE_NAME: tableName,
-        TABLE_NAME_LOWER_CAMEL_CASE: toLowerCamelCase(tableName),
+        TABLE_NAME_SNAKE_CASE: toSnakeCase(tableName),
         FIELDS: fields,
+        FILE_EXTENSION: fileExtension,
     });
-}
-
-/**
- * 格式化字段的属性
- * @param {string} attributeStr 属性字符串
- * @returns 
- */
-function formatAttribute(attributeStr) {
-    const attrs = [];
-
-    if (attributeStr) {
-        // 以逗号拆分后 trim，每项保留参数
-        const parsed = attributeStr
-            .split(',')
-            .map(attr => attr.trim())
-            .filter(Boolean); // 避免空字符串
-
-        attrs.push(...parsed);
-    }
-
-    return attrs.length ? ` (${attrs.join(', ')})` : '';
 }
 
 /**
