@@ -4,10 +4,10 @@ import fsAsync from 'fs/promises';
 import { i18n } from './environment.mjs';
 import { checkExist } from './utils/fsUtil.mjs';
 import { xlsxFbsOptions } from './environment.mjs';
-import { toLowerCamelCase, toUpperCamelCase, toSnakeCase, checkReservedKeyword } from './utils/stringUtil.mjs';
+import { toUpperCamelCase, toSnakeCase, checkReservedKeyword } from './utils/stringUtil.mjs';
 import path from 'path';
 import { fbsFieldTemplate, fbsTemplate, fillTemplate } from './template.mjs';
-import { info, warn } from './utils/logUtil.mjs';
+import { log, warn } from './utils/logUtil.mjs';
 
 /**
  * @typedef {Object} XlsxToFbsOptions
@@ -201,7 +201,7 @@ function validateNumberType(type, values) {
  * @returns {Promise<XlsxToFbsResult>}
  */
 export async function xlsxToFbs(filePath, options = {}) {
-    info(`xlsxToFbs: ${filePath}`);
+    log(`xlsxToFbs: ${filePath}`);
     if (!await checkExist(filePath)) {
         throw new Error(`${i18n.errorTableNotFound}: ${filePath}`);
     }
@@ -229,8 +229,10 @@ export async function xlsxToFbs(filePath, options = {}) {
         parsedResult = await parseWithExcelJS(filePath, options);
     }
 
-    const properties = formatProperties(parsedResult.propertyJson, parsedResult.dataJson, options);
-    const fullDataJson = formatDataJson(parsedResult.dataJson, properties); // 生成一份用于转换 bin 的 json 文件。
+    const tableName = toUpperCamelCase(path.basename(filePath, path.extname(filePath)));
+
+    const properties = formatProperties(parsedResult.propertyJson, parsedResult.dataJson, options, tableName);
+    const fullDataJson = formatDataJson(parsedResult.dataJson, properties, tableName); // 生成一份用于转换 bin 的 json 文件。
 
     if (options.defaultKey) {
         // 使用 key 关键字必须对数据进行排序
@@ -258,7 +260,6 @@ export async function xlsxToFbs(filePath, options = {}) {
         ? `file_extension "${options.binaryExtension.replace(/^\./, '')}";`
         : undefined;
     const fileName = path.basename(filePath);
-    const tableName = toUpperCamelCase(path.basename(filePath, path.extname(filePath)));
     const namespace = options.namespace;
 
     if (checkReservedKeyword(tableName)) {
@@ -402,9 +403,10 @@ async function parseWithExcelJS(filePath) {
  * @param {any} propertyJson 
  * @param {any} dataJson 
  * @param {XlsxToFbsOptions} options 
+ * @param {string} tableName 表名
  * @returns {FbsFieldProperty[]}
  */
-function formatProperties(propertyJson, dataJson, options) {
+function formatProperties(propertyJson, dataJson, options, tableName) {
     const properties = [];
     propertyJson.forEach(property => {
         let [comment, field, type, defaultValue, attribute] = options.propertyOrder.map(order => property[order]);
@@ -446,12 +448,12 @@ function formatProperties(propertyJson, dataJson, options) {
                 .filter(value => !isNaN(value));
             let validateResult = validateNumberType(type, values);
             if (!validateResult) {
-                warn(`${i18n.warningNumberTypeOverflow} field: ${comment}[${field}] => type: ${type}`);
+                warn(`${i18n.warningNumberTypeOverflow}. table: ${tableName}, field: ${comment}[${field}] => type: ${type}`);
             }
         }
 
         if (isLargeScalarType(type)) { // 配表用这么大数据，确定 ok 吗？
-            warn(`${i18n.warningNumberTypeRange} field: ${comment}[${field}] => type: ${type}`);
+            warn(`${i18n.warningNumberTypeRange}. table: ${tableName}, field: ${comment}[${field}] => type: ${type}`);
         }
 
         // defaultValue: 预防非数字
@@ -459,9 +461,9 @@ function formatProperties(propertyJson, dataJson, options) {
             const parsedValue = +defaultValue;
             if (isNaN(parsedValue)) {
                 if (typeof defaultValue === 'string') {
-                    warn(`${i18n.errorInvalidDefaultValue} field: ${comment}[${field}] => defaultValue: ${defaultValue.slice(0, 10)}...`);
+                    warn(`${i18n.errorInvalidDefaultValue}. table: ${tableName}, field: ${comment}[${field}] => defaultValue: ${defaultValue.slice(0, 10)}...`);
                 } else {
-                    warn(`${i18n.errorInvalidDefaultValue} field: ${comment}[${field}] => defaultValue: ${defaultValue}`);
+                    warn(`${i18n.errorInvalidDefaultValue}. table: ${tableName}, field: ${comment}[${field}] => defaultValue: ${defaultValue}`);
                 }
                 defaultValue = 0;
             }
@@ -503,9 +505,10 @@ function formatProperties(propertyJson, dataJson, options) {
  * 格式化数据页的数据
  * @param {any} dataJson 
  * @param {FbsFieldProperty[]} properties 
+ * @param {string} tableName 表名
  * @returns 
  */
-function formatDataJson(dataJson, properties) {
+function formatDataJson(dataJson, properties, tableName) {
     return dataJson.map(row =>
         Object.fromEntries(
             properties
@@ -531,7 +534,7 @@ function formatDataJson(dataJson, properties) {
                     } else if ((scalarTypes[type] || type === 'number') && typeof value === 'string') {
                         const parsedValue = +value;
                         if (isNaN(parsedValue)) {
-                            warn(`${i18n.errorInvalidNumberValue} field: ${comment}[${field}]:[${type}] => value: ${value}`);
+                            warn(`${i18n.errorInvalidNumberValue}. table: ${tableName}, field: ${comment}[${field}]:[${type}] => value: ${value}`);
                             value = 0; // 转换失败，则设置为 0，否则保留原字符串以保留精度
                         }
                     }

@@ -3,7 +3,7 @@ import { getGenerateScriptPath, getOrganizedScriptPath, i18n, projectPath } from
 import path from 'path';
 import fsAsync from 'fs/promises';
 import { flatcAsync } from './utils/flatcUtil.mjs';
-import { info, warn } from './utils/logUtil.mjs';
+import { log, warn } from './utils/logUtil.mjs';
 
 /**
  * 通过 .fbs 文件生成对应的代码
@@ -11,7 +11,7 @@ import { info, warn } from './utils/logUtil.mjs';
  * @param {string[]} flatcOptions 
  */
 export async function fbsToCode(fbsPath, flatcOptions) {
-    info(`fbsToCode: ${fbsPath}`);
+    log(`fbsToCode: ${fbsPath}`);
     if (!await checkExist(fbsPath)) {
         throw new Error(`${i18n.errorFbsNotFound}: ${fbsPath}`);
     }

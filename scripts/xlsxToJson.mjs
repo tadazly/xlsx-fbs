@@ -5,7 +5,8 @@ import { i18n } from './environment.mjs';
 import { checkExist } from './utils/fsUtil.mjs';
 import { xlsxFbsOptions } from './environment.mjs';
 import path from 'path';
-import { info, warn } from './utils/logUtil.mjs';
+import { log, warn } from './utils/logUtil.mjs';
+import { toUpperCamelCase } from './utils/stringUtil.mjs';
 
 /**
  * @typedef {Object} XlsxToJsonOptions
@@ -31,7 +32,7 @@ import { info, warn } from './utils/logUtil.mjs';
  * @returns {Promise<XlsxToJsonResult>} `{xlsxData: Array<any>, xlsxDataCensored: Array<any>}` 返回的 xlsxData 是原始表格数据对象，xlsxDataCensored 是删减字段的表格数据对象
  */
 export async function xlsxToJson(filePath, options = {}) {
-    info(`xlsxToJson: ${filePath}`);
+    log(`xlsxToJson: ${filePath}`);
     if (!await checkExist(filePath)) {
         throw new Error(`${i18n.errorTableNotFound}: ${filePath}`);
     }
@@ -59,8 +60,10 @@ export async function xlsxToJson(filePath, options = {}) {
         parsedResult = await parseWithExcelJS(filePath, options);
     }
 
+    const tableName = toUpperCamelCase(path.basename(filePath, path.extname(filePath)));
+
     const properties = formatProperties(parsedResult.propertyJson, options);
-    const xlsxData = formatDataJson(parsedResult.dataJson, properties);
+    const xlsxData = formatDataJson(parsedResult.dataJson, properties, tableName);
 
     if (options.censoredFields.length && !options.censoredTable) {
         const xlsxDataCensored = xlsxData.map(row => {
@@ -199,7 +202,7 @@ function formatProperties(propertyJson, options) {
     return properties;
 }
 
-function formatDataJson(dataJson, properties) {
+function formatDataJson(dataJson, properties, tableName) {
     return dataJson.map(row =>
         Object.fromEntries(
             properties
@@ -217,7 +220,7 @@ function formatDataJson(dataJson, properties) {
                         value = +value;
                         if (isNaN(value)) {
                             value = 0;
-                            warn(`${i18n.errorInvalidNumberValue} field: ${comment}[${field}]:[${type}] => value: ${row[comment]}`);
+                            warn(`${i18n.errorInvalidNumberValue}. table: ${tableName}, field: ${comment}[${field}]:[${type}] => value: ${row[comment]}`);
                         }
                     }
                     return [field, value];

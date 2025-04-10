@@ -152,7 +152,7 @@ Excel 文件路径或 Excel 所在的文件夹路径，传入文件则转换单�
 
 - `--multi-thread <number>` 批量打表时的多线程数量，默认 4 。
 
-- `--minimal-info` 最小化输出信息，可选范围 `log < info < warn < error`。
+- `--minimal-info` 最小化输出信息，可选范围 `log < info < warn < error`，默认 `info`。
 
 - `--allow-wild-table` 批量打表时允许打野表（$tables.xlsx中未配置的表）。慎用，确保不会把奇怪的东西打出来。
 

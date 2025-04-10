@@ -13,12 +13,12 @@ export function execAsync(command, cwd, showLog) {
     return new Promise((resolve, reject) => {
         exec(command, { cwd }, (error, stdout, stderr) => {
             if (error) {
-                logUtil.info(`% ${command} (cwd: ${cwd})`)
+                logUtil.error(`% ${command} (cwd: ${cwd})`)
                 logUtil.error(stderr)
                 reject(stderr)
             } else {
                 if (showLog !== false) {
-                    logUtil.info(stdout)
+                    console.log(stdout) // 避免子进程输出被吞掉
                 }
                 resolve(stdout)
             }
@@ -44,7 +44,7 @@ export function spawnAsync(command, args, options, showLog) {
         });
         process.stdout.on('data', msg => {
             if (showLog !== false) {
-                logUtil.info(`${msg.toString().trim()}`)
+                console.log(`${msg.toString().trim()}`) // 避免子进程输出被吞掉
             }
         })
         process.stderr.on('data', msg => {

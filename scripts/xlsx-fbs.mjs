@@ -72,7 +72,7 @@ async function main() {
                 value = 'log';
             }
             return value;
-        }, 'log')
+        }, 'info')
         .option('--legacy-mode', i18n.legacyMode)
         .option('--property-order <order>', i18n.propertyOrder, (value) => {
             if (!/^[A-Za-z]{5}$/.test(value)) {
