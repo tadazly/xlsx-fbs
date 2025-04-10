@@ -1,8 +1,4 @@
-import fsAsync from 'fs/promises';
-import path from 'path';
-import * as fsUtil from './utils/fsUtil.mjs';
 import { flatcToBinaryAsync } from './utils/flatcUtil.mjs';
-import { xlsxFbsOptions, getBinPath, getTableName } from './environment.mjs';
 
 /**
  * 将 json 文件转换为二进制文件

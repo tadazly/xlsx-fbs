@@ -232,6 +232,28 @@ export async function xlsxToFbs(filePath, options = {}) {
     const properties = formatProperties(parsedResult.propertyJson, parsedResult.dataJson, options);
     const fullDataJson = formatDataJson(parsedResult.dataJson, properties); // 生成一份用于转换 bin 的 json 文件。
 
+    if (options.defaultKey) {
+        // 使用 key 关键字必须对数据进行排序
+        const keyField = toSnakeCase(options.defaultKey);
+        fullDataJson.sort((a, b) => {
+            const valA = a[keyField] ?? '';
+            const valB = b[keyField] ?? '';
+
+            const isNumberA = typeof valA === 'number';
+            const isNumberB = typeof valB === 'number';
+
+            if (isNumberA && isNumberB) {
+                return valA - valB;
+            }
+
+            return String(valA).localeCompare(
+                String(valB),
+                'en',
+                { sensitivity: 'base', numeric: true } // 数字感知
+            );
+        });
+    }
+
     const fileExtension = options.binaryExtension
         ? `file_extension "${options.binaryExtension.replace(/^\./, '')}";`
         : undefined;
