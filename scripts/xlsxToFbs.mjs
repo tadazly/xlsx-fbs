@@ -18,6 +18,7 @@ import { log, warn } from './utils/logUtil.mjs';
  * @property {string} [namespace] 命名空间
  * @property {string} [defaultKey] 默认主键
  * @property {boolean} [enableStreamingRead] 是否开启流式读取，仅支持 xlsx 格式
+ * @property {boolean} [emptyString] 是否生成空字符串
  */
 
 /**
@@ -232,7 +233,7 @@ export async function xlsxToFbs(filePath, options = {}) {
     const tableName = toUpperCamelCase(path.basename(filePath, path.extname(filePath)));
 
     const properties = formatProperties(parsedResult.propertyJson, parsedResult.dataJson, options, tableName);
-    const fullDataJson = formatDataJson(parsedResult.dataJson, properties, tableName); // 生成一份用于转换 bin 的 json 文件。
+    const fullDataJson = formatDataJson(parsedResult.dataJson, properties, options, tableName); // 生成一份用于转换 bin 的 json 文件。
 
     if (options.defaultKey) {
         // 使用 key 关键字必须对数据进行排序
@@ -505,15 +506,20 @@ function formatProperties(propertyJson, dataJson, options, tableName) {
  * 格式化数据页的数据
  * @param {any} dataJson 
  * @param {FbsFieldProperty[]} properties 
+ * @param {XlsxToFbsOptions} options 
  * @param {string} tableName 表名
  * @returns 
  */
-function formatDataJson(dataJson, properties, tableName) {
+function formatDataJson(dataJson, properties, options, tableName) {
     return dataJson.map(row =>
         Object.fromEntries(
             properties
-                .filter(({ comment }) => {
+                .filter(({ comment, type }) => {
                     const value = row[comment];
+                    if (options.emptyString && type === 'string' && (!value || (typeof value === 'string' && value.trim() === ''))) {
+                        row[comment] = '';
+                        return true;
+                    }
                     return value !== undefined && !(typeof value === 'string' && value.trim() === '');
                 })
                 .map(({ comment, field, fbsField, type }) => {

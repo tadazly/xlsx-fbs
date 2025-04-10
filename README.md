@@ -136,7 +136,7 @@ Excel 文件路径或 Excel 所在的文件夹路径，传入文件则转换单�
 
 - `-k, --default-key <field>` 默认不使用 key 属性，传入后，若表里没有设置 key 属性的字段，则使用该字段作为 key。
 
-- `--binary-extension <ext>` 输出的二进制文件的后缀名，默认输出 .bin，你爱发疯可以填 .wtf.bytes。
+- `--binary-extension <ext>` 输出的二进制文件的后缀名，默认输出 bin，你爱发疯可以填 wtf.bytes。
 
 - `--censored-fields <fields>` 删减字段，使用 `,` 连接，会生成一份删减版本的文件到 `output_censored/` 目录。（注意不是删除数据，而是把整个字段从 .fbs 中删除！）
 
