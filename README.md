@@ -6,6 +6,10 @@ Excel 转 [FlatBuffers](https://flatbuffers.dev/) 工具。
 
 ## 依赖库
 
+### Node.js v22.12.0+
+
+- 没有安装过的朋友，何不试试 [VOLTA](https://docs.volta.sh/guide/getting-started) 进行 node 版本管理。
+
 ### FlatBuffer
 
 - **flatc**: FlatBuffers 的官方编译器，专门用来把 .fbs 文件变成一堆你不愿维护的代码。
@@ -47,7 +51,45 @@ Excel 转 [FlatBuffers](https://flatbuffers.dev/) 工具。
     npm unlink -g
     ```
 
-## 如何使用
+## 快速上手
+
+看来你已经发现项目中有个 `example` 文件夹。
+
+```
+example/
+├── singleConvert/       # 打单张表示例
+│   └── item.xlsx/        
+└── batchConvert/        # 批量打表示例
+    ├── 任意目录/           
+    └── $tables.xlsx     # 索引表-批量打表配置（可省略）
+```
+
+- 打单张表
+
+    ```shell
+    # 进入配表所在的文件夹
+    cd example/singleConvert
+
+    # 打表
+    xlsx-fbs item.xlsx --cpp --rust
+    ```
+
+- 批量打表
+
+    ```shell
+    # 进入批量打表的根目录
+    cd example/batchConvert
+
+    # 批量打表
+    xlsx-fbs --ts --csharp
+    ```
+
+    根目录有 `$tables.xlsx` 的情况下，只会打索引表中配置了的表。
+
+    接下来可以尝试删除 `$tables.xlsx`，再次执行打表，看看输出有啥区别。
+
+
+## 说明书
 
 ### 1. 创建符合规范的 Excel
 
@@ -197,6 +239,12 @@ output[_censored]/
 # 附录
 
 ## 数据表-配表规范
+
+### 表名规范
+
+- 表名请用英文字符，最好小驼峰命名，**不要用** 中文字符、特殊符号 和 Emoji💩。
+
+- 表名会被用来生成类名，所以不要出现任何编程语言相关的保留关键字，用了上线爆炸别怪我没提醒。
 
 ### 数据页规范
 
