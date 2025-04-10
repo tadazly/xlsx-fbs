@@ -4,7 +4,7 @@ import fsAsync from 'fs/promises';
 import { i18n } from './environment.mjs';
 import { checkExist } from './utils/fsUtil.mjs';
 import { xlsxFbsOptions } from './environment.mjs';
-import { toLowerCamelCase, toUpperCamelCase, toSnakeCase } from './utils/stringUtil.mjs';
+import { toLowerCamelCase, toUpperCamelCase, toSnakeCase, checkReservedKeyword } from './utils/stringUtil.mjs';
 import path from 'path';
 import { fbsFieldTemplate, fbsTemplate, fillTemplate } from './template.mjs';
 import { info, warn } from './utils/logUtil.mjs';
@@ -151,7 +151,7 @@ function inferNumberType(values) {
         const minValue = Math.min(...uniqueValues);
         type = inferNumberTypeRange(minValue, maxValue * 2); // 最大值乘以2，避免未来配表溢出
     } else {
-        type = 'float32'; // 'double' 类型请在表里配，我可不想背锅
+        type = 'float32'; // 'float64' 类型请手配
     }
     return type;
 }
@@ -260,9 +260,17 @@ export async function xlsxToFbs(filePath, options = {}) {
     const fileName = path.basename(filePath);
     const tableName = toUpperCamelCase(path.basename(filePath, path.extname(filePath)));
     const namespace = options.namespace;
+
+    if (checkReservedKeyword(tableName)) {
+        warn(`${i18n.warningReservedKeyword} => tableName: ${tableName}`);
+    }
+    if (checkReservedKeyword(namespace)) {
+        warn(`${i18n.warningReservedKeyword} => namespace: ${namespace}`);
+    }
+
     const fields = properties.map(formatFbsField).join('\n');
     const fbs = formatFbs({ fileName, namespace, tableName, fields, fileExtension });
-    const tableInfosFiled = `${toLowerCamelCase(tableName)}_infos`;
+    const tableInfosFiled = `${toSnakeCase(tableName)}_infos`;
     const xlsxData = {};
     xlsxData[tableInfosFiled] = fullDataJson;
 

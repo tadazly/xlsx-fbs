@@ -322,7 +322,7 @@ async function getTablesConfig(rootDir) {
     );
     if (matched.length === 0) {
         // 找不到文件则默认打根目录中的所有表
-        warn(i18n.errorTablesConfigNotFound);
+        warn(i18n.warningTablesConfigNotFound);
     } else {
         const tablesXlsxPath = path.join(rootDir, matched[0]);
         const { xlsxData: tablesXlsxJson } = await xlsxToJson(tablesXlsxPath, xlsxFbsOptions);
