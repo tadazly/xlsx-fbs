@@ -89,3 +89,7 @@ export const getOrganizedScriptPath = () => {
 export const getTsPath = () => {
     return path.join(getOrganizedScriptPath(), 'ts');
 }
+/** js 代码输出路径 */
+export const getJsPath = () => {
+    return path.join(getOrganizedScriptPath(), 'js');
+}

@@ -1,11 +1,10 @@
-import { checkExist } from './utils/fsUtil.mjs'
+import { checkExist, writeFile } from './utils/fsUtil.mjs'
 import { getGenerateScriptPath, getOrganizedScriptPath, i18n } from './environment.mjs';
 import path from 'path';
 import fsAsync from 'fs/promises';
 import { flatcAsync } from './utils/flatcUtil.mjs';
 import { log, warn } from './utils/logUtil.mjs';
 import { toKebabCase } from './utils/stringUtil.mjs';
-import * as fsUtil from './utils/fsUtil.mjs';
 import { getTsMainTemplate, getTsClassListTemplate, fillTemplate, getTsImportClassTemplate } from './template.mjs';
 
 /**
@@ -69,8 +68,90 @@ export async function generateTsMain(tsPath, namespace) {
     });
 
     const tsMainPath = path.join(tsPath, `${namespaceKebabCase}.ts`);
-    await fsUtil.writeFile(tsMainPath, tsMainContent, 'utf-8');
+    await writeFile(tsMainPath, tsMainContent, 'utf-8');
     return tsMainPath;
+}
+
+/**
+ * 根据 ts 代码生成对应的 js 代码
+ * @param {string} tsPath 
+ * @param {string} jsPath 
+ * @param {string} namespace 
+ * @param {number} maxThread 
+ */
+export async function generateJSBundle(tsPath, jsPath, namespace, maxThread = 4) {
+    const { build } = await import('esbuild');
+    const pLimit = (await import('p-limit')).default;
+    
+    if (!await checkExist(jsPath)) {
+        await fsAsync.mkdir(jsPath, { recursive: true });
+    }
+    
+    const namespaceKebabCase = toKebabCase(namespace);
+    const limit = pLimit(maxThread);
+
+    const buildList = [];
+    // browser
+    buildList.push(limit(() => build({
+        entryPoints: [ path.join(tsPath, `${namespaceKebabCase}.ts`) ],
+        bundle: true,
+        outfile: path.join(jsPath, `${namespaceKebabCase}.js`),
+        platform: 'browser',
+        target: ['es2017'],
+        sourcemap: false,
+        format: 'iife',
+    })));
+    buildList.push(limit(() => build({
+        entryPoints: [ path.join(tsPath, `${namespaceKebabCase}.ts`) ],
+        bundle: true,
+        minify: true,
+        outfile: path.join(jsPath, `${namespaceKebabCase}.min.js`),
+        platform: 'browser',
+        target: ['es2017'],
+        sourcemap: false,
+        format: 'iife',
+    })));
+    // node
+    buildList.push(limit(() => build({
+        entryPoints: [ path.join(tsPath, `${namespaceKebabCase}.ts`) ],
+        bundle: true,
+        outfile: path.join(jsPath, `${namespaceKebabCase}.cjs.js`),
+        platform: 'node',
+        target: ['node20'],
+        sourcemap: false,
+        format: 'cjs',
+    })));
+    buildList.push(limit(() => build({
+        entryPoints: [ path.join(tsPath, `${namespaceKebabCase}.ts`) ],
+        bundle: true,
+        minify: true,
+        outfile: path.join(jsPath, `${namespaceKebabCase}.cjs.min.js`),
+        platform: 'node',
+        target: ['node20'],
+        sourcemap: false,
+        format: 'cjs',
+    })));
+    buildList.push(limit(() => build({
+        entryPoints: [ path.join(tsPath, `${namespaceKebabCase}.ts`) ],
+        bundle: true,
+        outfile: path.join(jsPath, `${namespaceKebabCase}.esm.js`),
+        platform: 'node',
+        target: ['node20'],
+        sourcemap: false,
+        format: 'esm',
+    })));
+    buildList.push(limit(() => build({
+        entryPoints: [ path.join(tsPath, `${namespaceKebabCase}.ts`) ],
+        bundle: true,
+        minify: true,
+        outfile: path.join(jsPath, `${namespaceKebabCase}.esm.min.js`),
+        platform: 'node',
+        target: ['node20'],
+        sourcemap: false,
+        format: 'esm',
+    })));
+
+    await Promise.all(buildList);
 }
 
 const LANGUAGE_EXTENSIONS = {

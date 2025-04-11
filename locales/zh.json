@@ -29,6 +29,7 @@
     "successGenerateCode": "成功生成脚本",
     "successReadTablesConfig": "成功读取打表配置",
     "successGenerateTsMain": "成功生成 ts 入口代码",
+    "successGenerateJsBundle": "成功生成 js 代码",
     "warningSignedNumberType": "⚠️ Warning: 表格中存在有符号数，请检查表格数据",
     "warningFloatNumberType": "⚠️ Warning: 表格中存在浮点数，请检查表格数据",
     "warningNumberTypeRange": "⚠️ Warning: 数字类型范围过大，请检查表格数据",
@@ -54,5 +55,6 @@
     "errorInvalidNumberValue": "❌ Error: 数字类型值错误，请检查表格数据",
     "errorFlatcGenerateFailed": "❌ Error: flatc 生成 bin 失败",
     "errorNeedAllSuccessToGenerateTs": "❌ Error: 需要所有表都转换成功才能生成 ts 入口代码，请先纠正错误",
-    "errorTableNameDataClassSuffixConflict": "❌ Error: 表名和数据类后缀冲突，请更换表名或数据类后缀"
+    "errorTableNameDataClassSuffixConflict": "❌ Error: 表名和数据类后缀冲突，请更换表名或数据类后缀",
+    "errorESBuildFailed": "❌ Error: esbuild 生成 js 代码失败"
 }

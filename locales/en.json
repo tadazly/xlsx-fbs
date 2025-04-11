@@ -29,6 +29,7 @@
     "successGenerateCode": "Successfully generate script",
     "successReadTablesConfig": "Successfully read tables config",
     "successGenerateTsMain": "Successfully generate ts entry code",
+    "successGenerateJsBundle": "Successfully generate js bundle",
     "warningSignedNumberType": "⚠️ Warning: There are signed numbers in the table, please check the table data",
     "warningFloatNumberType": "⚠️ Warning: There are floating-point numbers in the table, please check the table data",
     "warningNumberTypeRange": "⚠️ Warning: The range of number types is too large, please check the table data",
@@ -54,5 +55,6 @@
     "errorInvalidNumberValue": "❌ Error: Invalid number value, please check the table data",
     "errorFlatcGenerateFailed": "❌ Error: Failed to generate bin from fbs",
     "errorNeedAllSuccessToGenerateTs": "❌ Error: Need all tables to be converted successfully before generating ts entry code, please fix the errors first",
-    "errorTableNameDataClassSuffixConflict": "❌ Error: Table name and data class suffix conflict, please change the table name or data class suffix"
+    "errorTableNameDataClassSuffixConflict": "❌ Error: Table name and data class suffix conflict, please change the table name or data class suffix",
+    "errorESBuildFailed": "❌ Error: Failed to generate js bundle from ts"
 }

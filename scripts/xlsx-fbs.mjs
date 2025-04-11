@@ -1,19 +1,18 @@
 #!/usr/bin/env node
 // 👆Help to Link to Global
 
-import { getTsPath, i18n } from './environment.mjs'
+import { getJsPath, getTsPath, i18n } from './environment.mjs'
 import { program } from 'commander';
 import fsAsync from 'fs/promises';
 import * as fsUtil from './utils/fsUtil.mjs';
 import path from 'path';
 import { xlsxToFbs } from './xlsxToFbs.mjs';
 import { xlsxToJson } from './xlsxToJson.mjs';
-import { fbsToCode, generateTsMain } from './fbsToCode.mjs';
+import { fbsToCode, generateJSBundle, generateTsMain } from './fbsToCode.mjs';
 import { xlsxFbsOptions, getFbsPath, getBinPath, getJsonPath, getGenerateScriptPath, getOrganizedScriptPath } from './environment.mjs';
 import { jsonToBin } from './generateFbsBin.mjs';
 import { encodeHtml, toUpperCamelCase } from './utils/stringUtil.mjs';
 import { spawnAsync } from './utils/processUtil.mjs';
-import pLimit from 'p-limit';
 import { log, error, info, warn, setLogLevel } from './utils/logUtil.mjs';
 
 async function main() {
@@ -217,6 +216,8 @@ async function singleConvertLegacy(input) {
 }
 
 async function batchConvert(input, flatcArgs) {
+    const pLimit = (await import('p-limit')).default;
+
     const startTime = performance.now();
     const tablesConfig = await getTablesConfig(input);
     const { mergeCount, censoredTableCount, censoredFieldsCount, constFieldsCount } = tablesConfig.reduce((result, config) => {
@@ -302,11 +303,15 @@ async function batchConvert(input, flatcArgs) {
     if (flatcArgs.includes('--ts')) {
         if (failedTables.length === 0) {
             const namespace = xlsxFbsOptions.namespace;
-            const dataClassSuffix = xlsxFbsOptions.dataClassSuffix;
-            const tableNames = tablesConfig.map(config => toUpperCamelCase(config.tableName));
             const tsOutputPath = getTsPath();
             const tsMainPath = await generateTsMain(tsOutputPath, namespace);
             info(`${i18n.successGenerateTsMain}: ${tsMainPath}`);
+
+            if (xlsxFbsOptions.js) {
+                const jsOutputPath = getJsPath();
+                await generateJSBundle(tsOutputPath, jsOutputPath, namespace, xlsxFbsOptions.multiThread);
+                info(`${i18n.successGenerateJsBundle}: ${jsOutputPath}`);
+            }
         } else {
             error(`${i18n.errorNeedAllSuccessToGenerateTs}`);
         }

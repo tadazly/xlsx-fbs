@@ -12,7 +12,9 @@
   "dependencies": {
     "chalk": "^5.4.1",
     "commander": "^13.1.0",
+    "esbuild": "^0.25.2",
     "exceljs": "^4.4.0",
+    "flatbuffers": "^25.2.10",
     "p-limit": "^6.2.0",
     "ts-morph": "^25.0.1",
     "xlsx": "^0.18.5"
