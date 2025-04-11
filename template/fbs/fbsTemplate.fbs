@@ -2,12 +2,12 @@
 {{{ FILE_EXTENSION }}}
 namespace {{{ NAMESPACE }}};
 
-table {{{ TABLE_NAME }}}Info {
+table {{{ TABLE_NAME }}}{{{ DATA_CLASS_SUFFIX }}} {
 {{{ FIELDS }}}
 }
 
 table {{{ TABLE_NAME }}} {
-  {{{ TABLE_NAME_SNAKE_CASE }}}_infos:[{{{ TABLE_NAME }}}Info];
+  {{{ TABLE_NAME_SNAKE_CASE }}}_{{{ DATA_CLASS_SUFFIX_SNAKE_CASE }}}s:[{{{ TABLE_NAME }}}{{{ DATA_CLASS_SUFFIX }}}];
 }
 
 root_type {{{ TABLE_NAME }}};

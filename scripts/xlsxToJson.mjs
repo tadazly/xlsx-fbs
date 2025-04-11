@@ -1,5 +1,3 @@
-import xlsx from 'xlsx';
-import ExcelJS from 'exceljs';
 import fsAsync from 'fs/promises';
 import { i18n } from './environment.mjs';
 import { checkExist } from './utils/fsUtil.mjs';
@@ -97,6 +95,8 @@ export async function xlsxToJson(filePath, options = {}) {
  * @returns {Promise<XlsxToJsonResult>}
  */
 async function parseWithXlsx(filePath) {
+    const xlsx = (await import('xlsx')).default;
+
     const xlsxFileData = await fsAsync.readFile(filePath);
     const workbook = xlsx.read(xlsxFileData, { type: 'buffer' });
 
@@ -125,6 +125,8 @@ async function parseWithXlsx(filePath) {
  * @returns {Promise<XlsxToJsonResult>}
  */
 async function parseWithExcelJS(filePath) {
+    const ExcelJS = (await import('exceljs')).default;
+
     const workbookReader = new ExcelJS.stream.xlsx.WorkbookReader(filePath);
     const sheetData = {};
     const sheetNames = [];

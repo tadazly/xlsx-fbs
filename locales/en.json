@@ -21,12 +21,14 @@
     "deleteFbs": "Delete the generated .fbs file after conversion",
     "generateFbsHash": "Generate the TableHashConfig class file for runtime verification (only supports C# and TypeScript, other languages please extend by yourself)",
     "generateJson": "Generate JSON file from the output FlatBuffer",
+    "dataClassSuffix": "The suffix of table data class, default to Info",
     "legacyMode": "Legacy mode, only output the original JSON file",
     "successGenerateFbs": "Successfully generate .fbs file",
     "successGenerateBinary": "Successfully generate .bin file",
     "successGenerateJson": "Successfully generate .json file",
     "successGenerateCode": "Successfully generate script",
     "successReadTablesConfig": "Successfully read tables config",
+    "successGenerateTsMain": "Successfully generate ts entry code",
     "warningSignedNumberType": "⚠️ Warning: There are signed numbers in the table, please check the table data",
     "warningFloatNumberType": "⚠️ Warning: There are floating-point numbers in the table, please check the table data",
     "warningNumberTypeRange": "⚠️ Warning: The range of number types is too large, please check the table data",
@@ -50,5 +52,7 @@
     "errorUnsupportedPlatform": "❌ Error: Unsupported platform",
     "errorScriptNotFound": "❌ Error: Script file not found",
     "errorInvalidNumberValue": "❌ Error: Invalid number value, please check the table data",
-    "errorFlatcGenerateFailed": "❌ Error: Failed to generate bin from fbs"
+    "errorFlatcGenerateFailed": "❌ Error: Failed to generate bin from fbs",
+    "errorNeedAllSuccessToGenerateTs": "❌ Error: Need all tables to be converted successfully before generating ts entry code, please fix the errors first",
+    "errorTableNameDataClassSuffixConflict": "❌ Error: Table name and data class suffix conflict, please change the table name or data class suffix"
 }

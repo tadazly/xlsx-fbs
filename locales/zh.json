@@ -21,12 +21,14 @@
     "deleteFbs": "转换后删除生成的 .fbs 文件",
     "generateFbsHash": "在输出的文件中添加 .fbs 文件的 hash 值，用于运行时校验表的数据结构是否匹配（仅支持 C# 和 TypeScript, 其他语言请自行扩展）",
     "generateJson": "通过输出的 FlatBuffer 生成 JSON 文件",
+    "dataClassSuffix": "表数据类后缀，默认是 Info",
     "legacyMode": "传统打表，只输出原始的 JSON 文件",
     "successGenerateFbs": "成功生成 .fbs 文件",
     "successGenerateBinary": "成功生成 .bin 文件",
     "successGenerateJson": "成功生成 .json 文件",
     "successGenerateCode": "成功生成脚本",
     "successReadTablesConfig": "成功读取打表配置",
+    "successGenerateTsMain": "成功生成 ts 入口代码",
     "warningSignedNumberType": "⚠️ Warning: 表格中存在有符号数，请检查表格数据",
     "warningFloatNumberType": "⚠️ Warning: 表格中存在浮点数，请检查表格数据",
     "warningNumberTypeRange": "⚠️ Warning: 数字类型范围过大，请检查表格数据",
@@ -50,5 +52,7 @@
     "errorUnsupportedPlatform": "❌ Error: 不支持当前平台",
     "errorScriptNotFound": "❌ Error: 脚本文件不存在",
     "errorInvalidNumberValue": "❌ Error: 数字类型值错误，请检查表格数据",
-    "errorFlatcGenerateFailed": "❌ Error: flatc 生成 bin 失败"
+    "errorFlatcGenerateFailed": "❌ Error: flatc 生成 bin 失败",
+    "errorNeedAllSuccessToGenerateTs": "❌ Error: 需要所有表都转换成功才能生成 ts 入口代码，请先纠正错误",
+    "errorTableNameDataClassSuffixConflict": "❌ Error: 表名和数据类后缀冲突，请更换表名或数据类后缀"
 }

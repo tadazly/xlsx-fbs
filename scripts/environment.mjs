@@ -33,7 +33,9 @@ function loadLocaleStrings(locale) {
 /** 国际化 */
 export const i18n = loadLocaleStrings(getLocale());
 
-/** xlsx-fbs 输入选项 */
+/** 
+ * xlsx-fbs 输入选项，不传给 flatc
+ */
 export const xlsxFbsOptions = {
     output: path.join(process.cwd(), 'output'),
     censoredOutput: null,
@@ -47,11 +49,13 @@ export const xlsxFbsOptions = {
     generateJson: false,
     legacyMode: false,
     deleteFbs: false,
+    dataClassSuffix: 'Info',
     generateFbsHash: false,
     allowWildTable: false,
     propertyOrder: [ 'A', 'B', 'C', 'D', 'E' ],
     multiThread: 4,
     minimalInfo: 'log',
+    js: false,
 }
 
 /** 获取表名 */
@@ -80,4 +84,8 @@ export const getGenerateScriptPath = (filePath) => {
 /** 根据语言组织后的脚本路径 */
 export const getOrganizedScriptPath = () => {
     return path.join(xlsxFbsOptions.output, 'scripts');
+}
+/** ts 代码输出路径 */
+export const getTsPath = () => {
+    return path.join(getOrganizedScriptPath(), 'ts');
 }

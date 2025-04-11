@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 // 👆Help to Link to Global
 
-import { i18n } from './environment.mjs'
+import { getTsPath, i18n } from './environment.mjs'
 import { program } from 'commander';
 import fsAsync from 'fs/promises';
 import * as fsUtil from './utils/fsUtil.mjs';
 import path from 'path';
 import { xlsxToFbs } from './xlsxToFbs.mjs';
 import { xlsxToJson } from './xlsxToJson.mjs';
-import { fbsToCode } from './fbsToCode.mjs';
+import { fbsToCode, generateTsMain } from './fbsToCode.mjs';
 import { xlsxFbsOptions, getFbsPath, getBinPath, getJsonPath, getGenerateScriptPath, getOrganizedScriptPath } from './environment.mjs';
 import { jsonToBin } from './generateFbsBin.mjs';
-import { encodeHtml } from './utils/stringUtil.mjs';
+import { encodeHtml, toUpperCamelCase } from './utils/stringUtil.mjs';
 import { spawnAsync } from './utils/processUtil.mjs';
 import pLimit from 'p-limit';
 import { log, error, info, warn, setLogLevel } from './utils/logUtil.mjs';
@@ -35,6 +35,7 @@ async function main() {
         .option('--cpp', 'C++')
         .option('--csharp', 'C#')
         .option('--ts', 'TypeScript')
+        .option('--js', 'JavaScript')
         .option('--rust', 'Rust')
         .option('--go', 'Golang')
         .option('--python', 'Python')
@@ -55,6 +56,9 @@ async function main() {
         .option('--empty-string', i18n.emptyString)
         .option('--enable-streaming-read', i18n.enableStreamingRead)
         .option('--delete-fbs', i18n.deleteFbs)
+        .option('--data-class-suffix <suffix>', i18n.dataClassSuffix, (value) => {
+            return toUpperCamelCase(value.trim());
+        }, 'Info')
         .option('--generate-fbs-hash', i18n.generateFbsHash)
         .option('--generate-json', i18n.generateJson)
         .option('--allow-wild-table', i18n.allowWildTable)
@@ -121,6 +125,10 @@ async function main() {
             .map(([key, value]) => typeof value === 'boolean' ? `--${key}` : `--${key} ${value}`),
         ...unknownArgs,
     ];
+
+    if (xlsxFbsOptions.js && !flatcArgs.includes('--ts')) {
+        flatcArgs.push('--ts');
+    }
 
     log(`flatc 参数：${flatcArgs}`);
 
@@ -268,13 +276,41 @@ async function batchConvert(input, flatcArgs) {
         if (xlsxFbsOptions.minimalInfo) {
             args.push('--minimal-info', xlsxFbsOptions.minimalInfo);
         }
+        if (xlsxFbsOptions.dataClassSuffix) {
+            args.push('--data-class-suffix', xlsxFbsOptions.dataClassSuffix);
+        }
 
-        return limit(() => spawnAsync('xlsx-fbs', [config.filePath, ...args, ...flatcArgs], {shell: true}));
+        return limit(async () => {
+            try {
+                await spawnAsync('xlsx-fbs', [config.filePath, ...args, ...flatcArgs], {shell: true});
+                return { isSuccess: true, tableName: config.tableName };
+            } catch (err) {
+                return { isSuccess: false, tableName: config.tableName, error: err };
+            }
+        });
     });
-    await Promise.all(convertPromises);
+    const results = await Promise.all(convertPromises);
+    const failedTables = results.filter(result => !result.isSuccess).map(result => result.tableName);
 
     const endTime = performance.now();
-    info(`Batch finished, Convert ${tablesConfig.length} tables, cost: ${endTime - startTime}ms`);
+    info(`Batch finished, Convert ${tablesConfig.length} tables, success: ${tablesConfig.length - failedTables.length}, failed: ${failedTables.length}, cost: ${endTime - startTime}ms`);
+    if (failedTables.length > 0) {
+        error(`Failed tables: ${failedTables.join(', ')}`);
+    }
+
+    // 生成 ts 代码的入口文件 main.ts
+    if (flatcArgs.includes('--ts')) {
+        if (failedTables.length === 0) {
+            const namespace = xlsxFbsOptions.namespace;
+            const dataClassSuffix = xlsxFbsOptions.dataClassSuffix;
+            const tableNames = tablesConfig.map(config => toUpperCamelCase(config.tableName));
+            const tsOutputPath = getTsPath();
+            const tsMainPath = await generateTsMain(tsOutputPath, namespace);
+            info(`${i18n.successGenerateTsMain}: ${tsMainPath}`);
+        } else {
+            error(`${i18n.errorNeedAllSuccessToGenerateTs}`);
+        }
+    }
 }
 
 /**
@@ -356,6 +392,10 @@ async function getTablesConfig(rootDir) {
 
     for (const table of tables) {
         const tableName = path.basename(table, path.extname(table));
+        if (tableName.endsWith(xlsxFbsOptions.dataClassSuffix)) {
+            error(`${i18n.errorTableNameDataClassSuffixConflict}: ${tableName}`);
+            process.exit(1);
+        }
         if (tablesConfigMap.has(tableName)) {
             const tableConfig = tablesConfigMap.get(tableName);
             tableConfig.filePath = table;

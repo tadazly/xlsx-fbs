@@ -190,6 +190,8 @@ Excel 文件路径或 Excel 所在的文件夹路径，传入文件则转换单�
 
 - `--generate-json` 通过输出的 FlatBuffer 生成 JSON 文件，用于版本控制对比字段的修改记录。
 
+- `--data-class-suffix <suffix>` 生成的表格数据类后缀，默认是 `Info`。比如 `item.xlsx` 表生成的每行数据的类名就是 `ItemInfo`；必须避免出现使用类后缀结尾命名的表，比如批量打表时，目录下同时有 `drop.xlsx` 和 `dropInfo.xlsx`，那么第一张表的数据类名会和第二张表的主类名冲突，BOOM💥。
+
 - `--delete-fbs` 转换后删除生成的 .fbs 文件，建议保留用于版本控制。
 
 - `--multi-thread <number>` 批量打表时的多线程数量，默认 4 。

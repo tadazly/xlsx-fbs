@@ -4,11 +4,23 @@ import path from 'path'
 
 const templatePath = path.join(projectPath, 'template');
 const fbsTemplatePath = path.join(templatePath, 'fbs');
+const tsTemplatePath = path.join(templatePath, 'ts');
 
-const readTemplate = filePath => fs.readFileSync(filePath, 'utf-8');
+const templateMap = new Map();
+const readTemplate = filePath => {
+    if (templateMap.has(filePath)) {
+        return templateMap.get(filePath);
+    }
+    const template = fs.readFileSync(filePath, 'utf-8');
+    templateMap.set(filePath, template);
+    return template;
+}
 
-export const fbsTemplate = readTemplate(path.join(fbsTemplatePath, 'fbsTemplate.fbs'));
-export const fbsFieldTemplate = readTemplate(path.join(fbsTemplatePath, 'fbsFieldTemplate.fbs'));
+export const getFbsTemplate = () => readTemplate(path.join(fbsTemplatePath, 'fbsTemplate.fbs'));
+export const getFbsFieldTemplate = () => readTemplate(path.join(fbsTemplatePath, 'fbsFieldTemplate.fbs'));
+export const getTsMainTemplate = () => readTemplate(path.join(tsTemplatePath, 'tsMainTemplate.ts'));
+export const getTsImportClassTemplate = () => readTemplate(path.join(tsTemplatePath, 'tsImportClassTemplate.ts'));
+export const getTsClassListTemplate = () => readTemplate(path.join(tsTemplatePath, 'tsClassListTemplate.ts'));
 
 /**
  * 填充模板

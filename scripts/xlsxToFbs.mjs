@@ -1,12 +1,10 @@
-import xlsx from 'xlsx';
-import ExcelJS from 'exceljs';
 import fsAsync from 'fs/promises';
 import { i18n } from './environment.mjs';
 import { checkExist } from './utils/fsUtil.mjs';
 import { xlsxFbsOptions } from './environment.mjs';
 import { toUpperCamelCase, toSnakeCase, checkReservedKeyword } from './utils/stringUtil.mjs';
 import path from 'path';
-import { fbsFieldTemplate, fbsTemplate, fillTemplate } from './template.mjs';
+import { getFbsFieldTemplate, getFbsTemplate, fillTemplate } from './template.mjs';
 import { log, warn } from './utils/logUtil.mjs';
 
 /**
@@ -19,6 +17,7 @@ import { log, warn } from './utils/logUtil.mjs';
  * @property {string} [defaultKey] 默认主键
  * @property {boolean} [enableStreamingRead] 是否开启流式读取，仅支持 xlsx 格式
  * @property {boolean} [emptyString] 是否生成空字符串
+ * @property {string} [dataClassSuffix] 数据类后缀
  */
 
 /**
@@ -217,6 +216,9 @@ export async function xlsxToFbs(filePath, options = {}) {
     if (!options.namespace) {
         options.namespace = xlsxFbsOptions.namespace;
     }
+    if (!options.dataClassSuffix) {
+        options.dataClassSuffix = xlsxFbsOptions.dataClassSuffix;
+    }
 
     let parsedResult;
     const extname = path.extname(filePath);
@@ -271,15 +273,16 @@ export async function xlsxToFbs(filePath, options = {}) {
     }
 
     const fields = properties.map(formatFbsField).join('\n');
-    const fbs = formatFbs({ fileName, namespace, tableName, fields, fileExtension });
-    const tableInfosFiled = `${toSnakeCase(tableName)}_infos`;
+    const dataClassSuffix = options.dataClassSuffix;
+    const fbs = formatFbs({ fileName, namespace, tableName, dataClassSuffix, fields, fileExtension });
+    const tableInfosFiled = `${toSnakeCase(tableName)}_${toSnakeCase(dataClassSuffix)}s`;
     const xlsxData = {};
     xlsxData[tableInfosFiled] = fullDataJson;
 
     if (options.censoredFields.length && !options.censoredTable) {
         const propertiesCensored = properties.filter(({ field }) => !options.censoredFields.includes(field));
         const fieldsCensored = propertiesCensored.map(formatFbsField).join('\n');
-        const fbsCensored = formatFbs({ fileName, namespace, tableName, fields: fieldsCensored, fileExtension });
+        const fbsCensored = formatFbs({ fileName, namespace, tableName, dataClassSuffix, fields: fieldsCensored, fileExtension });
 
         const xlsxDataCensored = {};
         xlsxDataCensored[tableInfosFiled] = fullDataJson.map(row => {
@@ -317,6 +320,8 @@ export async function xlsxToFbs(filePath, options = {}) {
  * @returns {Promise<XlsxToFbsResult>}
  */
 async function parseWithXlsx(filePath) {
+    const xlsx = (await import('xlsx')).default;
+    
     const xlsxFileData = await fsAsync.readFile(filePath);
     const workbook = xlsx.read(xlsxFileData, { type: 'buffer' });
 
@@ -345,6 +350,8 @@ async function parseWithXlsx(filePath) {
  * @returns {Promise<XlsxToFbsResult>}
  */
 async function parseWithExcelJS(filePath) {
+    const ExcelJS = (await import('exceljs')).default;
+
     const workbookReader = new ExcelJS.stream.xlsx.WorkbookReader(filePath);
     const sheetData = {};
     const sheetNames = [];
@@ -562,7 +569,7 @@ function formatFbsField(property) {
 
     attribute = attribute ? ` (${attribute})` : '';
 
-    return fillTemplate(fbsFieldTemplate, {
+    return fillTemplate(getFbsFieldTemplate(), {
         COMMENT: comment,
         FIELD: fbsField,
         TYPE: type,
@@ -577,13 +584,15 @@ function formatFbsField(property) {
  * @returns 
  */
 function formatFbs(property) {
-    const { fileName, namespace, tableName, fields, fileExtension } = property;
+    const { fileName, namespace, tableName, dataClassSuffix, fields, fileExtension } = property;
 
-    return fillTemplate(fbsTemplate, {
+    return fillTemplate(getFbsTemplate(), {
         FILE_NAME: fileName,
         NAMESPACE: namespace,
         TABLE_NAME: tableName,
         TABLE_NAME_SNAKE_CASE: toSnakeCase(tableName),
+        DATA_CLASS_SUFFIX: dataClassSuffix,
+        DATA_CLASS_SUFFIX_SNAKE_CASE: toSnakeCase(dataClassSuffix),
         FIELDS: fields,
         FILE_EXTENSION: fileExtension,
     });

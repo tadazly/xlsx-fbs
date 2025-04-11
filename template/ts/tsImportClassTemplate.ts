@@ -1,0 +1,1 @@
+import { {{{ CLASS_NAME }}} } from './{{{ SOURCE_FILE_PATH }}}';
