@@ -1,5 +1,5 @@
 import * as fsAsync from 'fs/promises'
-import { join, dirname } from 'path';
+import path from 'path';
 import os from 'os'
 
 /**
@@ -32,8 +32,8 @@ export async function listAllFiles(dir, options) {
     const entries = await fsAsync.readdir(dir, { withFileTypes: true })
 
     for (let entry of entries) {
-        const fullPath = join(dir, entry.name)
-        
+        const fullPath = path.join(dir, entry.name)
+
         if (entry.isDirectory()) {
             files = files.concat(await listAllFiles(fullPath, options))
         } else {
@@ -54,7 +54,7 @@ export async function listAllFiles(dir, options) {
  */
 export async function moveFile(src, dest) {
     try {
-        await fsAsync.mkdir(dirname(dest), {recursive: true})
+        await fsAsync.mkdir(path.dirname(dest), { recursive: true })
         await fsAsync.copyFile(src, dest)
         await fsAsync.rm(src)
 
@@ -73,16 +73,16 @@ export async function moveDir(src, dest) {
         const entries = await fsAsync.readdir(src, { withFileTypes: true })
         const waitList = []
         for (const entry of entries) {
-            const srcPath = join(src, entry.name)
-            const destPath = join(dest, entry.name)
+            const srcPath = path.join(src, entry.name)
+            const destPath = path.join(dest, entry.name)
             if (entry.isDirectory()) {
-                waitList.push(moveDir(srcPath. destPath))
+                waitList.push(moveDir(srcPath.destPath))
             } else {
                 waitList.push(fsAsync.copyFile(srcPath, destPath))
             }
         }
         await Promise.all(waitList)
-        await fsAsync.rm(src, {recursive: true, force: true})
+        await fsAsync.rm(src, { recursive: true, force: true })
         console.info(`移动文件夹：${src} => ${dest}`)
     } catch (err) {
         console.error(`移动失败：${src} => ${dest}`)
@@ -112,14 +112,14 @@ export async function deleteEmptyFolders(folderPath) {
         return false
     }
 
-    const items = await fsAsync.readdir(folderPath, {withFileTypes: true, recursive: false})
+    const items = await fsAsync.readdir(folderPath, { withFileTypes: true, recursive: false })
     if (items.length === 0) {
         console.info(`删除空文件夹：${folderPath}`)
         await deleteFile(folderPath)
     } else {
         for (const item of items) {
             if (item.isDirectory()) {
-                const fullPath = join(folderPath, item.name)
+                const fullPath = path.join(folderPath, item.name)
                 await deleteEmptyFolders(fullPath)
             }
         }
@@ -132,9 +132,9 @@ export async function deleteEmptyFolders(folderPath) {
  * @param {string} folderPath 
  */
 export async function findAllFiles(folderPath) {
-    const items = await fsAsync.readdir(folderPath, {withFileTypes: true, recursive: true})
+    const items = await fsAsync.readdir(folderPath, { withFileTypes: true, recursive: true })
     return items.filter(item => item.isFile())
-        .map(item => join(item.parentPath, item.name))
+        .map(item => path.join(item.parentPath, item.name))
 }
 
 /** 异步检查文件夹是否存在 */
@@ -207,7 +207,7 @@ export async function findFiles(filePath, matchFunc) {
         const promises = [];
 
         for (const entry of entries) {
-            const entryPath = join(currentDir, entry.name)
+            const entryPath = path.join(currentDir, entry.name)
             if (entry.isDirectory()) {
                 promises.push(find(entryPath))
             } else if (entry.isFile() && match(entry.name)) {
@@ -268,7 +268,7 @@ export function sizeToString(bytes) {
  */
 export async function writeFile(filePath, content, encoding = 'utf-8') {
     if (!await checkExist(filePath)) {
-        await fsAsync.mkdir(dirname(filePath), { recursive: true });
+        await fsAsync.mkdir(path.dirname(filePath), { recursive: true });
     }
     await fsAsync.writeFile(filePath, content, encoding);
 }
@@ -299,4 +299,26 @@ export async function isDirectory(dirPath) {
     } catch {
         return false;
     }
+}
+
+/**
+ * 获取相对路径，保留 ./ 前缀
+ * @param {string} from 
+ * @param {string} to 
+ * @param {boolean} posix 默认 true, 始终 `/` 分隔符
+ * @returns {string}
+ */
+export function getRelativePath(from, to, posix = true) {
+    let rel = path.relative(from, to);
+    rel = path.normalize(rel);
+
+    if (!rel.startsWith('.') && !rel.startsWith(path.sep)) {
+        rel = '.' + path.sep + rel;
+    }
+
+    if (posix) {
+        rel = rel.split(path.sep).join('/');;
+    }
+
+    return rel;
 }

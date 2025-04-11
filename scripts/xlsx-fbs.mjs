@@ -153,6 +153,11 @@ async function singleConvert(input, flatcArgs) {
         await fsUtil.writeFile(fbsOutputPath, fbs);
         log(`${i18n.successGenerateFbs}: ${getFbsPath(input)}`);
 
+        if (flatcArgs.length === 0) {
+            warn(i18n.warningMissingFlatcOptions);
+            return;
+        }
+
         flatcArgs.push(`-o ${getGenerateScriptPath(input)}`);
         await fbsToCode(fbsOutputPath, flatcArgs);
         log(`${i18n.successGenerateCode}: ${getOrganizedScriptPath()}`);

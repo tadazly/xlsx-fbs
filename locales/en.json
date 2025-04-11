@@ -39,6 +39,7 @@
     "warningDuplicateTable": "⚠️ Warning: Duplicate table name in the path, which table do you want to convert?",
     "warningTablesConfigNotFound": "⚠️ Warning: Tables config file $tables.xlsx not found, default to convert all tables",
     "warningReservedKeyword": "⚠️ Warning: The name contains reserved keywords, please change the name",
+    "warningMissingFlatcOptions": "⚠️ Warning: Flatc options not provided, only generate .fbs file",
     "errorInvalidInput": "❌ Error: Input parameter error, please check the input parameter",
     "errorInvalidPropertyOrder": "❌ Error: --property-order parameter must be a 5-character string representing table columns, like ABCDE",
     "errorInvalidRootDir": "❌ Error: Tables root directory not found",

@@ -1,1 +1,1 @@
-import { {{{ CLASS_NAME }}} } from './{{{ SOURCE_FILE_PATH }}}';
+import { {{{ CLASS_NAME }}} } from '{{{ SOURCE_FILE_PATH }}}';

@@ -1,4 +1,4 @@
-import { checkExist, writeFile } from './utils/fsUtil.mjs'
+import { checkExist, writeFile, getRelativePath } from './utils/fsUtil.mjs'
 import { getGenerateScriptPath, getOrganizedScriptPath, i18n } from './environment.mjs';
 import path from 'path';
 import fsAsync from 'fs/promises';
@@ -43,7 +43,7 @@ export async function generateTsMain(tsPath, namespace) {
         sourceFile.getClasses()
             .forEach(cls => {
                 if (cls.isExported() && cls.getName()) {
-                    exportedClasses[cls.getName()] = path.relative(tsPath, sourceFile.getFilePath()).replace(/\.ts$/g, '.js');
+                    exportedClasses[cls.getName()] = getRelativePath(tsPath, sourceFile.getFilePath()).replace(/\.ts$/g, '.js');
                 }
             });
     }

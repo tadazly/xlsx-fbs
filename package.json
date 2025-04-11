@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "main": "index.js",
   "bin": {
-    "xlsx-fbs": "scripts/xlsx-fbs.mjs"
+    "xlsx-fbs": "scripts/xlsx-fbs.mjs",
+    "x2f": "scripts/xlsx-fbs.mjs"
   },
   "keywords": [],
   "author": "",
