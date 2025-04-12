@@ -46,15 +46,13 @@ export const xlsxFbsOptions = {
     censoredTable: false,
     emptyString: false,
     enableStreamingRead: false,
-    generateJson: false,
     legacyMode: false,
-    deleteFbs: false,
     dataClassSuffix: 'Info',
     generateFbsHash: false,
     allowWildTable: false,
     propertyOrder: [ 'A', 'B', 'C', 'D', 'E' ],
     multiThread: 4,
-    minimalInfo: 'log',
+    minimalInfo: 'info',
     js: false,
 }
 

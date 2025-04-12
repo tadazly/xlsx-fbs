@@ -54,12 +54,10 @@ async function main() {
         .option('--censored-output <path>', i18n.censoredOutput)
         .option('--empty-string', i18n.emptyString)
         .option('--enable-streaming-read', i18n.enableStreamingRead)
-        .option('--delete-fbs', i18n.deleteFbs)
         .option('--data-class-suffix <suffix>', i18n.dataClassSuffix, (value) => {
             return toUpperCamelCase(value.trim());
         }, 'Info')
         .option('--generate-fbs-hash', i18n.generateFbsHash)
-        .option('--generate-json', i18n.generateJson)
         .option('--allow-wild-table', i18n.allowWildTable)
         .option('--multi-thread <number>', i18n.multiThread, (value) => {
             const num = parseInt(value);
@@ -125,6 +123,7 @@ async function main() {
         ...unknownArgs,
     ];
 
+    // 如果 js 选项为 true，则添加 ts 选项，由 ts 生成 js 代码
     if (xlsxFbsOptions.js && !flatcArgs.includes('--ts')) {
         flatcArgs.push('--ts');
     }
@@ -311,6 +310,7 @@ async function batchConvert(input, flatcArgs) {
                 const tsMainPath = await generateTsMain(tsOutputPath, namespace);
                 info(`${i18n.successGenerateTsMain}: ${tsMainPath}`);
     
+                // 生成 js 代码
                 if (xlsxFbsOptions.js) {
                     const jsOutputPath = getJsPath();
                     await generateJSBundle(tsOutputPath, jsOutputPath, namespace, xlsxFbsOptions.multiThread);
