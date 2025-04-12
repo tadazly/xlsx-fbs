@@ -54,6 +54,10 @@ export const xlsxFbsOptions = {
     multiThread: 4,
     minimalInfo: 'info',
     js: false,
+    jsSourceMap: false,
+    jsExcludeFlatBuffers: false,
+    jsBrowserTarget: [ 'es2017' ],
+    jsNodeTarget: [ 'node20' ],
 }
 
 /** 获取表名 */

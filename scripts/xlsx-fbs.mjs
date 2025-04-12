@@ -34,7 +34,6 @@ async function main() {
         .option('--cpp', 'C++')
         .option('--csharp', 'C#')
         .option('--ts', 'TypeScript')
-        .option('--js', 'JavaScript')
         .option('--rust', 'Rust')
         .option('--go', 'Golang')
         .option('--python', 'Python')
@@ -48,7 +47,7 @@ async function main() {
         .option('-k, --default-key <field>', i18n.defaultKey)
         .option('--binary-extension <ext>', i18n.binaryExtension)
         .option('--censored-fields <fields>', i18n.censoredFields, (value) => {
-            return value.split(',').map(field => field.trim()).filter(Boolean);
+            return value.split(',').map(field => field.trim()).filter(Boolean);  // 在控制台直接调用的时候记得输入双引号，比如 "aa,bb,cc"
         })
         .option('--censored-table', i18n.censoredTable)
         .option('--censored-output <path>', i18n.censoredOutput)
@@ -81,6 +80,15 @@ async function main() {
                 process.exit(1);
             }
             return value.toUpperCase().split('');
+        })
+        .option('--js', 'JavaScript')
+        .option('--js-sourcemap', i18n.jsSourcemap)
+        .option('--js-exclude-flatbuffers', i18n.jsExcludeFlatBuffers)
+        .option('--js-browser-target <target>', i18n.jsBrowserTarget, (value) => {
+            return value.split(',');
+        })
+        .option('--js-node-target <target>', i18n.jsNodeTarget, (value) => {
+            return value.split(',');
         })
         .helpOption('-h, --help', i18n.helpOption);
 
@@ -222,21 +230,20 @@ async function batchConvert(input, flatcArgs) {
 
     const startTime = performance.now();
     const tablesConfig = await getTablesConfig(input);
-    const { mergeCount, censoredTableCount, censoredFieldsCount, constFieldsCount } = tablesConfig.reduce((result, config) => {
-        if (config.merge) {
-            result.mergeCount++;
-        }
-        if (config.censoredTable) {
-            result.censoredTableCount++;
-        }
-        if (config.censoredFields.length > 0) {
-            result.censoredFieldsCount++;
-        }
-        if (config.constFields.length > 0) {
-            result.constFieldsCount++;
-        }
-        return result;
-    }, { mergeCount: 0, censoredTableCount: 0, censoredFieldsCount: 0, constFieldsCount: 0, name: new Set() });
+
+    let censoredTableCount = 0;
+    let censoredFieldsCount = 0;
+    /** @type {Map<string, TableConfig>} */
+    const mergeMap = new Map();
+    /** @type {Map<string, TableConfig>} */
+    const constFieldsMap = new Map();
+
+    for (const config of tablesConfig) {
+        if (config.censoredTable) censoredTableCount++;
+        if (config.censoredFields.length > 0) censoredFieldsCount++;
+        if (config.merge) mergeMap.set(config.tableName, config);
+        if (config.constFields.length > 0) constFieldsMap.set(config.tableName, config);
+    }
 
     if ((censoredFieldsCount > 0 || censoredTableCount > 0) && !xlsxFbsOptions.censoredOutput) {
         const censoredOutput = path.basename(xlsxFbsOptions.output) + '_censored';
@@ -244,48 +251,51 @@ async function batchConvert(input, flatcArgs) {
         xlsxFbsOptions.censoredOutput = path.join(dirname, censoredOutput);
     }
 
+    const commonArgs = [];
+    commonArgs.push('-o', xlsxFbsOptions.output);
+    commonArgs.push('-n', xlsxFbsOptions.namespace);
+    if (xlsxFbsOptions.defaultKey) {
+        commonArgs.push('-k', xlsxFbsOptions.defaultKey);
+    }
+    if (xlsxFbsOptions.binaryExtension) {
+        commonArgs.push('--binary-extension', xlsxFbsOptions.binaryExtension);
+    }
+    if (xlsxFbsOptions.censoredOutput) {
+        commonArgs.push('--censored-output', xlsxFbsOptions.censoredOutput);
+    }
+    if (xlsxFbsOptions.emptyString) {
+        commonArgs.push('--empty-string');
+    }
+    if (xlsxFbsOptions.enableStreamingRead) {
+        commonArgs.push('--enable-streaming-read');
+    }
+    if (xlsxFbsOptions.legacyMode) {
+        commonArgs.push('--legacy-mode');
+    }
+    if (xlsxFbsOptions.propertyOrder) {
+        commonArgs.push('--property-order', xlsxFbsOptions.propertyOrder.join(''));
+    }
+    if (xlsxFbsOptions.minimalInfo) {
+        commonArgs.push('--minimal-info', xlsxFbsOptions.minimalInfo);
+    }
+    if (xlsxFbsOptions.dataClassSuffix) {
+        commonArgs.push('--data-class-suffix', xlsxFbsOptions.dataClassSuffix);
+    }
+
     const limit = pLimit(xlsxFbsOptions.multiThread);
     const convertPromises = tablesConfig.map(config => {
-        const args = [];
-        args.push('-o', xlsxFbsOptions.output);
-        args.push('-n', xlsxFbsOptions.namespace);
-        if (xlsxFbsOptions.defaultKey) {
-            args.push('-k', xlsxFbsOptions.defaultKey);
-        }
-        if (xlsxFbsOptions.binaryExtension) {
-            args.push('--binary-extension', xlsxFbsOptions.binaryExtension);
-        }
-        if (xlsxFbsOptions.censoredOutput) {
-            args.push('--censored-output', xlsxFbsOptions.censoredOutput);
-        }
+        const args = commonArgs.concat();
+
         if (config.censoredFields.length > 0) {
             args.push('--censored-fields', config.censoredFields.join(','));
         }
         if (config.censoredTable > 0) {
             args.push('--censored-table');
         }
-        if (xlsxFbsOptions.emptyString) {
-            args.push('--empty-string');
-        }
-        if (xlsxFbsOptions.enableStreamingRead) {
-            args.push('--enable-streaming-read');
-        }
-        if (xlsxFbsOptions.legacyMode) {
-            args.push('--legacy-mode');
-        }
-        if (xlsxFbsOptions.propertyOrder) {
-            args.push('--property-order', xlsxFbsOptions.propertyOrder.join(''));
-        }
-        if (xlsxFbsOptions.minimalInfo) {
-            args.push('--minimal-info', xlsxFbsOptions.minimalInfo);
-        }
-        if (xlsxFbsOptions.dataClassSuffix) {
-            args.push('--data-class-suffix', xlsxFbsOptions.dataClassSuffix);
-        }
 
         return limit(async () => {
             try {
-                await spawnAsync('xlsx-fbs', [config.filePath, ...args, ...flatcArgs], {shell: true});
+                await spawnAsync('xlsx-fbs', [config.filePath, ...args, ...flatcArgs], { shell: true });
                 return { isSuccess: true, tableName: config.tableName };
             } catch (err) {
                 return { isSuccess: false, tableName: config.tableName, error: err };
@@ -309,11 +319,11 @@ async function batchConvert(input, flatcArgs) {
                 const tsOutputPath = getTsPath();
                 const tsMainPath = await generateTsMain(tsOutputPath, namespace);
                 info(`${i18n.successGenerateTsMain}: ${tsMainPath}`);
-    
+
                 // 生成 js 代码
                 if (xlsxFbsOptions.js) {
                     const jsOutputPath = getJsPath();
-                    await generateJSBundle(tsOutputPath, jsOutputPath, namespace, xlsxFbsOptions.multiThread);
+                    await generateJSBundle(tsOutputPath, jsOutputPath, xlsxFbsOptions);
                     info(`${i18n.successGenerateJsBundle}: ${jsOutputPath}`);
                 }
             }

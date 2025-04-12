@@ -1,5 +1,5 @@
 import { checkExist, writeFile, getRelativePath } from './utils/fsUtil.mjs'
-import { getGenerateScriptPath, getOrganizedScriptPath, i18n } from './environment.mjs';
+import { getGenerateScriptPath, getOrganizedScriptPath, i18n, projectPath } from './environment.mjs';
 import path from 'path';
 import fsAsync from 'fs/promises';
 import { flatcAsync } from './utils/flatcUtil.mjs';
@@ -73,13 +73,22 @@ export async function generateTsMain(tsPath, namespace) {
 }
 
 /**
+ * @typedef JSBuildOptions
+ * @property {string} namespace
+ * @property {number} multiThread
+ * @property {boolean} jsSourceMap
+ * @property {boolean} jsExcludeFlatBuffers
+ * @property {string[]} jsBrowserTarget
+ * @property {string[]} jsNodeTarget
+ */
+
+/**
  * 根据 ts 代码生成对应的 js 代码
  * @param {string} tsPath 
  * @param {string} jsPath 
- * @param {string} namespace 
- * @param {number} maxThread 
+ * @param {JSBuildOptions} options 
  */
-export async function generateJSBundle(tsPath, jsPath, namespace, maxThread = 4) {
+export async function generateJSBundle(tsPath, jsPath, options = {}) {
     const { build } = await import('esbuild');
     const pLimit = (await import('p-limit')).default;
     
@@ -87,67 +96,62 @@ export async function generateJSBundle(tsPath, jsPath, namespace, maxThread = 4)
         await fsAsync.mkdir(jsPath, { recursive: true });
     }
     
-    const namespaceKebabCase = toKebabCase(namespace);
-    const limit = pLimit(maxThread);
+    const namespaceKebabCase = toKebabCase(options.namespace);
+    const limit = pLimit(options.multiThread);
 
-    const buildList = [];
-    // browser
-    buildList.push(limit(() => build({
+    /** @type {import('esbuild').BuildOptions} */
+    const browserBuildOptions = {
         entryPoints: [ path.join(tsPath, `${namespaceKebabCase}.ts`) ],
         bundle: true,
         outfile: path.join(jsPath, `${namespaceKebabCase}.js`),
         platform: 'browser',
-        target: ['es2017'],
-        sourcemap: false,
+        target: options.jsBrowserTarget,
+        sourcemap: options.jsSourceMap,
         format: 'iife',
-    })));
-    buildList.push(limit(() => build({
-        entryPoints: [ path.join(tsPath, `${namespaceKebabCase}.ts`) ],
-        bundle: true,
-        minify: true,
-        outfile: path.join(jsPath, `${namespaceKebabCase}.min.js`),
-        platform: 'browser',
-        target: ['es2017'],
-        sourcemap: false,
-        format: 'iife',
-    })));
-    // node
-    buildList.push(limit(() => build({
+        nodePaths: [ path.resolve(projectPath, 'node_modules') ],   // 在项目外的路径解析依赖的 flatbuffers
+    }
+
+    /** @type {import('esbuild').BuildOptions} */
+    const nodeBuildOptions = {
         entryPoints: [ path.join(tsPath, `${namespaceKebabCase}.ts`) ],
         bundle: true,
         outfile: path.join(jsPath, `${namespaceKebabCase}.cjs.js`),
         platform: 'node',
-        target: ['node20'],
-        sourcemap: false,
+        target: options.jsNodeTarget,
+        sourcemap: options.jsSourceMap,
         format: 'cjs',
-    })));
+        nodePaths: [ path.resolve(projectPath, 'node_modules') ],
+    }
+
+    if (options.jsExcludeFlatBuffers) {
+        browserBuildOptions.external = [ 'flatbuffers' ];
+        nodeBuildOptions.external = [ 'flatbuffers' ];
+    }
+
+    const buildList = [];
+    // browser
+    buildList.push(limit(() => build(browserBuildOptions)));
     buildList.push(limit(() => build({
-        entryPoints: [ path.join(tsPath, `${namespaceKebabCase}.ts`) ],
-        bundle: true,
+        ...browserBuildOptions,
         minify: true,
-        outfile: path.join(jsPath, `${namespaceKebabCase}.cjs.min.js`),
-        platform: 'node',
-        target: ['node20'],
-        sourcemap: false,
-        format: 'cjs',
+        outfile: browserBuildOptions.outfile.replace(/\.js$/, '.min.js'),
+    })));
+    // node
+    buildList.push(limit(() => build(nodeBuildOptions)));
+    buildList.push(limit(() => build({
+        ...nodeBuildOptions,
+        minify: true,
+        outfile: nodeBuildOptions.outfile.replace(/\.cjs\.js$/, '.cjs.min.js'),
     })));
     buildList.push(limit(() => build({
-        entryPoints: [ path.join(tsPath, `${namespaceKebabCase}.ts`) ],
-        bundle: true,
-        outfile: path.join(jsPath, `${namespaceKebabCase}.esm.js`),
-        platform: 'node',
-        target: ['node20'],
-        sourcemap: false,
+        ...nodeBuildOptions,
+        outfile: nodeBuildOptions.outfile.replace(/\.cjs\.js$/, '.esm.js'),
         format: 'esm',
     })));
     buildList.push(limit(() => build({
-        entryPoints: [ path.join(tsPath, `${namespaceKebabCase}.ts`) ],
-        bundle: true,
+        ...nodeBuildOptions,
         minify: true,
-        outfile: path.join(jsPath, `${namespaceKebabCase}.esm.min.js`),
-        platform: 'node',
-        target: ['node20'],
-        sourcemap: false,
+        outfile: nodeBuildOptions.outfile.replace(/\.cjs\.js$/, '.esm.min.js'),
         format: 'esm',
     })));
 
