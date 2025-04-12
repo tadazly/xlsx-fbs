@@ -179,8 +179,7 @@ async function singleConvert(input, flatcArgs) {
         if (fbsCensored) {
             // 由于修改了全局变量 xlsxFbsOptions.output，所以需要在最后执行
             log('generate censored output ...');
-            const outputDirname = path.basename(xlsxFbsOptions.output) + '_censored';
-            xlsxFbsOptions.output = path.join(path.dirname(xlsxFbsOptions.output), outputDirname);
+            xlsxFbsOptions.output = xlsxFbsOptions.censoredOutput;
             await generateOutput(input, fbsCensored, xlsxDataCensored);
         }
 
@@ -212,8 +211,7 @@ async function singleConvertLegacy(input) {
 
     if (xlsxDataCensored) {
         log('generate censored output ...');
-        const outputDirname = path.basename(xlsxFbsOptions.output) + '_censored';
-        xlsxFbsOptions.output = path.join(path.dirname(xlsxFbsOptions.output), outputDirname);
+        xlsxFbsOptions.output = xlsxFbsOptions.censoredOutput;
         await generateLegacyOutput(input, xlsxDataCensored);
     }
     const endTime = performance.now();
@@ -307,15 +305,23 @@ async function batchConvert(input, flatcArgs) {
     // 生成 ts 代码的入口文件 main.ts
     if (flatcArgs.includes('--ts')) {
         if (failedTables.length === 0) {
-            const namespace = xlsxFbsOptions.namespace;
-            const tsOutputPath = getTsPath();
-            const tsMainPath = await generateTsMain(tsOutputPath, namespace);
-            info(`${i18n.successGenerateTsMain}: ${tsMainPath}`);
-
-            if (xlsxFbsOptions.js) {
-                const jsOutputPath = getJsPath();
-                await generateJSBundle(tsOutputPath, jsOutputPath, namespace, xlsxFbsOptions.multiThread);
-                info(`${i18n.successGenerateJsBundle}: ${jsOutputPath}`);
+            async function generateCode() {
+                const namespace = xlsxFbsOptions.namespace;
+                const tsOutputPath = getTsPath();
+                const tsMainPath = await generateTsMain(tsOutputPath, namespace);
+                info(`${i18n.successGenerateTsMain}: ${tsMainPath}`);
+    
+                if (xlsxFbsOptions.js) {
+                    const jsOutputPath = getJsPath();
+                    await generateJSBundle(tsOutputPath, jsOutputPath, namespace, xlsxFbsOptions.multiThread);
+                    info(`${i18n.successGenerateJsBundle}: ${jsOutputPath}`);
+                }
+            }
+            await generateCode();
+            if (xlsxFbsOptions.censoredOutput) {
+                console.log('generate censored ts/js ...');
+                xlsxFbsOptions.output = xlsxFbsOptions.censoredOutput;
+                await generateCode();
             }
         } else {
             error(`${i18n.errorNeedAllSuccessToGenerateTs}`);
