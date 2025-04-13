@@ -289,7 +289,7 @@ async function batchConvert(input, flatcArgs) {
         if (config.censoredFields.length > 0) {
             args.push('--censored-fields', config.censoredFields.join(','));
         }
-        if (config.censoredTable > 0) {
+        if (config.censoredTable) {
             args.push('--censored-table');
         }
 

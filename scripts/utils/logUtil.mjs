@@ -1,6 +1,5 @@
 import chalk from "chalk"
 import readline from 'node:readline/promises'
-import { formatDate } from "./dateUtil.mjs"
 /**
  * 当前日志等级
  * 可选值：debug < log < info < warn < error
@@ -35,43 +34,24 @@ const shouldLog = (level) => {
     return logLevels[level] >= logLevels[currentLogLevel]
 }
 
-let logTimeFlag = false
-/**
- * 是否启用日志时间
- * @param {boolean} value 
- */
-const enableLogTime = (value) => {
-    logTimeFlag = true
-}
-const addLogTime = (msgs) => {
-    if (logTimeFlag) {
-        msgs.unshift(formatDate(new Date()))
-    }
-}
-
 const log = (...msgs) => {
     if (!shouldLog('log')) return
-    addLogTime(msgs)
     console.log(...msgs.map(msg => chalk.white(msg)))
 }
 const info = (...msgs) => {
     if (!shouldLog('info')) return
-    addLogTime(msgs)
     console.log(...msgs.map(msg => chalk.bold.green(msg)))
 }
 const error = (...msgs) => {
     if (!shouldLog('error')) return
-    addLogTime(msgs)
     console.log(...msgs.map(msg => chalk.hex('#ff0000').bold(msg)))
 }
 const warn = (...msgs) => {
     if (!shouldLog('warn')) return
-    addLogTime(msgs)
     console.log(...msgs.map(msg => chalk.hex('#ffcc00').bold(msg)))
 }
 const debug = (...msgs) => {
     if (!shouldLog('debug')) return
-    addLogTime(msgs)
     console.log(...msgs.map(msg => chalk.blueBright(msg)))
 }
 
@@ -106,7 +86,6 @@ const logger = {
     debug,
     info,
     confirm,
-    enableLogTime,
     setLogLevel,
 }
 
@@ -118,6 +97,5 @@ export {
     debug,
     info,
     confirm,
-    enableLogTime,
     setLogLevel,
 }
