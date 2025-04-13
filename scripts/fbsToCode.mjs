@@ -230,7 +230,11 @@ async function organizeCodeFiles(sourceDir, destDir) {
 
                 // 移动文件
                 const targetPath = path.join(targetDir, item);
-                await fsAsync.rename(itemPath, targetPath);
+                try {
+                    await fsAsync.rename(itemPath, targetPath);
+                } catch (err) {
+                    warn(`WARN: Skip exist rename: ${targetPath}`);
+                }
             } else if (stats.isDirectory()) {
                 await traverseDirectory(itemPath);
             }

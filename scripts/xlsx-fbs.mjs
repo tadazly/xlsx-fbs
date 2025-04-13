@@ -59,8 +59,8 @@ async function main() {
         .option('--generate-fbs-hash', i18n.generateFbsHash)
         .option('--allow-wild-table', i18n.allowWildTable)
         .option('--multi-thread <number>', i18n.multiThread, (value) => {
-            const num = parseInt(value);
-            if (isNaN(num) || num < 1 || num > 10) {
+            let num = parseInt(value);
+            if (isNaN(num) || num < 1 || num > 16) {
                 num = xlsxFbsOptions.multiThread;
             }
             return num;
