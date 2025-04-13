@@ -24,7 +24,7 @@
     "dataClassSuffix": "The suffix of table data class, default to Info",
     "legacyMode": "Legacy mode, only output the original JSON file",
     "jsSourcemap": "Generate sourcemap",
-    "jsExcludeFlatBuffers": "Exclude FlatBuffers code from js bundle",
+    "jsExcludeFlatbuffers": "Exclude FlatBuffers code from js bundle",
     "jsBrowserTarget": "esbuild js browser target",
     "jsNodeTarget": "esbuild js node target",
     "successGenerateFbs": "Successfully generate .fbs file",

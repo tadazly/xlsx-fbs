@@ -24,7 +24,7 @@
     "dataClassSuffix": "表数据类后缀，默认是 Info",
     "legacyMode": "传统打表，只输出原始的 JSON 文件",
     "jsSourcemap": "生成 sourcemap",
-    "jsExcludeFlatBuffers": "打包 js 时排除 FlatBuffers 库代码",
+    "jsExcludeFlatbuffers": "打包 js 时排除 FlatBuffers 库代码",
     "jsBrowserTarget": "js 浏览器构建目标",
     "jsNodeTarget": "js Node构建目标",
     "successGenerateFbs": "成功生成 .fbs 文件",

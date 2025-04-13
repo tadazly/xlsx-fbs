@@ -77,7 +77,7 @@ export async function generateTsMain(tsPath, namespace) {
  * @property {string} namespace
  * @property {number} multiThread
  * @property {boolean} jsSourceMap
- * @property {boolean} jsExcludeFlatBuffers
+ * @property {boolean} jsExcludeFlatbuffers
  * @property {string[]} jsBrowserTarget
  * @property {string[]} jsNodeTarget
  */
@@ -123,7 +123,7 @@ export async function generateJSBundle(tsPath, jsPath, options = {}) {
         nodePaths: [ path.resolve(projectPath, 'node_modules') ],
     }
 
-    if (options.jsExcludeFlatBuffers) {
+    if (options.jsExcludeFlatbuffers) {
         browserBuildOptions.external = [ 'flatbuffers' ];
         nodeBuildOptions.external = [ 'flatbuffers' ];
     }

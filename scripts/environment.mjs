@@ -55,7 +55,7 @@ export const xlsxFbsOptions = {
     minimalInfo: 'info',
     js: false,
     jsSourceMap: false,
-    jsExcludeFlatBuffers: false,
+    jsExcludeFlatbuffers: false,
     jsBrowserTarget: [ 'es2017' ],
     jsNodeTarget: [ 'node20' ],
 }

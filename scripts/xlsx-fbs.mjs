@@ -12,7 +12,6 @@ import { fbsToCode, generateJSBundle, generateTsMain } from './fbsToCode.mjs';
 import { xlsxFbsOptions, getFbsPath, getBinPath, getJsonPath, getGenerateScriptPath, getOrganizedScriptPath } from './environment.mjs';
 import { jsonToBin } from './generateFbsBin.mjs';
 import { encodeHtml, toUpperCamelCase } from './utils/stringUtil.mjs';
-import { spawnAsync } from './utils/processUtil.mjs';
 import { log, error, info, warn, setLogLevel } from './utils/logUtil.mjs';
 
 async function main() {
@@ -60,7 +59,7 @@ async function main() {
         .option('--allow-wild-table', i18n.allowWildTable)
         .option('--multi-thread <number>', i18n.multiThread, (value) => {
             let num = parseInt(value);
-            if (isNaN(num) || num < 1 || num > 16) {
+            if (isNaN(num) || num < 1) {
                 num = xlsxFbsOptions.multiThread;
             }
             return num;
@@ -83,7 +82,7 @@ async function main() {
         })
         .option('--js', 'JavaScript')
         .option('--js-sourcemap', i18n.jsSourcemap)
-        .option('--js-exclude-flatbuffers', i18n.jsExcludeFlatBuffers)
+        .option('--js-exclude-flatbuffers', i18n.jsExcludeFlatbuffers)
         .option('--js-browser-target <target>', i18n.jsBrowserTarget, (value) => {
             return value.split(',');
         })
@@ -226,6 +225,8 @@ async function singleConvertLegacy(input) {
 }
 
 async function batchConvert(input, flatcArgs) {
+    const os = await import('os');
+    const { spawnAsync } = await import('./utils/processUtil.mjs');
     const pLimit = (await import('p-limit')).default;
 
     const startTime = performance.now();
@@ -282,7 +283,8 @@ async function batchConvert(input, flatcArgs) {
         commonArgs.push('--data-class-suffix', xlsxFbsOptions.dataClassSuffix);
     }
 
-    const limit = pLimit(xlsxFbsOptions.multiThread);
+    const maxThreads = Math.min(os.cpus().length, xlsxFbsOptions.multiThread);
+    const limit = pLimit(maxThreads);
     const convertPromises = tablesConfig.map(config => {
         const args = commonArgs.concat();
 
