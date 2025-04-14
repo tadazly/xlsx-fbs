@@ -53,8 +53,8 @@ export async function generateMergeFbsBin(tableConfigs, options, flatcArgs) {
         }));
 
         mergeFieldList.push(fillTemplate(getFbsMergeFieldTemplate(), {
-            TABLE_NAME: tableClassName,
-            TABLE_NAME_SNAKE_CASE: tableNameSnakeCase,
+            TABLE_CLASS: tableClassName,
+            TABLE_CLASS_SNAKE_CASE: tableNameSnakeCase,
             DATA_CLASS_SUFFIX: dataClassSuffix,
             DATA_CLASS_SUFFIX_SNAKE_CASE: dataClassSuffixSnakeCase,
         }));

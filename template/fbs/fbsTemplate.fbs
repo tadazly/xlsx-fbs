@@ -2,12 +2,12 @@
 {{{ FILE_EXTENSION }}}
 namespace {{{ NAMESPACE }}};
 
-table {{{ TABLE_NAME }}}{{{ DATA_CLASS_SUFFIX }}} {
+table {{{ TABLE_CLASS }}}{{{ DATA_CLASS_SUFFIX }}} {
 {{{ FIELDS }}}
 }
 
-table {{{ TABLE_NAME }}} {
-  {{{ TABLE_NAME_SNAKE_CASE }}}_{{{ DATA_CLASS_SUFFIX_SNAKE_CASE }}}s:[{{{ TABLE_NAME }}}{{{ DATA_CLASS_SUFFIX }}}];
+table {{{ TABLE_CLASS }}} {
+  {{{ TABLE_CLASS_SNAKE_CASE }}}_{{{ DATA_CLASS_SUFFIX_SNAKE_CASE }}}s:[{{{ TABLE_CLASS }}}{{{ DATA_CLASS_SUFFIX }}}];
 }
 
-root_type {{{ TABLE_NAME }}};
+root_type {{{ TABLE_CLASS }}};

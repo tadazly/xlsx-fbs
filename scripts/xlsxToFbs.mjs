@@ -232,10 +232,10 @@ export async function xlsxToFbs(filePath, options = {}) {
         parsedResult = await parseWithExcelJS(filePath, options);
     }
 
-    const tableName = toUpperCamelCase(path.basename(filePath, path.extname(filePath)));
+    const tableClass = toUpperCamelCase(path.basename(filePath, path.extname(filePath)));
 
-    const properties = formatProperties(parsedResult.propertyJson, parsedResult.dataJson, options, tableName);
-    const fullDataJson = formatDataJson(parsedResult.dataJson, properties, options, tableName); // 生成一份用于转换 bin 的 json 文件。
+    const properties = formatProperties(parsedResult.propertyJson, parsedResult.dataJson, options, tableClass);
+    const fullDataJson = formatDataJson(parsedResult.dataJson, properties, options, tableClass); // 生成一份用于转换 bin 的 json 文件。
 
     if (options.defaultKey) {
         // 使用 key 关键字必须对数据进行排序
@@ -265,8 +265,8 @@ export async function xlsxToFbs(filePath, options = {}) {
     const fileName = path.basename(filePath);
     const namespace = options.namespace;
 
-    if (checkReservedKeyword(tableName)) {
-        warn(`${i18n.warningReservedKeyword} => tableName: ${tableName}`);
+    if (checkReservedKeyword(tableClass)) {
+        warn(`${i18n.warningReservedKeyword} => tableName: ${tableClass}`);
     }
     if (checkReservedKeyword(namespace)) {
         warn(`${i18n.warningReservedKeyword} => namespace: ${namespace}`);
@@ -274,15 +274,15 @@ export async function xlsxToFbs(filePath, options = {}) {
 
     const fields = properties.map(formatFbsField).join('\n');
     const dataClassSuffix = options.dataClassSuffix;
-    const fbs = formatFbs({ fileName, namespace, tableName, dataClassSuffix, fields, fileExtension });
-    const tableInfosFiled = `${toSnakeCase(tableName)}_${toSnakeCase(dataClassSuffix)}s`;
+    const fbs = formatFbs({ fileName, namespace, tableClass, dataClassSuffix, fields, fileExtension });
+    const tableInfosFiled = `${toSnakeCase(tableClass)}_${toSnakeCase(dataClassSuffix)}s`;
     const xlsxData = {};
     xlsxData[tableInfosFiled] = fullDataJson;
 
     if (options.censoredFields.length && !options.censoredTable) {
         const propertiesCensored = properties.filter(({ field }) => !options.censoredFields.includes(field));
         const fieldsCensored = propertiesCensored.map(formatFbsField).join('\n');
-        const fbsCensored = formatFbs({ fileName, namespace, tableName, dataClassSuffix, fields: fieldsCensored, fileExtension });
+        const fbsCensored = formatFbs({ fileName, namespace, tableClass, dataClassSuffix, fields: fieldsCensored, fileExtension });
 
         const xlsxDataCensored = {};
         xlsxDataCensored[tableInfosFiled] = fullDataJson.map(row => {
@@ -584,13 +584,13 @@ function formatFbsField(property) {
  * @returns 
  */
 function formatFbs(property) {
-    const { fileName, namespace, tableName, dataClassSuffix, fields, fileExtension } = property;
+    const { fileName, namespace, tableClass, dataClassSuffix, fields, fileExtension } = property;
 
     return fillTemplate(getFbsTemplate(), {
         FILE_NAME: fileName,
         NAMESPACE: namespace,
-        TABLE_NAME: tableName,
-        TABLE_NAME_SNAKE_CASE: toSnakeCase(tableName),
+        TABLE_CLASS: tableClass,
+        TABLE_CLASS_SNAKE_CASE: toSnakeCase(tableClass),
         DATA_CLASS_SUFFIX: dataClassSuffix,
         DATA_CLASS_SUFFIX_SNAKE_CASE: toSnakeCase(dataClassSuffix),
         FIELDS: fields,
