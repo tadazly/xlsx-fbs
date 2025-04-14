@@ -44,7 +44,9 @@ export const xlsxFbsOptions = {
     binaryExtension: null,
     censoredFields: [],
     censoredTable: false,
+    cleanOutput: false,
     emptyString: false,
+    disableMergeTable: false,
     enableStreamingRead: false,
     legacyMode: false,
     dataClassSuffix: 'Info',
@@ -66,7 +68,10 @@ export const getTableName = (filePath) => {
 }
 /** .fbs 输出路径 */
 export const getFbsPath = (filePath) => {
-    return path.join(xlsxFbsOptions.output, 'fbs', `${getTableName(filePath)}.fbs`);
+    if (filePath) {
+        return path.join(xlsxFbsOptions.output, 'fbs', `${getTableName(filePath)}.fbs`);
+    }
+    return path.join(xlsxFbsOptions.output, 'fbs');
 }
 /** .bin 输出路径 */
 export const getBinPath = (filePath) => {

@@ -254,7 +254,11 @@ Excel 文件路径或 Excel 所在的文件夹路径，传入文件则转换单�
 
 - `--censored-output` 指定删减表的输出路径，默认是 `${output}_censored/`。
 
+- `--clean-output` 批量打表前，强制清空输出目录，慎用。
+
 - `--empty-string` 表中字符串类型的字段在创建二进制时默认填充空字符串而不是 null。
+
+- `--disable-merge-table`  批量打表时，若在配置表中配置了 `merge` 字段，默认会为这些表生成 `mergeTable` 的代码和二进制，不想要此功能可禁用。
 
 - `--enable-streaming-read` 开启 .xlsx 格式的流式读取，速度快，内存小，中文可能会乱码😠，如果是英文表格，建议启用流式加载来处理更快。
 
@@ -422,7 +426,7 @@ bit_flags|枚举值可组合
 索引表的结构和数据表一样，但是配置以下这些 **功能字段**。
 
 - **tableName**: 需要打表的表名，是文件名不需要后缀，若不配置将不会打表。
-- **merge**: 是否合并到一张大表中，方便预加载。
+- **merge**: 是否合并到一张大表中，方便预加载，标记的表会被合并到 `mergeTable` 中。
 - **censoredTable**: 敏感表，将不会输出到 `output_censored/` 目录中，但是会输出到 `output/` 中。一般用于前后端共用一套打表逻辑时，从前端目录中删除后端表。
 - **censoredFields**: 敏感字段，使用 `,` 连接表中的指定字段（变量名），会删除这些字段后输出到 `output_censored/` 目录中，同时未删减版会输出到 `output/` 中。也是起到将后端使用数据从前端表中移除的作用。
 - **constFields**: 常量字段，会使用表中的指定字段作为常量，并转换到独立的 Xlsx.tableNameConst 类中，配置方式为 `[{"key":"","value":"","desc":""},{"key":"","value":"","desc:"""},...]`。例如想使用 **NPC名** 作为常量获取到 **NPC的id** 时，可以这样配置 `[{"key":"npcName","value":"id","desc":"npcDesc"}]`。

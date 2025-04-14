@@ -261,7 +261,7 @@ export async function xlsxToFbs(filePath, options = {}) {
 
     const fileExtension = options.binaryExtension
         ? `file_extension "${options.binaryExtension.replace(/^\./, '')}";`
-        : undefined;
+        : '';
     const fileName = path.basename(filePath);
     const namespace = options.namespace;
 

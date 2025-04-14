@@ -1,0 +1,9 @@
+{{{ FILE_EXTENSION }}}
+{{{ INCLUDE_LIST }}}
+namespace {{{ NAMESPACE }}};
+
+table MergeTable {
+{{{ MERGE_FIELD_LIST }}}
+}
+
+root_type MergeTable;

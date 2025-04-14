@@ -10,7 +10,7 @@ import { xlsxToFbs } from './xlsxToFbs.mjs';
 import { xlsxToJson } from './xlsxToJson.mjs';
 import { fbsToCode, generateJSBundle, generateTsConst, generateTsMain } from './fbsToCode.mjs';
 import { xlsxFbsOptions, getFbsPath, getBinPath, getJsonPath, getGenerateScriptPath, getOrganizedScriptPath } from './environment.mjs';
-import { jsonToBin } from './generateFbsBin.mjs';
+import { generateMergeFbsBin, jsonToBin } from './generateFbsBin.mjs';
 import { encodeHtml, toUpperCamelCase } from './utils/stringUtil.mjs';
 import { log, error, info, warn, setLogLevel } from './utils/logUtil.mjs';
 
@@ -50,7 +50,9 @@ async function main() {
         })
         .option('--censored-table', i18n.censoredTable)
         .option('--censored-output <path>', i18n.censoredOutput)
+        .option('--clean-output', i18n.cleanOutput)
         .option('--empty-string', i18n.emptyString)
+        .option('--disable-merge-table', i18n.disableMergeTable)
         .option('--enable-streaming-read', i18n.enableStreamingRead)
         .option('--data-class-suffix <suffix>', i18n.dataClassSuffix, (value) => {
             return toUpperCamelCase(value.trim());
@@ -164,8 +166,9 @@ async function singleConvert(input, flatcArgs) {
             return;
         }
 
-        flatcArgs.push(`-o ${getGenerateScriptPath(input)}`);
-        await fbsToCode(fbsOutputPath, flatcArgs);
+        const flatcArgsCopy = flatcArgs.concat();
+        flatcArgsCopy.push(`-o ${getGenerateScriptPath(input)}`);
+        await fbsToCode(fbsOutputPath, flatcArgsCopy);
         log(`${i18n.successGenerateCode}: ${getOrganizedScriptPath()}`);
 
         const jsonOutputPath = getJsonPath(input);
@@ -230,19 +233,29 @@ async function batchConvert(input, flatcArgs) {
     const pLimit = (await import('p-limit')).default;
 
     const startTime = performance.now();
+
+    if (xlsxFbsOptions.cleanOutput) {
+        await fsUtil.deleteFile(xlsxFbsOptions.output);
+        info(`clean output: ${xlsxFbsOptions.output}`);
+        if (xlsxFbsOptions.censoredOutput) {
+            await fsUtil.deleteFile(xlsxFbsOptions.censoredOutput);
+            info(`clean censored output: ${xlsxFbsOptions.censoredOutput}`);
+        }
+    }
+
     const tablesConfig = await getTablesConfig(input);
 
     let censoredTableCount = 0;
     let censoredFieldsCount = 0;
-    /** @type {Map<string, TableConfig>} */
-    const mergeMap = new Map();
+    /** @type {TableConfig[]} */
+    const mergeTableConfigs = [];
     /** @type {TableConfig[]} */
     const constFieldsTableConfigs = [];
 
     for (const config of tablesConfig) {
         if (config.censoredTable) censoredTableCount++;
         if (config.censoredFields.length > 0) censoredFieldsCount++;
-        if (config.merge) mergeMap.set(config.tableName, config);
+        if (config.merge) mergeTableConfigs.push(config);
         if (config.constFields.length > 0) constFieldsTableConfigs.push(config);
     }
 
@@ -311,6 +324,19 @@ async function batchConvert(input, flatcArgs) {
     info(`Batch finished, Convert ${tablesConfig.length} tables, success: ${tablesConfig.length - failedTables.length}, failed: ${failedTables.length}, cost: ${endTime - startTime}ms`);
     if (failedTables.length > 0) {
         error(`Failed tables: ${failedTables.join(', ')}`);
+    }
+
+    if (mergeTableConfigs.length > 0 && !xlsxFbsOptions.disableMergeTable) {
+        await generateMergeFbsBin(mergeTableConfigs, xlsxFbsOptions, flatcArgs.concat());
+        console.log('generate censored merge table ...');
+        if (xlsxFbsOptions.censoredOutput) {
+            const originalOutput = xlsxFbsOptions.output;
+            xlsxFbsOptions.output = xlsxFbsOptions.censoredOutput;
+            const censoredMergeConfigs = mergeTableConfigs.filter(config => !config.censoredTable);
+            await generateMergeFbsBin(censoredMergeConfigs, xlsxFbsOptions, flatcArgs.concat());
+            xlsxFbsOptions.output = originalOutput;
+        }
+        info(`${i18n.successGenerateMergeTable}`);
     }
 
     // 生成 ts 代码的入口文件 main.ts

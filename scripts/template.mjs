@@ -19,6 +19,9 @@ const readTemplate = filePath => {
 //#region fbs
 export const getFbsTemplate = () => readTemplate(path.join(fbsTemplatePath, 'fbsTemplate.fbs'));
 export const getFbsFieldTemplate = () => readTemplate(path.join(fbsTemplatePath, 'fbsFieldTemplate.fbs'));
+export const getFbsIncludeTemplate = () => readTemplate(path.join(fbsTemplatePath, 'fbsIncludeTemplate.fbs'));
+export const getFbsMergeTemplate = () => readTemplate(path.join(fbsTemplatePath, 'fbsMergeTemplate.fbs'));
+export const getFbsMergeFieldTemplate = () => readTemplate(path.join(fbsTemplatePath, 'fbsMergeFieldTemplate.fbs'));
 //#endregion
 
 //#region ts

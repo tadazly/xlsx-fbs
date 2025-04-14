@@ -26,8 +26,12 @@ export async function flatcAsync(flatcOptions, files, binaryFiles) {
  * @param {string} jsonPath 输入的 json 文件
  * @param {string} binPath 输出的二进制文件
  */
-export async function flatcToBinaryAsync(fbsPath, jsonPath, binPath) {
-    await flatcAsync(['--binary', '-o', binPath], [fbsPath, jsonPath]);
+export async function flatcToBinaryAsync(fbsPath, jsonPath, binPath, includePath) {
+    if (includePath) {
+        await flatcAsync(['--binary', '-o', binPath, '-I', includePath], [fbsPath, jsonPath]);
+    } else {
+        await flatcAsync(['--binary', '-o', binPath], [fbsPath, jsonPath]);
+    }
 }
 
 /**
