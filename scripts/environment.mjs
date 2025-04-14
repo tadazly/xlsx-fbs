@@ -53,7 +53,7 @@ export const xlsxFbsOptions = {
     generateFbsHash: false,
     allowWildTable: false,
     propertyOrder: [ 'A', 'B', 'C', 'D', 'E' ],
-    multiThread: 4,
+    multiThread: 6,
     minimalInfo: 'info',
     js: false,
     jsSourceMap: false,

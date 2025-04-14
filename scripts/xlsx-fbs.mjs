@@ -324,8 +324,17 @@ async function batchConvert(input, flatcArgs) {
     info(`Batch finished, Convert ${tablesConfig.length} tables, success: ${tablesConfig.length - failedTables.length}, failed: ${failedTables.length}, cost: ${endTime - startTime}ms`);
     if (failedTables.length > 0) {
         error(`Failed tables: ${failedTables.join(', ')}`);
+        error(i18n.errorNeedAllSuccessToPostProcess);
+        return;
     }
 
+    // 如果 flatc 选项为空，则不生成任何代码
+    if (flatcArgs.length === 0) {
+        console.warn(`${i18n.warningMissingFlatcOptions}`);
+        return;
+    }
+
+    // 生成合并表
     if (mergeTableConfigs.length > 0 && !xlsxFbsOptions.disableMergeTable) {
         await generateMergeFbsBin(mergeTableConfigs, xlsxFbsOptions, flatcArgs.concat());
         console.log('generate censored merge table ...');
@@ -339,53 +348,52 @@ async function batchConvert(input, flatcArgs) {
         info(`${i18n.successGenerateMergeTable}`);
     }
 
+    // 生成 C# 常量代码
     if (flatcArgs.includes('--csharp') && constFieldsTableConfigs.length > 0) {
-        const namespace = xlsxFbsOptions.namespace;
-        const csharpOutputPath = getCSharpPath();
-        const jsonOutputPath = getJsonPath();
-        const csharpConstPaths = await generateCSharpConst(csharpOutputPath, jsonOutputPath, namespace, constFieldsTableConfigs);
-        info(`${i18n.successGenerateTsConst}: ${csharpConstPaths.join('\n')}`);
+        async function generateCSharp() {
+            const namespace = xlsxFbsOptions.namespace;
+            const csharpOutputPath = getCSharpPath();
+            const jsonOutputPath = getJsonPath();
+            const csharpConstPaths = await generateCSharpConst(csharpOutputPath, jsonOutputPath, namespace, constFieldsTableConfigs);
+            info(`${i18n.successGenerateConst}: ${csharpConstPaths.join('\n')}`);
+        }
+        await generateCSharp();
         if (xlsxFbsOptions.censoredOutput) {
             console.log('generate censored csharp ...');
             const originalOutput = xlsxFbsOptions.output;
             xlsxFbsOptions.output = xlsxFbsOptions.censoredOutput;
-            const csharpConstPaths = await generateCSharpConst(csharpOutputPath, jsonOutputPath, namespace, constFieldsTableConfigs);
+            await generateCSharp();
             xlsxFbsOptions.output = originalOutput;
-            info(`${i18n.successGenerateTsConst}: ${csharpConstPaths.join('\n')}`);
         }
     }
     
     // 生成 ts 代码的入口文件 main.ts
     if (flatcArgs.includes('--ts')) {
-        if (failedTables.length === 0) {
-            async function generateTsJs() {
-                const namespace = xlsxFbsOptions.namespace;
-                const tsOutputPath = getTsPath();
-                const jsonOutputPath = getJsonPath();
+        async function generateTsJs() {
+            const namespace = xlsxFbsOptions.namespace;
+            const tsOutputPath = getTsPath();
+            const jsonOutputPath = getJsonPath();
 
-                if (constFieldsTableConfigs.length > 0) {
-                    const tsConstPaths = await generateTsConst(tsOutputPath, jsonOutputPath, namespace, constFieldsTableConfigs);
-                    info(`${i18n.successGenerateTsConst}: ${tsConstPaths.join('\n')}`);
-                }
-
-                const tsMainPath = await generateTsMain(tsOutputPath, namespace);
-                info(`${i18n.successGenerateTsMain}: ${tsMainPath}`);
-
-                // 生成 js 代码
-                if (xlsxFbsOptions.js) {
-                    const jsOutputPath = getJsPath();
-                    await generateJSBundle(tsOutputPath, jsOutputPath, xlsxFbsOptions);
-                    info(`${i18n.successGenerateJsBundle}: ${jsOutputPath}`);
-                }
+            if (constFieldsTableConfigs.length > 0) {
+                const tsConstPaths = await generateTsConst(tsOutputPath, jsonOutputPath, namespace, constFieldsTableConfigs);
+                info(`${i18n.successGenerateConst}: ${tsConstPaths.join('\n')}`);
             }
+
+            const tsMainPath = await generateTsMain(tsOutputPath, namespace);
+            info(`${i18n.successGenerateTsMain}: ${tsMainPath}`);
+
+            // 生成 js 代码
+            if (xlsxFbsOptions.js) {
+                const jsOutputPath = getJsPath();
+                await generateJSBundle(tsOutputPath, jsOutputPath, xlsxFbsOptions);
+                info(`${i18n.successGenerateJsBundle}: ${jsOutputPath}`);
+            }
+        }
+        await generateTsJs();
+        if (xlsxFbsOptions.censoredOutput) {
+            console.log('generate censored ts/js ...');
+            xlsxFbsOptions.output = xlsxFbsOptions.censoredOutput;
             await generateTsJs();
-            if (xlsxFbsOptions.censoredOutput) {
-                console.log('generate censored ts/js ...');
-                xlsxFbsOptions.output = xlsxFbsOptions.censoredOutput;
-                await generateTsJs();
-            }
-        } else {
-            error(`${i18n.errorNeedAllSuccessToGenerateTs}`);
         }
     }
 }
