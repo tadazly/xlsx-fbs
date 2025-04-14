@@ -103,3 +103,7 @@ export const getTsPath = () => {
 export const getJsPath = () => {
     return path.join(getOrganizedScriptPath(), 'js');
 }
+/** csharp 代码输出路径 */
+export const getCSharpPath = () => {
+    return path.join(getOrganizedScriptPath(), 'csharp');
+}

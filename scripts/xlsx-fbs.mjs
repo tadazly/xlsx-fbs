@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 // 👆Help to Link to Global
 
-import { getJsPath, getTsPath, i18n } from './environment.mjs'
+import { getCSharpPath, getJsPath, getTsPath, i18n } from './environment.mjs'
 import { program } from 'commander';
 import fsAsync from 'fs/promises';
 import * as fsUtil from './utils/fsUtil.mjs';
 import path from 'path';
 import { xlsxToFbs } from './xlsxToFbs.mjs';
 import { xlsxToJson } from './xlsxToJson.mjs';
-import { fbsToCode, generateJSBundle, generateTsConst, generateTsMain } from './fbsToCode.mjs';
+import { fbsToCode, generateCSharpConst, generateJSBundle, generateTsConst, generateTsMain } from './fbsToCode.mjs';
 import { xlsxFbsOptions, getFbsPath, getBinPath, getJsonPath, getGenerateScriptPath, getOrganizedScriptPath } from './environment.mjs';
 import { generateMergeFbsBin, jsonToBin } from './generateFbsBin.mjs';
 import { encodeHtml, toUpperCamelCase } from './utils/stringUtil.mjs';
@@ -339,6 +339,22 @@ async function batchConvert(input, flatcArgs) {
         info(`${i18n.successGenerateMergeTable}`);
     }
 
+    if (flatcArgs.includes('--csharp') && constFieldsTableConfigs.length > 0) {
+        const namespace = xlsxFbsOptions.namespace;
+        const csharpOutputPath = getCSharpPath();
+        const jsonOutputPath = getJsonPath();
+        const csharpConstPaths = await generateCSharpConst(csharpOutputPath, jsonOutputPath, namespace, constFieldsTableConfigs);
+        info(`${i18n.successGenerateTsConst}: ${csharpConstPaths.join('\n')}`);
+        if (xlsxFbsOptions.censoredOutput) {
+            console.log('generate censored csharp ...');
+            const originalOutput = xlsxFbsOptions.output;
+            xlsxFbsOptions.output = xlsxFbsOptions.censoredOutput;
+            const csharpConstPaths = await generateCSharpConst(csharpOutputPath, jsonOutputPath, namespace, constFieldsTableConfigs);
+            xlsxFbsOptions.output = originalOutput;
+            info(`${i18n.successGenerateTsConst}: ${csharpConstPaths.join('\n')}`);
+        }
+    }
+    
     // 生成 ts 代码的入口文件 main.ts
     if (flatcArgs.includes('--ts')) {
         if (failedTables.length === 0) {

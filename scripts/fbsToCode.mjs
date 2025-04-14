@@ -4,8 +4,8 @@ import path from 'path';
 import fsAsync from 'fs/promises';
 import { flatcAsync } from './utils/flatcUtil.mjs';
 import { log, warn } from './utils/logUtil.mjs';
-import { toKebabCase, toUpperCamelCase, toSnakeCase, toConstantStyle } from './utils/stringUtil.mjs';
-import { getTsMainTemplate, getTsClassListTemplate, fillTemplate, getTsImportClassTemplate, getTsConstFieldTemplate, getTsConstTemplate } from './template.mjs';
+import { toKebabCase, toUpperCamelCase, toSnakeCase, toTableConstantStyle } from './utils/stringUtil.mjs';
+import { getTsMainTemplate, getTsClassListTemplate, fillTemplate, getTsImportClassTemplate, getTsConstFieldTemplate, getTsConstTemplate, getCSharpConstTemplate, getCSharpConstFieldTemplate } from './template.mjs';
 
 /**
  * 通过 .fbs 文件生成对应的代码
@@ -73,15 +73,26 @@ export async function generateTsMain(tsPath, namespace) {
 }
 
 /**
- * 补充入口文件中的表格常量定义
- * @param {string} tsPath 
- * @param {string} jsonPath 
- * @param {string} namespace 
- * @param {import('./xlsx-fbs.mjs').TableConfig[]} configs 
- */
-export async function generateTsConst(tsPath, jsonPath, namespace, configs) {
-    const namespaceKebabCase = toKebabCase(namespace);
-    const tsScriptsPath = path.join(tsPath, namespaceKebabCase);
+ * 生成任意语言的表格常量定义
+ * @param {string} scriptRoot - 脚本根目录
+ * @param {string} jsonPath - JSON 数据源路径
+ * @param {string} namespace - 命名空间
+ * @param {import('./xlsx-fbs.mjs').TableConfig[]} configs - 表格配置
+ * @param {{
+*   fileExt: string,
+*   getFileName: (namespace: string) => string,
+*   getClassName: (tableName: string) => string,
+*   getFieldKey: (key: string) => string,
+*   getFieldType: (value: any) => string,
+*   getFieldValue: (value: any) => string,
+*   getFieldDesc: (desc: any) => string,
+*   getConstTemplate: () => string,
+*   getFieldTemplate: () => string,
+* }} langOptions - 语言相关模板配置
+*/
+export async function generateLangConst(scriptRoot, jsonPath, namespace, configs, langOptions) {
+    const namespaceStyled = langOptions.getFileName(namespace);
+    const scriptsPath = path.join(scriptRoot, ...namespaceStyled.split('.'));
     const outputList = [];
 
     for (const config of configs) {
@@ -96,36 +107,84 @@ export async function generateTsConst(tsPath, jsonPath, namespace, configs) {
         const constFieldTemplateList = [];
 
         for (const constField of constFields) {
-            let { key, value, desc } = constField;
-            key = toSnakeCase(key);
-            value = toSnakeCase(value);
-            desc = toSnakeCase(desc);
+            let { key: keyField, value: valueField, desc: descField } = constField;
+            keyField = toSnakeCase(keyField);
+            valueField = toSnakeCase(valueField);
+            descField = toSnakeCase(descField);
+
             const fieldMap = new Map();
             for (const info of tableInfos) {
-                if (info[key] !== undefined) {
-                    fieldMap.set(info[key], { value: info[value], desc: info[desc] });
+                if (info[keyField] !== undefined) {
+                    fieldMap.set(info[keyField], { value: info[valueField], desc: info[descField] });
                 }
             }
+
             fieldMap.forEach(({ value, desc }, key) => {
-                constFieldTemplateList.push(fillTemplate(getTsConstFieldTemplate(), {
-                    CONST_KEY: toConstantStyle(key),
-                    CONST_VALUE: value || 0,
-                    CONST_DESC: desc,
-                }));
+                const rendered = fillTemplate(langOptions.getFieldTemplate(), {
+                    CONST_KEY: langOptions.getFieldKey(key),
+                    CONST_VALUE: langOptions.getFieldValue(value),
+                    CONST_TYPE: langOptions.getFieldType(value),
+                    CONST_DESC: langOptions.getFieldDesc(desc),
+                });
+                constFieldTemplateList.push(rendered);
             });
         }
 
-        const tsConstContent = fillTemplate(getTsConstTemplate(), {
-            CLASS_NAME: toUpperCamelCase(tableName),
+        const fileContent = fillTemplate(langOptions.getConstTemplate(), {
+            NAMESPACE: namespace,
+            CLASS_NAME: langOptions.getClassName(tableName),
             CONST_FIELD_LIST: constFieldTemplateList.join('\n\n'),
         });
 
-        const constFileName = toKebabCase(`${tableName}Const`);
-        const tsConstPath = path.join(tsScriptsPath, `${constFileName}.ts`);
-        await writeFile(tsConstPath, tsConstContent, 'utf-8');
-        outputList.push(tsConstPath);
+        const fileName = langOptions.getFileName(`${tableName}Const`);
+        const filePath = path.join(scriptsPath, `${fileName}.${langOptions.fileExt}`);
+        await writeFile(filePath, fileContent, 'utf-8');
+        outputList.push(filePath);
     }
+
     return outputList;
+}
+
+/**
+ * 生成 TypeScript 的表格常量定义
+ * @param {string} tsPath 
+ * @param {string} jsonPath 
+ * @param {string} namespace 
+ * @param {import('./xlsx-fbs.mjs').TableConfig[]} configs 
+ */
+export async function generateTsConst(tsPath, jsonPath, namespace, configs) {
+    return generateLangConst(tsPath, jsonPath, namespace, configs, {
+        fileExt: 'ts',
+        getFileName: toKebabCase,
+        getClassName: toUpperCamelCase,
+        getFieldKey: toTableConstantStyle,
+        getFieldType: () => '', // TS 不用显示写类型在 const 上
+        getFieldValue: val => typeof val === 'string' ? `"${val}"` : val ?? 0,
+        getFieldDesc: desc => desc || '',
+        getConstTemplate: getTsConstTemplate,
+        getFieldTemplate: getTsConstFieldTemplate,
+    });
+}
+
+/**
+ * 生成 C# 的表格常量定义
+ * @param {string} csharpPath 
+ * @param {string} jsonPath 
+ * @param {string} namespace 
+ * @param {import('./xlsx-fbs.mjs').TableConfig[]} configs 
+ */
+export async function generateCSharpConst(csharpPath, jsonPath, namespace, configs) {
+    return generateLangConst(csharpPath, jsonPath, namespace, configs, {
+        fileExt: 'cs',
+        getFileName: toUpperCamelCase,
+        getClassName: toUpperCamelCase,
+        getFieldKey: toTableConstantStyle,
+        getFieldType: val => typeof val === 'string' ? 'string' : 'int',
+        getFieldValue: val => typeof val === 'string' ? `"${val}"` : val ?? 0,
+        getFieldDesc: desc => desc || '',
+        getConstTemplate: getCSharpConstTemplate,
+        getFieldTemplate: getCSharpConstFieldTemplate,
+    });
 }
 
 /**

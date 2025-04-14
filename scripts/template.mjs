@@ -5,7 +5,7 @@ import path from 'path'
 const templatePath = path.join(projectPath, 'template');
 const fbsTemplatePath = path.join(templatePath, 'fbs');
 const tsTemplatePath = path.join(templatePath, 'ts');
-
+const csharpTemplatePath = path.join(templatePath, 'csharp');
 const templateMap = new Map();
 const readTemplate = filePath => {
     if (templateMap.has(filePath)) {
@@ -30,6 +30,11 @@ export const getTsImportClassTemplate = () => readTemplate(path.join(tsTemplateP
 export const getTsClassListTemplate = () => readTemplate(path.join(tsTemplatePath, 'tsClassListTemplate.ts'));
 export const getTsConstTemplate = () => readTemplate(path.join(tsTemplatePath, 'tsConstTemplate.ts'));
 export const getTsConstFieldTemplate = () => readTemplate(path.join(tsTemplatePath, 'tsConstFieldTemplate.ts'));
+//#endregion
+
+//#region csharp
+export const getCSharpConstTemplate = () => readTemplate(path.join(csharpTemplatePath, 'csharpConstTemplate.cs'));
+export const getCSharpConstFieldTemplate = () => readTemplate(path.join(csharpTemplatePath, 'csharpConstFieldTemplate.cs'));
 //#endregion
 
 /**

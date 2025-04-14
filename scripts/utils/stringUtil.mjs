@@ -73,11 +73,11 @@ export function toKebabCase(input) {
 }
 
 /**
- * 转换成常量风格
+ * 转换成表格常量名风格，全大写，下划线分隔
  * @param {string} input
  * @returns {string}
  */
-export function toConstantStyle(input) {
+export function toTableConstantStyle(input) {
     return input
         .replace(/([a-z0-9])([A-Z])/g, '$1_$2')  // camelCase → camel_Case
         .replace(/[-\s]+/g, '_')                 // kebab-case / spaces → _
