@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // 👆Help to Link to Global
 
-import { getCSharpPath, getJsPath, getTsPath, i18n } from './environment.mjs'
+import { getCSharpPath, getJsPath, getTableHashPath, getTsPath, i18n } from './environment.mjs'
 import { program } from 'commander';
 import fsAsync from 'fs/promises';
 import * as fsUtil from './utils/fsUtil.mjs';
@@ -53,6 +53,7 @@ async function main() {
         .option('--clean-output', i18n.cleanOutput)
         .option('--empty-string', i18n.emptyString)
         .option('--disable-merge-table', i18n.disableMergeTable)
+        .option('--disable-incremental', i18n.disableIncremental)
         .option('--enable-streaming-read', i18n.enableStreamingRead)
         .option('--data-class-suffix <suffix>', i18n.dataClassSuffix, (value) => {
             return toUpperCamelCase(value.trim());
@@ -243,7 +244,9 @@ async function batchConvert(input, flatcArgs) {
         }
     }
 
-    const tablesConfig = await getTablesConfig(input);
+    const fullTablesConfig = await getTablesConfig(input);
+    /** @type {TableConfig[]} */
+    const tablesConfig = [];
 
     let censoredTableCount = 0;
     let censoredFieldsCount = 0;
@@ -252,13 +255,32 @@ async function batchConvert(input, flatcArgs) {
     /** @type {TableConfig[]} */
     const constFieldsTableConfigs = [];
 
-    for (const config of tablesConfig) {
+    // 通过判断文件修改时间来判断是否需要打表
+    let tableHash = {};
+    const tableHashPath = getTableHashPath();
+    // hash 文件仅存放在未删减目录
+    if (await fsUtil.checkExist(tableHashPath)) {
+        const tableHashContent = await fsAsync.readFile(tableHashPath, 'utf-8');
+        tableHash = JSON.parse(tableHashContent);
+    }
+
+    for (const config of fullTablesConfig) {
+        if (!xlsxFbsOptions.disableIncremental) {
+            const stat = await fsAsync.stat(config.filePath);
+            if (stat.mtimeMs === tableHash[config.filePath]) {
+                // 跳过未改变的表
+                continue;
+            }
+            tableHash[config.filePath] = stat.mtimeMs;
+        }
+        tablesConfig.push(config);
         if (config.censoredTable) censoredTableCount++;
         if (config.censoredFields.length > 0) censoredFieldsCount++;
         if (config.merge) mergeTableConfigs.push(config);
         if (config.constFields.length > 0) constFieldsTableConfigs.push(config);
     }
 
+    // 如果有删减表或者删减字段，则创建删减打表目录
     if ((censoredFieldsCount > 0 || censoredTableCount > 0) && !xlsxFbsOptions.censoredOutput) {
         const censoredOutput = path.basename(xlsxFbsOptions.output) + '_censored';
         const dirname = path.dirname(xlsxFbsOptions.output);
@@ -296,8 +318,10 @@ async function batchConvert(input, flatcArgs) {
         commonArgs.push('--data-class-suffix', xlsxFbsOptions.dataClassSuffix);
     }
 
+    // 限制最大并发数
     const maxThreads = Math.min(os.cpus().length, xlsxFbsOptions.multiThread);
     const limit = pLimit(maxThreads);
+    // 创建打表任务
     const convertPromises = tablesConfig.map(config => {
         const args = commonArgs.concat();
 
@@ -317,6 +341,7 @@ async function batchConvert(input, flatcArgs) {
             }
         });
     });
+    // 等待所有打表完成
     const results = await Promise.all(convertPromises);
     const failedTables = results.filter(result => !result.isSuccess).map(result => result.tableName);
 
@@ -396,6 +421,9 @@ async function batchConvert(input, flatcArgs) {
             await generateTsJs();
         }
     }
+
+    // 所有后处理完成后，记录文件的修改日期，作为增量打表标志
+    await fsAsync.writeFile(tableHashPath, JSON.stringify(tableHash, null, 2), 'utf-8');
 }
 
 /**

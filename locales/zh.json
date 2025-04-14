@@ -18,6 +18,7 @@
     "allowWildTable": "批量打表时允许打野表（$tables.xlsx中未配置的表）",
     "emptyString": "表中字符串类型的字段在创建二进制时默认填充空字符串而不是 null",
     "disableMergeTable": "禁用批量打表的合并表功能",
+    "disableIncremental": "禁用批量打表的增量打表功能",
     "enableStreamingRead": "开启 .xlsx 格式的流式读取，速度快，内存小，中文可能会乱码",
     "binaryExtension": "输出的二进制文件的扩展名，默认是 .bin",
     "deleteFbs": "转换后删除生成的 .fbs 文件",

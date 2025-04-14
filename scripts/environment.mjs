@@ -47,6 +47,7 @@ export const xlsxFbsOptions = {
     cleanOutput: false,
     emptyString: false,
     disableMergeTable: false,
+    disableIncremental: false,
     enableStreamingRead: false,
     legacyMode: false,
     dataClassSuffix: 'Info',
@@ -106,4 +107,8 @@ export const getJsPath = () => {
 /** csharp 代码输出路径 */
 export const getCSharpPath = () => {
     return path.join(getOrganizedScriptPath(), 'csharp');
+}
+/** 表 hash 文件路径 */
+export const getTableHashPath = () => {
+    return path.join(xlsxFbsOptions.output, 'table_hash.json');
 }

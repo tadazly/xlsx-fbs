@@ -260,6 +260,8 @@ Excel 文件路径或 Excel 所在的文件夹路径，传入文件则转换单�
 
 - `--disable-merge-table`  批量打表时，若在配置表中配置了 `merge` 字段，默认会为这些表生成 `mergeTable` 的代码和二进制，不想要此功能可禁用。
 
+- `--disable-incremental` 批量打表默认开启增量打表，也可以手动关闭。
+
 - `--enable-streaming-read` 开启 .xlsx 格式的流式读取，速度快，内存小，中文可能会乱码😠，如果是英文表格，建议启用流式加载来处理更快。
 
 - `--data-class-suffix <suffix>` 生成的表格数据类名后缀，默认是 `Info`。比如 `item.xlsx` 表生成的每行数据的类名就是 `ItemInfo`；必须避免出现使用类后缀结尾命名的表，比如批量打表时，目录下同时有 `drop.xlsx` 和 `dropInfo.xlsx`，那么第一张表的数据类名会和第二张表的主类名冲突，BOOM💥。
