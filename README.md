@@ -479,3 +479,5 @@ bit_flags|枚举值可组合
 - 使用 flatc 转换 bin 到 json 时，必须设置 --strict-json，否则就爆炸；-o 参数需要放在输入前，二进制文件要放在 -- 后，没有设置 file_indentifier 时，需要传入 --raw-binary。
 
 - exceljs 流式读取较大的中文表格时，会不稳定出现乱码��。
+
+- flatc 生成代码文件夹的命名格式会跟随参数顺序改变，比如命名空间为 `Xlsx`，参数为 `--ts --csharp` 时，输出的代码文件夹为 `xlsx`(kebab)，当参数顺序对调时，文件夹为 `Xlsx`(UpperCamel)。
