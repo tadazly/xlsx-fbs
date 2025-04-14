@@ -77,7 +77,10 @@ export const getBinPath = (filePath) => {
 }
 /** .json 输出路径 */
 export const getJsonPath = (filePath) => {
-    return path.join(xlsxFbsOptions.output, 'json', `${getTableName(filePath)}.json`);
+    if (filePath) {
+        return path.join(xlsxFbsOptions.output, 'json', `${getTableName(filePath)}.json`);
+    }
+    return path.join(xlsxFbsOptions.output, 'json');
 }
 /** flatc 生成的脚本路径 */
 export const getGenerateScriptPath = (filePath) => {

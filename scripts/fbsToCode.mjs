@@ -4,8 +4,8 @@ import path from 'path';
 import fsAsync from 'fs/promises';
 import { flatcAsync } from './utils/flatcUtil.mjs';
 import { log, warn } from './utils/logUtil.mjs';
-import { toKebabCase } from './utils/stringUtil.mjs';
-import { getTsMainTemplate, getTsClassListTemplate, fillTemplate, getTsImportClassTemplate } from './template.mjs';
+import { toKebabCase, toUpperCamelCase, toSnakeCase, toConstantStyle } from './utils/stringUtil.mjs';
+import { getTsMainTemplate, getTsClassListTemplate, fillTemplate, getTsImportClassTemplate, getTsConstFieldTemplate, getTsConstTemplate } from './template.mjs';
 
 /**
  * 通过 .fbs 文件生成对应的代码
@@ -70,6 +70,62 @@ export async function generateTsMain(tsPath, namespace) {
     const tsMainPath = path.join(tsPath, `${namespaceKebabCase}.ts`);
     await writeFile(tsMainPath, tsMainContent, 'utf-8');
     return tsMainPath;
+}
+
+/**
+ * 补充入口文件中的表格常量定义
+ * @param {string} tsPath 
+ * @param {string} jsonPath 
+ * @param {string} namespace 
+ * @param {import('./xlsx-fbs.mjs').TableConfig[]} configs 
+ */
+export async function generateTsConst(tsPath, jsonPath, namespace, configs) {
+    const namespaceKebabCase = toKebabCase(namespace);
+    const tsScriptsPath = path.join(tsPath, namespaceKebabCase);
+    const outputList = [];
+
+    for (const config of configs) {
+        const { tableName, constFields } = config;
+
+        const tableData = await fsAsync.readFile(path.join(jsonPath, `${tableName}.json`), 'utf-8');
+        const tableDataObject = JSON.parse(tableData);
+        /** @type {Record<string, any>[]} */
+        const tableInfos = Object.values(tableDataObject)[0];
+
+        /** @type {string[]} */
+        const constFieldTemplateList = [];
+
+        for (const constField of constFields) {
+            let { key, value, desc } = constField;
+            key = toSnakeCase(key);
+            value = toSnakeCase(value);
+            desc = toSnakeCase(desc);
+            const fieldMap = new Map();
+            for (const info of tableInfos) {
+                if (info[key] !== undefined) {
+                    fieldMap.set(info[key], { value: info[value], desc: info[desc] });
+                }
+            }
+            fieldMap.forEach(({ value, desc }, key) => {
+                constFieldTemplateList.push(fillTemplate(getTsConstFieldTemplate(), {
+                    CONST_KEY: toConstantStyle(key),
+                    CONST_VALUE: value || 0,
+                    CONST_DESC: desc,
+                }));
+            });
+        }
+
+        const tsConstContent = fillTemplate(getTsConstTemplate(), {
+            CLASS_NAME: toUpperCamelCase(tableName),
+            CONST_FIELD_LIST: constFieldTemplateList.join('\n\n'),
+        });
+
+        const constFileName = toKebabCase(`${tableName}Const`);
+        const tsConstPath = path.join(tsScriptsPath, `${constFileName}.ts`);
+        await writeFile(tsConstPath, tsConstContent, 'utf-8');
+        outputList.push(tsConstPath);
+    }
+    return outputList;
 }
 
 /**

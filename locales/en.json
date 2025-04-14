@@ -32,6 +32,7 @@
     "successGenerateJson": "Successfully generate .json file",
     "successGenerateCode": "Successfully generate script",
     "successReadTablesConfig": "Successfully read tables config",
+    "successGenerateTsConst": "Successfully generate ts const code",
     "successGenerateTsMain": "Successfully generate ts entry code",
     "successGenerateJsBundle": "Successfully generate js bundle",
     "warningSignedNumberType": "⚠️ Warning: There are signed numbers in the table, please check the table data",

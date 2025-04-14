@@ -8,7 +8,7 @@ import * as fsUtil from './utils/fsUtil.mjs';
 import path from 'path';
 import { xlsxToFbs } from './xlsxToFbs.mjs';
 import { xlsxToJson } from './xlsxToJson.mjs';
-import { fbsToCode, generateJSBundle, generateTsMain } from './fbsToCode.mjs';
+import { fbsToCode, generateJSBundle, generateTsConst, generateTsMain } from './fbsToCode.mjs';
 import { xlsxFbsOptions, getFbsPath, getBinPath, getJsonPath, getGenerateScriptPath, getOrganizedScriptPath } from './environment.mjs';
 import { jsonToBin } from './generateFbsBin.mjs';
 import { encodeHtml, toUpperCamelCase } from './utils/stringUtil.mjs';
@@ -236,14 +236,14 @@ async function batchConvert(input, flatcArgs) {
     let censoredFieldsCount = 0;
     /** @type {Map<string, TableConfig>} */
     const mergeMap = new Map();
-    /** @type {Map<string, TableConfig>} */
-    const constFieldsMap = new Map();
+    /** @type {TableConfig[]} */
+    const constFieldsTableConfigs = [];
 
     for (const config of tablesConfig) {
         if (config.censoredTable) censoredTableCount++;
         if (config.censoredFields.length > 0) censoredFieldsCount++;
         if (config.merge) mergeMap.set(config.tableName, config);
-        if (config.constFields.length > 0) constFieldsMap.set(config.tableName, config);
+        if (config.constFields.length > 0) constFieldsTableConfigs.push(config);
     }
 
     if ((censoredFieldsCount > 0 || censoredTableCount > 0) && !xlsxFbsOptions.censoredOutput) {
@@ -316,9 +316,16 @@ async function batchConvert(input, flatcArgs) {
     // 生成 ts 代码的入口文件 main.ts
     if (flatcArgs.includes('--ts')) {
         if (failedTables.length === 0) {
-            async function generateCode() {
+            async function generateTsJs() {
                 const namespace = xlsxFbsOptions.namespace;
                 const tsOutputPath = getTsPath();
+                const jsonOutputPath = getJsonPath();
+
+                if (constFieldsTableConfigs.length > 0) {
+                    const tsConstPaths = await generateTsConst(tsOutputPath, jsonOutputPath, namespace, constFieldsTableConfigs);
+                    info(`${i18n.successGenerateTsConst}: ${tsConstPaths.join('\n')}`);
+                }
+
                 const tsMainPath = await generateTsMain(tsOutputPath, namespace);
                 info(`${i18n.successGenerateTsMain}: ${tsMainPath}`);
 
@@ -329,11 +336,11 @@ async function batchConvert(input, flatcArgs) {
                     info(`${i18n.successGenerateJsBundle}: ${jsOutputPath}`);
                 }
             }
-            await generateCode();
+            await generateTsJs();
             if (xlsxFbsOptions.censoredOutput) {
                 console.log('generate censored ts/js ...');
                 xlsxFbsOptions.output = xlsxFbsOptions.censoredOutput;
-                await generateCode();
+                await generateTsJs();
             }
         } else {
             error(`${i18n.errorNeedAllSuccessToGenerateTs}`);
@@ -342,13 +349,20 @@ async function batchConvert(input, flatcArgs) {
 }
 
 /**
+ * @typedef {Object} ConstField
+ * @property {string} key 常量名
+ * @property {string} value 常量值
+ * @property {string} desc 常量描述
+ */
+
+/**
  * @typedef {Object} TableConfig
  * @property {string} tableName 表名
  * @property {string} filePath 表路径
  * @property {boolean} merge 是否将多张表合并到一个二进制文件
  * @property {boolean} censoredTable 是否在 output_censored 目录中剔除该表
  * @property {string[]} censoredFields 需要删除的敏感字段(会单独生成一份阉割版的到另一个文件夹)
- * @property {{key: string, value: string, desc: string}[]} constFields 需要生产常量定义的字段
+ * @property {ConstField[]} constFields 需要生产常量定义的字段
  */
 
 /**

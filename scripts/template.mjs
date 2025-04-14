@@ -16,11 +16,18 @@ const readTemplate = filePath => {
     return template;
 }
 
+//#region fbs
 export const getFbsTemplate = () => readTemplate(path.join(fbsTemplatePath, 'fbsTemplate.fbs'));
 export const getFbsFieldTemplate = () => readTemplate(path.join(fbsTemplatePath, 'fbsFieldTemplate.fbs'));
+//#endregion
+
+//#region ts
 export const getTsMainTemplate = () => readTemplate(path.join(tsTemplatePath, 'tsMainTemplate.ts'));
 export const getTsImportClassTemplate = () => readTemplate(path.join(tsTemplatePath, 'tsImportClassTemplate.ts'));
 export const getTsClassListTemplate = () => readTemplate(path.join(tsTemplatePath, 'tsClassListTemplate.ts'));
+export const getTsConstTemplate = () => readTemplate(path.join(tsTemplatePath, 'tsConstTemplate.ts'));
+export const getTsConstFieldTemplate = () => readTemplate(path.join(tsTemplatePath, 'tsConstFieldTemplate.ts'));
+//#endregion
 
 /**
  * 填充模板
