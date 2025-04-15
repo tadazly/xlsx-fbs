@@ -1,9 +1,9 @@
 // {{{ FILE_NAME }}}
-{{{ FILE_EXTENSION }}}
-namespace {{{ NAMESPACE }}};
 
-table {{{ TABLE_CLASS }}}{{{ DATA_CLASS_SUFFIX }}} {
-{{{ FIELDS }}}
+{{{ FILE_EXTENSION }}}namespace {{{ NAMESPACE }}};
+
+{{{ ENUM_LIST }}}{{{ STRUCT_LIST }}}{{{ SUB_TABLE_LIST }}}table {{{ TABLE_CLASS }}}{{{ DATA_CLASS_SUFFIX }}} {
+{{{ FIELD_LIST }}}
 }
 
 table {{{ TABLE_CLASS }}} {

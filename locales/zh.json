@@ -66,5 +66,11 @@
     "errorFlatcGenerateFailed": "❌ Error: flatc 生成 bin 失败",
     "errorNeedAllSuccessToPostProcess": "❌ Error: 需要所有表都转换成功才能进行后续处理，请先纠正错误",
     "errorTableNameDataClassSuffixConflict": "❌ Error: 表名和数据类后缀冲突，请更换表名或数据类后缀",
-    "errorESBuildFailed": "❌ Error: esbuild 生成 js 代码失败"
+    "errorESBuildFailed": "❌ Error: esbuild 生成 js 代码失败",
+    "errorSubTableSheetMissing": "❌ Error: 子表数据页和属性页不匹配，请检查表格格式是否正确",
+    "errorSubTableNotFound": "❌ Error: 子表不存在，请检查表格格式是否正确",
+    "errorSubTableDataNotFound": "❌ Error: 子表数据不存在",
+    "errorEnumDefaultValueMissing": "❌ Error: 枚举类型缺少默认值，请配置默认值",
+    "errorEnumNotFound": "❌ Error: 枚举类型不存在，请检查表格格式是否正确",
+    "errorStructNotFound": "❌ Error: 结构体类型不存在，请检查表格格式是否正确"
 }

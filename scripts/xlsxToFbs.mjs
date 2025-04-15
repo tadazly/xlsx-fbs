@@ -2,10 +2,10 @@ import fsAsync from 'fs/promises';
 import { i18n } from './environment.mjs';
 import { checkExist } from './utils/fsUtil.mjs';
 import { xlsxFbsOptions } from './environment.mjs';
-import { toUpperCamelCase, toSnakeCase, checkReservedKeyword } from './utils/stringUtil.mjs';
+import { toUpperCamelCase, toSnakeCase, checkReservedKeyword, cleanAtTag, parseAtTag, parsePseudoJSON } from './utils/stringUtil.mjs';
 import path from 'path';
-import { getFbsFieldTemplate, getFbsTemplate, fillTemplate } from './template.mjs';
-import { log, warn } from './utils/logUtil.mjs';
+import { getFbsFieldTemplate, getFbsTemplate, fillTemplate, getFbsEnumTemplate, getFbsStructTemplate, getFbsTableTemplate, getFbsStructFieldTemplate } from './template.mjs';
+import { error, log, warn } from './utils/logUtil.mjs';
 
 /**
  * @typedef {Object} XlsxToFbsOptions
@@ -34,31 +34,57 @@ import { log, warn } from './utils/logUtil.mjs';
  * @property {string} field 字段名
  * @property {string} fbsField 生成的 fbs 字段
  * @property {string} type 字段类型
+ * @property {string} tagType 字段类型若配置了 \@ 则返回标签类型，比如 table, enum, struct
  * @property {string} defaultValue 默认值
  * @property {string} attribute 属性
+ */
+
+/**
+ * @typedef {Object} FbsEnumProperty
+ * @property {string} name 枚举名 UpperCamelCase
+ * @property {string} type 枚举值的类型，scalarTypes 中的类型 byte, ubyte, short ushort, int, uint, long and ulong
+ * @property {Record<string, number>} values 枚举值
+ */
+
+/**
+ * @typedef {Object} FbsStructProperty
+ * @property {string} name 结构体名 UpperCamelCase
+ * @property {Record<string, string>} fields 字段, 字段名 => 字段类型
+ */
+
+/**
+ * @typedef {Object} FbsSubTableProperty
+ * @property {string} name 子表名 UpperCamelCase
+ * @property {boolean} formatted 是否格式化过（字段映射）
+ * @property {Record<string, any>[]} dataJson 数据
+ * @property {FbsFieldProperty[]} fieldProperties 字段属性
  */
 
 /**
  * @typedef {Object} FbsProperty
  * @property {string} fileName 文件名
  * @property {string} namespace 命名空间
- * @property {string} tableName 表名
- * @property {FbsFieldProperty[]} fields 字段
+ * @property {string} tableClass 表名
+ * @property {string} dataClassSuffix 数据类后缀
  * @property {string} fileExtension 文件扩展名
+ * @property {FbsFieldProperty[]} fieldProperties 字段
+ * @property {FbsEnumProperty[]} enumProperties 枚举
+ * @property {FbsStructProperty[]} structProperties 结构体
+ * @property {FbsSubTableProperty[]} subTableProperties 子表
  */
 
 const scalarTypeDefs = {
-    int8:    { min: -128, max: 127, size: 1 },
-    uint8:   { min: 0, max: 255, size: 1 },
-    int16:   { min: -32768, max: 32767, size: 2 },
-    uint16:  { min: 0, max: 65535, size: 2 },
-    int32:   { min: -2147483648, max: 2147483647, size: 4 },
-    uint32:  { min: 0, max: 4294967295, size: 4 },
+    int8: { min: -128, max: 127, size: 1 },
+    uint8: { min: 0, max: 255, size: 1 },
+    int16: { min: -32768, max: 32767, size: 2 },
+    uint16: { min: 0, max: 65535, size: 2 },
+    int32: { min: -2147483648, max: 2147483647, size: 4 },
+    uint32: { min: 0, max: 4294967295, size: 4 },
     float32: { min: -3.4028235e38, max: 3.4028235e38, size: 4 },
-    int64:   { min: -9223372036854775808n, max: 9223372036854775807n, size: 8 },
-    uint64:  { min: 0n, max: 18446744073709551615n, size: 8 },
+    int64: { min: -9223372036854775808n, max: 9223372036854775807n, size: 8 },
+    uint64: { min: 0n, max: 18446744073709551615n, size: 8 },
     float64: { min: -Number.MAX_VALUE, max: Number.MAX_VALUE, size: 8 },
-    bool:    { min: 0, max: 1, size: 1 },
+    bool: { min: 0, max: 1, size: 1 },
 };
 
 /**
@@ -66,32 +92,32 @@ const scalarTypeDefs = {
  */
 const scalarTypes = {
     // 1 byte
-    bool:   scalarTypeDefs.bool,
-    byte:   scalarTypeDefs.int8,
-    ubyte:  scalarTypeDefs.uint8,
-    int8:   scalarTypeDefs.int8,
-    uint8:  scalarTypeDefs.uint8,
-  
+    bool: scalarTypeDefs.bool,
+    byte: scalarTypeDefs.int8,
+    ubyte: scalarTypeDefs.uint8,
+    int8: scalarTypeDefs.int8,
+    uint8: scalarTypeDefs.uint8,
+
     // 2 bytes
-    short:   scalarTypeDefs.int16,
-    ushort:  scalarTypeDefs.uint16,
-    int16:   scalarTypeDefs.int16,
-    uint16:  scalarTypeDefs.uint16,
-  
+    short: scalarTypeDefs.int16,
+    ushort: scalarTypeDefs.uint16,
+    int16: scalarTypeDefs.int16,
+    uint16: scalarTypeDefs.uint16,
+
     // 4 bytes
-    int:     scalarTypeDefs.int32,
-    uint:    scalarTypeDefs.uint32,
-    int32:   scalarTypeDefs.int32,
-    uint32:  scalarTypeDefs.uint32,
-    float:   scalarTypeDefs.float32,
+    int: scalarTypeDefs.int32,
+    uint: scalarTypeDefs.uint32,
+    int32: scalarTypeDefs.int32,
+    uint32: scalarTypeDefs.uint32,
+    float: scalarTypeDefs.float32,
     float32: scalarTypeDefs.float32,
-  
+
     // 8 bytes
-    long:    scalarTypeDefs.int64,
-    ulong:   scalarTypeDefs.uint64,
-    int64:   scalarTypeDefs.int64,
-    uint64:  scalarTypeDefs.uint64,
-    double:  scalarTypeDefs.float64,
+    long: scalarTypeDefs.int64,
+    ulong: scalarTypeDefs.uint64,
+    int64: scalarTypeDefs.int64,
+    uint64: scalarTypeDefs.uint64,
+    double: scalarTypeDefs.float64,
     float64: scalarTypeDefs.float64,
 };
 
@@ -116,7 +142,7 @@ const scalarTypeOrder = [
     'uint16', 'int16',
     'uint32', 'int32',
     'uint64', 'int64',
-  ];
+];
 /**
  * 推导数字类型范围，不考虑浮点数，所以需要在外部判断是否所有数字是整数
  * @param {number} min 最小值
@@ -128,7 +154,7 @@ function inferNumberTypeRange(min, max) {
         const def = scalarTypeDefs[type];
         const minVal = typeof def.min === 'bigint' ? BigInt(min) : Number(min);
         const maxVal = typeof def.max === 'bigint' ? BigInt(max) : Number(max);
-    
+
         if (minVal >= def.min && maxVal <= def.max) {
             return type;
         }
@@ -220,6 +246,7 @@ export async function xlsxToFbs(filePath, options = {}) {
         options.dataClassSuffix = xlsxFbsOptions.dataClassSuffix;
     }
 
+    /** @type {ParseResult} */
     let parsedResult;
     const extname = path.extname(filePath);
     if (extname !== '.xls' && extname !== '.xlsx') {
@@ -232,10 +259,32 @@ export async function xlsxToFbs(filePath, options = {}) {
         parsedResult = await parseWithExcelJS(filePath, options);
     }
 
-    const tableClass = toUpperCamelCase(path.basename(filePath, path.extname(filePath)));
+    // 先构造子表、枚举、结构体
+    const subTableProperties = Array.from(parsedResult.subTableMap.values());
+    const enumProperties = Array.from(parsedResult.enumMap.values());
+    const structProperties = Array.from(parsedResult.structMap.values());
 
-    const properties = formatProperties(parsedResult.propertyJson, parsedResult.dataJson, options, tableClass);
-    const fullDataJson = formatDataJson(parsedResult.dataJson, properties, options, tableClass); // 生成一份用于转换 bin 的 json 文件。
+    const fileName = path.basename(filePath);
+    const namespace = options.namespace;
+    const tableClass = toUpperCamelCase(path.basename(filePath, path.extname(filePath)));
+    const dataClassSuffix = options.dataClassSuffix;
+
+    const fieldProperties = formatProperties(parsedResult.propertyJson, parsedResult.dataJson, options, tableClass);
+
+    /** @type {FbsProperty} */
+    const fbsProperty = {
+        fileName,
+        namespace,
+        tableClass,
+        dataClassSuffix,
+        fileExtension: options.binaryExtension,
+        fieldProperties,
+        enumProperties,
+        structProperties,
+        subTableProperties,
+    }
+
+    const fullDataJson = formatDataJson(parsedResult.dataJson, fbsProperty, options, tableClass); // 生成一份用于转换 bin 的 json 文件。
 
     if (options.defaultKey) {
         // 使用 key 关键字必须对数据进行排序
@@ -259,12 +308,6 @@ export async function xlsxToFbs(filePath, options = {}) {
         });
     }
 
-    const fileExtension = options.binaryExtension
-        ? `file_extension "${options.binaryExtension.replace(/^\./, '')}";`
-        : '';
-    const fileName = path.basename(filePath);
-    const namespace = options.namespace;
-
     if (checkReservedKeyword(tableClass)) {
         warn(`${i18n.warningReservedKeyword} => tableName: ${tableClass}`);
     }
@@ -272,17 +315,17 @@ export async function xlsxToFbs(filePath, options = {}) {
         warn(`${i18n.warningReservedKeyword} => namespace: ${namespace}`);
     }
 
-    const fields = properties.map(formatFbsField).join('\n');
-    const dataClassSuffix = options.dataClassSuffix;
-    const fbs = formatFbs({ fileName, namespace, tableClass, dataClassSuffix, fields, fileExtension });
+    const fbs = formatFbs(fbsProperty);
     const tableInfosFiled = `${toSnakeCase(tableClass)}_${toSnakeCase(dataClassSuffix)}s`;
     const xlsxData = {};
     xlsxData[tableInfosFiled] = fullDataJson;
 
     if (options.censoredFields.length && !options.censoredTable) {
-        const propertiesCensored = properties.filter(({ field }) => !options.censoredFields.includes(field));
-        const fieldsCensored = propertiesCensored.map(formatFbsField).join('\n');
-        const fbsCensored = formatFbs({ fileName, namespace, tableClass, dataClassSuffix, fields: fieldsCensored, fileExtension });
+        const propertiesCensored = fieldProperties.filter(({ field }) => !options.censoredFields.includes(field));
+        const fbsCensored = formatFbs({
+            ...fbsProperty,
+            fieldProperties: propertiesCensored,
+        });
 
         const xlsxDataCensored = {};
         xlsxDataCensored[tableInfosFiled] = fullDataJson.map(row => {
@@ -315,32 +358,124 @@ export async function xlsxToFbs(filePath, options = {}) {
 }
 
 /**
+ * @typedef {Object} ParseResult
+ * @property {any} dataJson 数据页
+ * @property {any} propertyJson 属性页
+ * @property {Map<string, FbsSubTableProperty>} subTableMap 子表
+ * @property {Map<string, FbsEnumProperty>} enumMap 枚举
+ * @property {Map<string, FbsStructProperty>} structMap 结构体
+ */
+
+/**
  * 使用 xlsx 加载完整 xls 文件
  * @param {string} filePath xlsx 文件路径
- * @returns {Promise<XlsxToFbsResult>}
+ * @returns {Promise<ParseResult>}
  */
 async function parseWithXlsx(filePath) {
     const xlsx = (await import('xlsx')).default;
-    
+
     const xlsxFileData = await fsAsync.readFile(filePath);
     const workbook = xlsx.read(xlsxFileData, { type: 'buffer' });
 
-    const dataSheetName = workbook.SheetNames[0];
-    const propertySheetName = workbook.SheetNames[1];
+    const tableName = path.basename(filePath, path.extname(filePath));
 
-    const dataSheet = workbook.Sheets[dataSheetName];
-    const propertySheet = workbook.Sheets[propertySheetName];
+    /** @type {Map<string, FbsSubTableProperty>} */
+    const subTableMap = new Map();
+    /** @type {Map<string, FbsEnumProperty>} */
+    const enumMap = new Map();
+    /** @type {Map<string, FbsStructProperty>} */
+    const structMap = new Map();
+
+    const subTableDataSheetNames = [];
+    const enumSheetNames = [];
+    const structSheetNames = [];
+
+    let dataSheetName = 'Sheet1';
+    let propertySheetName = 'Sheet2';
+
+    // 使用 表名 作为数据页名，使用 属性 作为属性页名
+    for (const sheetName of workbook.SheetNames) {
+        const sheetNameLower = sheetName.toLowerCase();
+        if (sheetNameLower === tableName.toLowerCase()) {
+            dataSheetName = sheetName;
+        } else if (sheetNameLower === 'property' || sheetNameLower === '属性') {
+            propertySheetName = sheetName;
+        } else if (sheetNameLower.startsWith('table@')) {
+            subTableDataSheetNames.push(sheetName);
+        } else if (sheetNameLower.startsWith('enum@')) {
+            enumSheetNames.push(sheetName);
+        } else if (sheetNameLower.startsWith('struct@')) {
+            structSheetNames.push(sheetName);
+        }
+    }
+
+    const dataSheet = workbook.Sheets[dataSheetName] || workbook.Sheets[workbook.SheetNames[0]];
+    const propertySheet = workbook.Sheets[propertySheetName] || workbook.Sheets[workbook.SheetNames[1]];
 
     if (!dataSheet || !propertySheet) {
-        throw new Error(i18n.errorTableInvalid);
+        throw new Error(i18n.errorTableInvalid + ` => ${tableName}`);
     }
 
     const dataJson = xlsx.utils.sheet_to_json(dataSheet, { header: 2 });
     const propertyJson = xlsx.utils.sheet_to_json(propertySheet, { header: 'A' });
 
+    // 处理好主表数据后，接下来分析各种杂七杂八的 table, struct, enum
+
+    // subTable
+    for (const sheetName of subTableDataSheetNames) {
+        const subTableName = sheetName.slice(6);
+        const subTablePropertySheetName = `property@${subTableName}`;
+        const subTableDataSheet = workbook.Sheets[sheetName];
+        const subTablePropertySheet = workbook.Sheets[subTablePropertySheetName];
+
+        if (!subTableDataSheet || !subTablePropertySheet) {
+            throw new Error(i18n.errorSubTableSheetMissing + ` => ${tableName}.${subTableName}`);
+        }
+
+        const subTableDataJson = xlsx.utils.sheet_to_json(subTableDataSheet, { header: 2 });
+        const subTablePropertyJson = xlsx.utils.sheet_to_json(subTablePropertySheet, { header: 'A' });
+
+        subTableMap.set(subTableName, {
+            name: subTableName,
+            dataJson: subTableDataJson,
+            fieldProperties: formatProperties(subTablePropertyJson, subTableDataJson, { propertyOrder: ['A', 'B', 'C', 'D', 'E'] }, `${tableName}.${subTableName}`),
+        });
+    }
+
+    // enum
+    for (const sheetName of enumSheetNames) {
+        const enumName = sheetName.slice(5);
+        const enumSheet = workbook.Sheets[sheetName];
+        const enumJson = xlsx.utils.sheet_to_json(enumSheet, { header: 1 });
+        const enumType = enumJson[0][1]; // 取第一行的类型
+        const enumValues = Object.fromEntries(enumJson.map(row => [row[0], row[2]]));
+
+        enumMap.set(enumName, {
+            name: enumName,
+            type: enumType,
+            values: enumValues,
+        });
+    }
+
+    // struct
+    for (const sheetName of structSheetNames) {
+        const structName = sheetName.slice(7);
+        const structSheet = workbook.Sheets[sheetName];
+        const structJson = xlsx.utils.sheet_to_json(structSheet, { header: 1 });
+        const structFields = Object.fromEntries(structJson.map(row => [row[0], row[1]]));
+
+        structMap.set(structName, {
+            name: structName,
+            fields: structFields,
+        });
+    }
+
     return {
         dataJson,
         propertyJson,
+        subTableMap,
+        enumMap,
+        structMap,
     }
 }
 
@@ -359,28 +494,35 @@ async function parseWithExcelJS(filePath) {
     for await (const worksheetReader of workbookReader) {
         const sheetName = worksheetReader.name;
         sheetNames.push(sheetName);
-        const rows = [];
 
+        const rows = [];
         for await (const row of worksheetReader) {
             rows.push(row.values.slice(1)); // 注意：row.values[0] 是 undefined
         }
 
         sheetData[sheetName] = rows;
+    }
 
-        if (sheetNames.length === 2) {
-            break; // 只读取前两页
+    // 流式加载由于是异步的，会出现 sheetNames 的顺序是乱的情况，则需要排序
+    // 所以必须强制命名正确，才能保证数据正确
+    let dataSheetName = 'Sheet1';
+    let propertySheetName = 'Sheet2';
+
+    // 使用 表名 作为数据页名，使用 属性 作为属性页名
+    for (const sheetName of sheetNames) {
+        const sheetNameLower = sheetName.toLowerCase();
+        if (sheetNameLower === tableName.toLowerCase()) {
+            dataSheetName = sheetName;
+        } else if (sheetNameLower === 'property' || sheetNameLower === '属性') {
+            propertySheetName = sheetName;
         }
     }
 
-    // 有可能出现 sheetNames 的顺序是乱的情况，则需要排序
-    // sheetNames.sort();
-    // console.log(sheetNames);
-
-    const dataRows = sheetData[sheetNames[0]]; // 数据页
-    const propertyRows = sheetData[sheetNames[1]]; // 属性页
+    const dataRows = sheetData[dataSheetName]; // 数据页
+    const propertyRows = sheetData[propertySheetName]; // 属性页
 
     if (!dataRows || !propertyRows) {
-        throw new Error(i18n.errorTableInvalid);
+        throw new Error(i18n.errorTableInvalid + ` => ${tableName}`);
     }
 
     const header = dataRows[0];
@@ -421,7 +563,7 @@ function formatProperties(propertyJson, dataJson, options, tableName) {
         if (!comment || !field || !type) {
             return;
         }
-        
+
         // 都 trim 一下
         comment = comment.trim();
         field = field.trim();
@@ -430,9 +572,13 @@ function formatProperties(propertyJson, dataJson, options, tableName) {
         // field: 直接处理好 fbs 使用的 蛇形命名
         const fbsField = toSnakeCase(field);
 
+        const { tagType, tagName, formatted } = parseAtTag(type);
+
         // type: 预防大小写错误
         if (builtinTypes.includes(type.toLowerCase())) {
             type = type.toLowerCase();
+        } else {
+            type = formatted;
         }
 
         // type: 动态推断类型
@@ -475,6 +621,10 @@ function formatProperties(propertyJson, dataJson, options, tableName) {
                 }
                 defaultValue = 0;
             }
+        } else if (tagType === 'enum') {
+            if (!defaultValue) {
+                error(`${i18n.errorEnumDefaultValueMissing}. table: ${tableName}, field: ${comment}[${field}] => defaultValue: ${defaultValue}`);
+            }
         } else {
             defaultValue = null;
         }
@@ -502,6 +652,7 @@ function formatProperties(propertyJson, dataJson, options, tableName) {
             field,
             fbsField,
             type,
+            tagType,
             defaultValue,
             attribute,
         });
@@ -512,15 +663,79 @@ function formatProperties(propertyJson, dataJson, options, tableName) {
 /**
  * 格式化数据页的数据
  * @param {any} dataJson 
- * @param {FbsFieldProperty[]} properties 
+ * @param {FbsProperty} fbsProperty 
  * @param {XlsxToFbsOptions} options 
  * @param {string} tableName 表名
  * @returns 
  */
-function formatDataJson(dataJson, properties, options, tableName) {
+function formatDataJson(dataJson, fbsProperty, options, tableName) {
+    function formatValue(value, type, tagType, comment, field) {
+        if (typeof value === 'object') {
+            // 如果单元格是对象，则提取文本（ExcelJS特有处理）
+            if (value && typeof value === 'object' && Array.isArray(value.richText)) {
+                return value.richText.map(part => part.text).join('');
+            } else {
+                return value?.toString?.() ?? '';
+            }
+        } else if (typeof value === 'number' && type === 'string') {
+            // 字符串类型必须保证为字符串，否则 flatc 会报错
+            return value.toString();
+        } else if (typeof value === 'string' && (scalarTypes[type] || type === 'number')) {
+             // 标量类型的不需要转换成数字，只需要验证是否能转换为数字。如 int64 类型 "9007199254740993" 存储字符串让 flatc 转换以保留精度
+            const parsedValue = +value;
+            if (isNaN(parsedValue)) {
+                warn(`${i18n.errorInvalidNumberValue}. table: ${tableName}, field: ${comment}[${field}]:[${type}] => value: ${value}`);
+                return 0; // 转换失败，则设置为 0，否则保留原字符串以保留精度
+            }
+        } else if (type.startsWith('[')) {
+            const valueType = type.slice(1, -1);
+            if (tagType === 'struct') {
+                // 结构体直接转换对象
+                return parsePseudoJSON(value);
+            }
+            // 其余当作数组处理
+            return value.toString().split(',').map(val => formatValue(val, valueType, tagType, comment, field));
+        } else if (tagType === 'enum') {
+            // 枚举只检查是否存在，不转换值的类型
+            const enumProperty = fbsProperty.enumProperties.find(({ name }) => name === type);
+            if (!enumProperty) {
+                warn(`${i18n.errorEnumNotFound}. table: ${tableName}, field: ${comment}[${field}] => type: ${type}`);
+                return null;
+            }
+        } else if (tagType === 'struct') {
+            // 结构体只检查是否存在，不转换值的类型
+            const structProperty = fbsProperty.structProperties.find(({ name }) => name === type);
+            if (!structProperty) {
+                warn(`${i18n.errorStructNotFound}. table: ${tableName}, field: ${comment}[${field}] => type: ${type}`);
+                return null;
+            }
+            return parsePseudoJSON(value);
+        } else if (tagType === 'table') {
+            const tableProperty = fbsProperty.subTableProperties.find(({ name }) => name === type);
+            if (!tableProperty) {
+                warn(`${i18n.errorSubTableNotFound}. table: ${tableName}, field: ${comment}[${field}] => type: ${type}`);
+                return null;
+            }
+            if (!tableProperty.formatted) {
+                tableProperty.dataJson = formatDataJson(tableProperty.dataJson, {
+                    ...fbsProperty,
+                    fieldProperties: tableProperty.fieldProperties,
+                }, options, `${tableName}.${type}`);
+                tableProperty.formatted = true;
+            }
+            const data = tableProperty.dataJson.find(item => item.id === +value);
+            if (!data) {
+                warn(`${i18n.errorSubTableDataNotFound}. table: ${tableName}, field: ${comment}[${field}] => type: ${type} => id: ${value}`);
+                return null;
+            }
+            return data;
+        }
+        return value;
+    }
+
     return dataJson.map(row =>
         Object.fromEntries(
-            properties
+            fbsProperty.fieldProperties
                 .filter(({ comment, type }) => {
                     const value = row[comment];
                     if (options.emptyString && type === 'string' && (!value || (typeof value === 'string' && value.trim() === ''))) {
@@ -529,32 +744,79 @@ function formatDataJson(dataJson, properties, options, tableName) {
                     }
                     return value !== undefined && !(typeof value === 'string' && value.trim() === '');
                 })
-                .map(({ comment, field, fbsField, type }) => {
-                    let value = row[comment];
-                    // 如果单元格是对象，则提取文本（ExcelJS特有处理）
-                    if (typeof value === 'object') {
-                        if (value && typeof value === 'object' && Array.isArray(value.richText)) {
-                            value = value.richText.map(part => part.text).join('');
-                        } else {
-                            value = value?.toString?.() ?? '';
-                        }
+                .map(({ comment, field, fbsField, type, tagType }) => {
+                    try {
+                        const value = formatValue(row[comment], type, tagType, comment, field);
+                        return [fbsField, value];
+                    } catch (err) {
+                        error(`Format Value Error! table: ${tableName}, field: ${comment}[${field}] => value: ${row[comment]}`);
+                        // error(err.stack);
+                        return [fbsField, null];
                     }
-                    // 字符串类型必须保证为字符串，否则 flatc 会报错
-                    // 标量类型的不需要转换成数字，只需要验证是否能转换为数字。如 int64 类型 "9007199254740993" 存储字符串让 flatc 转换以保留精度
-                    // 其他类型（如数组和结构）暂未处理
-                    if (type === 'string' && typeof value === 'number') {
-                        value = value.toString();
-                    } else if ((scalarTypes[type] || type === 'number') && typeof value === 'string') {
-                        const parsedValue = +value;
-                        if (isNaN(parsedValue)) {
-                            warn(`${i18n.errorInvalidNumberValue}. table: ${tableName}, field: ${comment}[${field}]:[${type}] => value: ${value}`);
-                            value = 0; // 转换失败，则设置为 0，否则保留原字符串以保留精度
-                        }
-                    }
-                    return [fbsField, value];
                 })
         )
     );
+}
+
+/**
+ * 格式化枚举
+ * @param {FbsEnumProperty} property 
+ * @returns 
+ */
+function formatFbsEnum(property) {
+    const { name, type, values } = property;
+
+    return fillTemplate(getFbsEnumTemplate(), {
+        ENUM_NAME: toUpperCamelCase(name),
+        ENUM_TYPE: type,
+        ENUM_VALUES: Object.entries(values).map(([key, value]) => {
+            const keyUpperCamelCase = toUpperCamelCase(key);
+            if (value === undefined) {
+                return `${keyUpperCamelCase}`;
+            } else if (typeof value !== 'number') {
+                const parsedValue = +value;
+                if (isNaN(parsedValue)) {
+                    return `${keyUpperCamelCase}`;
+                }
+                return `${keyUpperCamelCase} = ${parsedValue}`;
+            }
+            return `${keyUpperCamelCase} = ${value}`;
+        }).join(', '),
+    });
+}
+
+/**
+ * 格式化结构体
+ * @param {FbsStructProperty} property 
+ * @returns 
+ */
+function formatFbsStruct(property) {
+    const { name, fields } = property;
+
+    return fillTemplate(getFbsStructTemplate(), {
+        STRUCT_CLASS: toUpperCamelCase(name),
+        FIELD_LIST: Object.entries(fields).map(([key, value]) =>
+            fillTemplate(getFbsStructFieldTemplate(), {
+                FIELD: toSnakeCase(key),
+                TYPE: value,
+            })
+        ).join('\n'),
+    });
+}
+
+/**
+ * 格式化子表
+ * @param {FbsSubTableProperty} property 
+ * @returns 
+ */
+function formatFbsSubTable(property) {
+    const { name, fieldProperties } = property;
+    const formattedFields = fieldProperties.map(formatFbsField).join('\n');
+
+    return fillTemplate(getFbsTableTemplate(), {
+        TABLE_CLASS: toUpperCamelCase(name),
+        FIELD_LIST: formattedFields,
+    });
 }
 
 /**
@@ -584,17 +846,31 @@ function formatFbsField(property) {
  * @returns 
  */
 function formatFbs(property) {
-    const { fileName, namespace, tableClass, dataClassSuffix, fields, fileExtension } = property;
+    const {
+        fileName, namespace, tableClass, dataClassSuffix, fileExtension,
+        fieldProperties, enumProperties, structProperties, subTableProperties,
+    } = property;
+
+    const fileExtensionString = fileExtension
+        ? `file_extension "${fileExtension.replace(/^\./, '')}";\n\n`
+        : '';
+    const enums = enumProperties.length ? enumProperties.map(formatFbsEnum).join('\n\n') + '\n\n' : '';
+    const structs = structProperties.length ? structProperties.map(formatFbsStruct).join('\n\n') + '\n\n' : '';
+    const subTables = subTableProperties.length ? subTableProperties.map(formatFbsSubTable).join('\n\n') + '\n\n' : '';
+    const fields = fieldProperties.map(formatFbsField).join('\n');
 
     return fillTemplate(getFbsTemplate(), {
         FILE_NAME: fileName,
+        FILE_EXTENSION: fileExtensionString,
         NAMESPACE: namespace,
+        ENUM_LIST: enums,
+        STRUCT_LIST: structs,
+        SUB_TABLE_LIST: subTables,
         TABLE_CLASS: tableClass,
         TABLE_CLASS_SNAKE_CASE: toSnakeCase(tableClass),
         DATA_CLASS_SUFFIX: dataClassSuffix,
         DATA_CLASS_SUFFIX_SNAKE_CASE: toSnakeCase(dataClassSuffix),
-        FIELDS: fields,
-        FILE_EXTENSION: fileExtension,
+        FIELD_LIST: fields,
     });
 }
 

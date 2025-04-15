@@ -160,3 +160,65 @@ export function normalizeStringToAscii(input) {
         .replace(/^_+|_+$/g, '')           // 去掉开头结尾的 _
         .replace(/_+/g, '_');              // 连续下划线合并
 }
+
+/**
+ * 去掉字符串中的 @ 标签
+ * @param {string} input 
+ * @returns {string}
+ */
+export function cleanAtTag(input) {
+    return input.replace(/(\[?)\w+@([^()\[\]]+)(\]?)/, '$1$2$3');
+}
+
+/**
+ * 解析属性中的 @ 标签
+ * @param {string} input 
+ * @returns {{tagType: string, tagName: string, formatted: string}}
+ * @example
+ * console.log(parseWeirdTag("[table@abc]"));
+ * // { type: 'table', name: 'abc', formatted: '[abc]' }
+ */
+export function parseAtTag(input) {
+    const match = input.match(/^\[?([^\[@\]]+)?@([^\[\]]+)\]?$/);
+    if (!match) return { tagType: '', tagName: '', formatted: input };
+
+    const tagType = match[1];
+    const tagName = match[2];
+
+    const formatted = input.startsWith('[') ? `[${tagName}]` : tagName;
+
+    return {
+        tagType,
+        tagName,
+        formatted
+    };
+}
+
+/**
+ * 解析奇怪的对象字符串
+ * @param {string} input 
+ * @returns {Object}
+ */
+export function parsePseudoJSON(input) {
+    let str = input.trim();
+    const isArray = str.startsWith('[') || str.includes('},{');
+    if (isArray && !str.startsWith('[')) {
+        str = `[${str}]`;
+    }
+    if (!isArray && str.startsWith('{') && str.endsWith('}')) {
+        str = str.slice(1, -1);
+    }
+    // 给第一个 key 加引号（如果没有包裹 {}）
+    str = str.replace(/^([a-zA-Z_]\w*)\s*:/, '"$1":');
+    // 给其余 key 加引号（在 , 或 { 后出现的）
+    const quoted = str.replace(/([{,]\s*)([a-zA-Z_]\w*)(\s*:)/g, '$1"$2"$3');
+    const wrapped = isArray ? quoted : `{${quoted}}`;
+
+    try {
+        return JSON.parse(wrapped);
+    } catch (e) {
+        console.error("🥴 无法解析这个鬼：", input);
+        console.error(e.stack);
+        return null;
+    }
+}

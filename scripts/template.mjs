@@ -22,6 +22,10 @@ export const getFbsFieldTemplate = () => readTemplate(path.join(fbsTemplatePath,
 export const getFbsIncludeTemplate = () => readTemplate(path.join(fbsTemplatePath, 'fbsIncludeTemplate.fbs'));
 export const getFbsMergeTemplate = () => readTemplate(path.join(fbsTemplatePath, 'fbsMergeTemplate.fbs'));
 export const getFbsMergeFieldTemplate = () => readTemplate(path.join(fbsTemplatePath, 'fbsMergeFieldTemplate.fbs'));
+export const getFbsStructTemplate = () => readTemplate(path.join(fbsTemplatePath, 'fbsStructTemplate.fbs'));
+export const getFbsStructFieldTemplate = () => readTemplate(path.join(fbsTemplatePath, 'fbsStructFieldTemplate.fbs'));
+export const getFbsEnumTemplate = () => readTemplate(path.join(fbsTemplatePath, 'fbsEnumTemplate.fbs'));
+export const getFbsTableTemplate = () => readTemplate(path.join(fbsTemplatePath, 'fbsTableTemplate.fbs'));
 //#endregion
 
 //#region ts

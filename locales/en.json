@@ -66,5 +66,11 @@
     "errorFlatcGenerateFailed": "❌ Error: Failed to generate bin from fbs",
     "errorNeedAllSuccessToPostProcess": "❌ Error: Need all tables to be converted successfully before post processing, please fix the errors first",
     "errorTableNameDataClassSuffixConflict": "❌ Error: Table name and data class suffix conflict, please change the table name or data class suffix",
-    "errorESBuildFailed": "❌ Error: Failed to generate js bundle from ts"
+    "errorESBuildFailed": "❌ Error: Failed to generate js bundle from ts",
+    "errorSubTableSheetMissing": "❌ Error: Sub-table data sheet and property sheet mismatch, please check if the table format is correct",
+    "errorSubTableNotFound": "❌ Error: Sub-table not found, please check if the table format is correct",
+    "errorSubTableDataNotFound": "❌ Error: Sub-table data not found",
+    "errorEnumDefaultValueMissing": "❌ Error: Enum type missing default value, please configure the default value",
+    "errorEnumNotFound": "❌ Error: Enum type not found, please check if the table format is correct",
+    "errorStructNotFound": "❌ Error: Struct type not found, please check if the table format is correct"
 }

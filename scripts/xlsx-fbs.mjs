@@ -196,7 +196,7 @@ async function singleConvert(input, flatcArgs) {
         const endTime = performance.now();
         info(`Finished: ${input} cost: ${endTime - startTime}ms`);
     } catch (err) {
-        error(err);
+        error(err.stack);
         process.exit(1);
     }
 }
@@ -235,15 +235,6 @@ async function batchConvert(input, flatcArgs) {
 
     const startTime = performance.now();
 
-    if (xlsxFbsOptions.cleanOutput) {
-        await fsUtil.deleteFile(xlsxFbsOptions.output);
-        info(`clean output: ${xlsxFbsOptions.output}`);
-        if (xlsxFbsOptions.censoredOutput) {
-            await fsUtil.deleteFile(xlsxFbsOptions.censoredOutput);
-            info(`clean censored output: ${xlsxFbsOptions.censoredOutput}`);
-        }
-    }
-
     const fullTablesConfig = await getTablesConfig(input);
     /** @type {TableConfig[]} */
     const tablesConfig = [];
@@ -259,7 +250,7 @@ async function batchConvert(input, flatcArgs) {
     let tableHash = {};
     const tableHashPath = getTableHashPath();
     // hash 文件仅存放在未删减目录
-    if (await fsUtil.checkExist(tableHashPath)) {
+    if (!xlsxFbsOptions.cleanOutput && await fsUtil.checkExist(tableHashPath)) {
         const tableHashContent = await fsAsync.readFile(tableHashPath, 'utf-8');
         tableHash = JSON.parse(tableHashContent);
     }
@@ -285,6 +276,15 @@ async function batchConvert(input, flatcArgs) {
         const censoredOutput = path.basename(xlsxFbsOptions.output) + '_censored';
         const dirname = path.dirname(xlsxFbsOptions.output);
         xlsxFbsOptions.censoredOutput = path.join(dirname, censoredOutput);
+    }
+
+    if (xlsxFbsOptions.cleanOutput) {
+        await fsUtil.deleteFile(xlsxFbsOptions.output);
+        info(`clean output: ${xlsxFbsOptions.output}`);
+        if (xlsxFbsOptions.censoredOutput) {
+            await fsUtil.deleteFile(xlsxFbsOptions.censoredOutput);
+            info(`clean censored output: ${xlsxFbsOptions.censoredOutput}`);
+        }
     }
 
     const commonArgs = [];

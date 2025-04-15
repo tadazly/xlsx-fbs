@@ -1,0 +1,3 @@
+table {{{ TABLE_CLASS }}} {
+{{{ FIELD_LIST }}}
+}
