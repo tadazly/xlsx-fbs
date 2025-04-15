@@ -262,7 +262,7 @@ Excel 文件路径或 Excel 所在的文件夹路径，传入文件则转换单�
 
 - `--disable-incremental` 批量打表默认开启增量打表，也可以手动关闭。
 
-- `--enable-streaming-read` 开启 .xlsx 格式的流式读取，速度快，内存小，中文可能会乱码😠，如果是英文表格，建议启用流式加载来处理更快。
+- `--enable-streaming-read` 开启 .xlsx 格式的流式读取，速度快，内存小，中文可能会乱码😠，还有不稳定出现数据变成 sharedString 的 bug，建议先**不要用**，等 ExcelJS 项目修复。
 
 - `--data-class-suffix <suffix>` 生成的表格数据类名后缀，默认是 `Info`。比如 `item.xlsx` 表生成的每行数据的类名就是 `ItemInfo`；必须避免出现使用类后缀结尾命名的表，比如批量打表时，目录下同时有 `drop.xlsx` 和 `dropInfo.xlsx`，那么第一张表的数据类名会和第二张表的主类名冲突，BOOM💥。
 
@@ -511,6 +511,6 @@ bit_flags|枚举值可组合
 
 - 使用 flatc 转换 bin 到 json 时，必须设置 --strict-json，否则就爆炸；-o 参数需要放在输入前，二进制文件要放在 -- 后，没有设置 file_indentifier 时，需要传入 --raw-binary。
 
-- exceljs 流式读取较大的中文表格时，会不稳定出现乱码��。
+- ExcelJS 流式读取较大的中文表格时，会不稳定出现乱码��，还有多个sheet时会不稳定出现 sharedString bug，最终导致 `TypeError: comment.trim is not a function`，真不是我的锅😭，建议暂时不要用流式加载。
 
 - flatc 生成代码文件夹的命名格式会跟随参数顺序改变，比如命名空间为 `Xlsx`，参数为 `--ts --csharp` 时，输出的代码文件夹为 `xlsx`(kebab)，当参数顺序对调时，文件夹为 `Xlsx`(UpperCamel)。

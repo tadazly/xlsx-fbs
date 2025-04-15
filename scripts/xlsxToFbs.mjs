@@ -438,7 +438,12 @@ async function parseWithXlsx(filePath) {
         subTableMap.set(subTableName, {
             name: subTableName,
             dataJson: subTableDataJson,
-            fieldProperties: formatProperties(subTablePropertyJson, subTableDataJson, { propertyOrder: ['A', 'B', 'C', 'D', 'E'] }, `${tableName}.${subTableName}`),
+            fieldProperties: formatProperties(
+                subTablePropertyJson, 
+                subTableDataJson, 
+                { propertyOrder: ['A', 'B', 'C', 'D', 'E'] }, 
+                `${tableName}.${subTableName}`
+            ),
         });
     }
 
@@ -503,6 +508,18 @@ async function parseWithExcelJS(filePath) {
         sheetData[sheetName] = rows;
     }
 
+    const tableName = path.basename(filePath, path.extname(filePath));
+    /** @type {Map<string, FbsSubTableProperty>} */
+    const subTableMap = new Map();
+    /** @type {Map<string, FbsEnumProperty>} */
+    const enumMap = new Map();
+    /** @type {Map<string, FbsStructProperty>} */
+    const structMap = new Map();
+
+    const subTableDataSheetNames = [];
+    const enumSheetNames = [];
+    const structSheetNames = [];
+
     // 流式加载由于是异步的，会出现 sheetNames 的顺序是乱的情况，则需要排序
     // 所以必须强制命名正确，才能保证数据正确
     let dataSheetName = 'Sheet1';
@@ -515,6 +532,12 @@ async function parseWithExcelJS(filePath) {
             dataSheetName = sheetName;
         } else if (sheetNameLower === 'property' || sheetNameLower === '属性') {
             propertySheetName = sheetName;
+        } else if (sheetNameLower.startsWith('table@')) {
+            subTableDataSheetNames.push(sheetName);
+        } else if (sheetNameLower.startsWith('enum@')) {
+            enumSheetNames.push(sheetName);
+        } else if (sheetNameLower.startsWith('struct@')) {
+            structSheetNames.push(sheetName);
         }
     }
 
@@ -542,9 +565,80 @@ async function parseWithExcelJS(filePath) {
         return obj;
     });
 
+    // subTable
+    for (const sheetName of subTableDataSheetNames) {
+        const subTableName = sheetName.slice(6);
+        const subTablePropertySheetName = `property@${subTableName}`;
+        const subTableData = sheetData[sheetName];
+        const subTableProperty = sheetData[subTablePropertySheetName];
+
+        if (!subTableData || !subTableProperty) {
+            throw new Error(i18n.errorSubTableSheetMissing + ` => ${tableName}.${subTableName}`);
+        }
+
+        const subHeader = subTableData[0];
+        const subTableDataJson = subTableData.slice(1).map(row => {
+            const obj = {};
+            row.forEach((val, i) => {
+                obj[subHeader[i]] = val;
+            });
+            return obj;
+        });
+
+        const subTablePropertyJson = subTableProperty.map(row => {
+            const obj = {};
+            row.forEach((val, i) => {
+                obj[String.fromCharCode(65 + i)] = val;
+            });
+            return obj;
+        });
+
+        subTableMap.set(subTableName, {
+            name: subTableName,
+            dataJson: subTableDataJson,
+            fieldProperties: formatProperties(
+                subTablePropertyJson,
+                subTableDataJson,
+                { propertyOrder: ['A', 'B', 'C', 'D', 'E'] },
+                `${tableName}.${subTableName}`
+            )
+        });
+    }
+
+    // enum
+    for (const sheetName of enumSheetNames) {
+        const enumName = sheetName.slice(5);
+        const enumRows = sheetData[sheetName];
+
+        const enumType = enumRows[0]?.[1];
+        const enumValues = Object.fromEntries(enumRows.map(row => [row[0], row[2]]));
+
+        enumMap.set(enumName, {
+            name: enumName,
+            type: enumType,
+            values: enumValues,
+        });
+    }
+
+    // struct
+    for (const sheetName of structSheetNames) {
+        const structName = sheetName.slice(7);
+        const structRows = sheetData[sheetName];
+
+        const fields = Object.fromEntries(structRows.map(row => [row[0], row[1]]));
+
+        structMap.set(structName, {
+            name: structName,
+            fields,
+        });
+    }
+
     return {
         dataJson,
         propertyJson,
+        subTableMap,
+        enumMap,
+        structMap,
     }
 }
 
