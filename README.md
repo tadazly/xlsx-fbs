@@ -1,88 +1,8 @@
-# 🧾 xlsx-fbs / x2f - Excel → FlatBuffers
+# 🧾 xlsx-fbs / x2f - Excel To FlatBuffers
 
 **xlsx-fbs**（a.k.a. `x2f`）是一个将 Excel 表格批量转换为 [FlatBuffers](https://flatbuffers.dev/) 的命令行工具，支持生成 `.fbs` 结构文件和多语言数据类（如 `.ts`、`.cs`、`.h` 等）。适用于客户端/服务端通用表格打包场景，支持自定义字段属性、敏感字段过滤、多线程转换等高级玩法。
 
----
-
-### 🚀 核心功能
-
-- 📄 **支持 .xlsx 表格**，自动识别数据页与属性页  
-- 🔧 **自动生成 .fbs 文件**，字段注释、默认值、deprecated 全都安排  
-- 🛠️ **集成 flatc**，支持输出 TS / C# / C++ 等多语言代码  
-- 🔥 **多线程转换**，适配大规模批量打表需求  
-- 🕵️ **敏感字段过滤**，前后端共用表格不用再吵架  
-- 🧪 **JSON 生成 & 变更对比**，支持版本控制  
-- 🧙 **灵活的字段解析规则**，让你和 Excel 策划都能活下去
-
----
-
-### 📦 使用方式
-
-> 记得先安装 Node.js，可以用 [VOLTA](https://docs.volta.sh/guide/getting-started)。
-
-```bash
-git clone https://github.com/tadazly/xlsx-fbs.git
-cd xlsx-fbs
-
-npm install
-npm link  # 注册全局命令
-
-# 打单张表
-xlsx-fbs item.xlsx --ts --csharp
-
-# 批量打表
-xlsx-fbs ./your_folder --cpp --rust -n GameData -k id
-```
-
----
-
-### 🤹 全局指令别名
-
-```bash
-xlsx-fbs -h   # 全称
-x2f -h        # 简写（同样好用）
-```
-
----
-
-### 📚 配表规范 & 示例
-
-提供详尽的 [配表规范](#数据表-配表规范)，包括字段类型、默认值、属性标注、命名规范等  
-自带 `example/` 示例目录，开箱即用，手把手教你上天打表。
-
----
-
-### 🎒 依赖工具
-
-- `flatc`：FlatBuffers 编译器  
-- `xlsx` / `ExcelJS`：表格读取  
-- `commander`：命令行解析  
-- `chalk`：终端彩色输出  
-- `ts-morph`：TS 抽象语法树魔改工具  
-- `esbuild`：js 极速打包器  
-
----
-
-### 🧩 支持平台
-
-- Node.js ≥ 22.12.0  
-- 操作系统不限（只要你能跑 Node 和 flatc）
-
-
-### 🧙 使用建议
-
-- 推荐配合 `$tables.xlsx` [配置文件](#索引表-批量打表配置)进行批量打表管理  
-- 别乱删属性页字段，不然后果自负  
-- 遇到 FlatBuffers 的坑，看[官方文档](https://flatbuffers.dev/)不是逃避，是自救  
-
----
-
-> “打表交给我，你只管填坑。” —— 来自一只孤独而强迫症的 Excel 精灵的自白
-
----
-
-
-### 👇下面是长篇作文，建议不看。
+> 完整版文档链接 [中文](./README.original.md)
 
 ## 安装 xlsx-fbs 
 
@@ -93,37 +13,34 @@ x2f -h        # 简写（同样好用）
     cd xlsx-fbs
     ```
 
-1. 初始化项目
+1. 初始化项目（跑个 npm install，仪式感不能少）
 
     ```shell
     npm install
     ```
 
-2. 链接全局`xlsx-fbs`指令
+2. 链接全局指令（让终端认识你这个新朋友）
 
     ```shell
     npm link
     ```
 
-3. 开始浪，使用 `-h` 查看所有选项
+3. 测试一下，查看帮助信息（假装你会用）
 
     ```shell
-    # 默认
-    xlsx-fbs -h
-
-    # 简写
-    x2f -h
+    xlsx-fbs -h     # 默认命令
+    x2f -h          # 简写命令
     ```
 
-- 删除链接的全局指令（不想用的时候再用）
+- 想退出这段关系？删掉全局链接即可：
 
     ```shell
     npm unlink -g
     ```
 
-## 快速上手
+## 快速上手：三分钟带你打出第一张表
 
-看来你已经发现项目中有个 `example` 文件夹。
+项目内的 `example/` 文件夹就是你的 playground。
 
 ```
 example/
@@ -131,47 +48,35 @@ example/
 │   └── item.xlsx/        
 └── batchConvert/        # 批量打表示例
     ├── 任意目录/           
-    └── $tables.xlsx     # 索引表-批量打表配置（可省略）
+    └── $tables.xlsx     # 索引表（可选，但建议有）
 ```
 
-- 打单张表
+### 🎯 单张打表
 
-    ```shell
-    # 进入配表所在的文件夹
-    cd example/singleConvert
+```shell
+cd example/singleConvert
+x2f item.xlsx --cpp --rust
+```
 
-    # 打表
-    xlsx-fbs item.xlsx --cpp --rust
-    ```
+### 🎯 批量打表
 
-- 批量打表
+```shell
+cd example/batchConvert
+x2f --ts --csharp
+```
 
-    ```shell
-    # 进入批量打表的根目录
-    cd example/batchConvert
-
-    # 批量打表
-    xlsx-fbs --ts --csharp
-    ```
-
-    根目录有 `$tables.xlsx` 的情况下，只会打索引表中配置了的表。
-
-    接下来可以尝试删除 `$tables.xlsx`，再次执行打表，看看输出有啥区别。
+💡 存在 `$tables.xlsx` 时，只打你配置的表； 🧪 没有它？默认全打。可以自己试试删掉再跑一遍，看会不会变得“更刺激”。
 
 
-## 说明书
+## 说明书：不会用是你的事，我的文档没问题
 
-### 1. 创建符合规范的 Excel
+### 一、 创建符合规范的 Excel
 
-#### 简单示例，完整规范请看[配表规范](#数据表-配表规范)
+#### 示例结构，完整规范请看[配表规范](#数据表-配表规范)
 
-item.xls:
+**item.xls:**
 
-- item: 数据页
-
-    数据页的第一行定义了字段名，与属性页的第一列中定义的字段名对应，顺序可以不同。
-
-    例子：
+- **数据页（item）**：字段名写在第一行，顺序可乱，别名要对。
 
     A|B|C|D|E
     -|-|-|-|-
@@ -180,9 +85,9 @@ item.xls:
     102|钻石|交易稀有物品的货币|99999999|
     1001|HP药|有了他你就能随便浪|9999|99
 
-- property: 属性页
+- **属性页（property）**：结构定义 + 行为规则所在。
 
-    属性页的 A 列定义 **字段名**，B 列定义了字段的 **变量名**，C 列定义字段的 **类型**，D 列定义字段的 **默认值**（可省略），E 列定义字段的 **属性**（可省略），后面几列随你发挥。
+    A - **字段名**，B - **变量名**，C - **类型**，D - **默认值**（可省略），E - **属性**（可省略）。
 
     A|B|C|D|E|F
     -|-|-|-|-|-
@@ -192,6 +97,8 @@ item.xls:
     策划偷偷删掉的|wtf|uint||deprecated|字段就算不用了也最好保留，手动标记废弃
     最大数|max|number|9999||玩家可以拥有的最大数量
     每日上限|dailyLimit|number|||每天最多获得数量限制
+
+    > 字段类型自动识别 number 的具体类型，但别乱用，64-bit 会让你哭。
 
 - 生成的 .fbs 文件
 
@@ -222,145 +129,105 @@ item.xls:
     root_type Item;
     ```
 
-    **注意：**.fbs 中的字段名变成了 `snake_case` 命名，这是其规范，最终代码中的字段名会根据代码规范生成对应的格式，比如 ts 中是 `lowerCamelCase` 而 C# 中是 `UpperCamelCase` 。
+    > ⚠️ 自动转为 snake_case 命名，最终代码按语言规范生成。
 
-### 2. 使用 `xlsx-fbs` 转换
+### 二、 使用 `xlsx-fbs` 转换
 
 ```shell
 xlsx-fbs [ input ] [ flatc options ] [ xlsx-fbs options ]
 ```
 
-#### input 选项
+#### input 输入路径
 
-Excel 文件路径或 Excel 所在的文件夹路径，传入文件则转换单张表，传入路径则 **递归** 转换文件夹下的所有表，不传默认转换 `xlsx-fbs` 执行路径下的所有表。 
+- 文件：转换单张表
 
-#### flatc 选项
+- 文件夹：递归转换所有表
 
-可转换的代码语言和 **flatc** 的完整参数列表请参考 [FlatBuffers 文档](https://flatbuffers.dev/flatc/)，xlsx-fbs 会将参数传递给 **flatc**。以下列举一些常用的：
+- 不传：默认转当前目录下所有表
 
-- `--cpp --csharp --ts --java` 等，生成对应语言的代码。
+#### flatc 编译选项
 
-#### xlsx-fbs 选项
+参考 [FlatBuffers 文档](https://flatbuffers.dev/flatc/)，常见的：
 
-- `-o, --output <path>` 输出路径，默认输出到执行 `xlsx-fbs` 的文件夹的 `output/` 下。
+- `--cpp --csharp --ts --java --rust`
 
-- `-n, --namespace <name>` 生成代码的命名空间，默认是 `Xlsx`。
+#### xlsx-fbs 自定义选项
 
-- `-k, --default-key <field>` 默认不使用 key 属性，传入后，若表里没有设置 key 属性的字段，则使用该字段作为 key。
+参数|用途
+-|-
+`-o, --output <path>` | 输出路径，默认 `output/`
+`-n, --namespace <name>` | 命名空间，默认 `Xlsx`
+`-k, --default-key <field>` | 若表中未配置 key 属性，使用传入的字段作为 key 属性
+`--binary-extension <ext>` | 输出二进制的后缀，默认 bin
+`--censored-fields <fields>` | 删除字段，生成删减版
+`--censored-output <path>` | 自定义删减版输出路径，默认`${output}_censored/`
+`--clean-output` | 批量打表前，清空输出目录，慎用。
+`--empty-string` | string 用空串代替 null
+`--disable-merge-table` | 禁用索引表中的 `merge` 功能
+`--disable-incremental` | 禁用增量打表
+`--enable-streaming-read` | 开启流式读取，慎用！乱码预警
+`--data-class-suffix <suffix>` | 表格数据类名后缀，默认 `Info`
+`--multi-thread <number>` | 多线程数量，默认 6
+`--minimal-info` | 控制输出日志等级，默认 `info`
+`--allow-wild-table` | 允许打野表（索引表中未配置的表）
+`--property-order` | [属性页顺序](属性页的默认值)自定义，如 `AABDE`
+`--js`/`--js-sourcemap` | 输出 JS 代码及映射
+`--js-exclude-flatbuffers` | 排除 flatbuffers 代码
+`--js-browser-target/ <target>` | [JS 编译目标](https://esbuild.github.io/api/#target)，默认 `es2017`
+`--js-node-target <target>` | Node编译目标，默认 `node20`。
 
-- `--binary-extension <ext>` 输出的二进制文件的后缀名，默认输出 bin，你爱发疯可以填 wtf.bytes。
-
-- `--censored-fields <fields>` 删减字段，使用 `,` 连接，会生成一份删减版本的文件到 `output_censored/` 目录。（注意不是删除数据，而是把整个字段从 .fbs 中删除！）
-
-- `--censored-output` 指定删减表的输出路径，默认是 `${output}_censored/`。
-
-- `--clean-output` 批量打表前，强制清空输出目录，慎用。
-
-- `--empty-string` 表中字符串类型的字段在创建二进制时默认填充空字符串而不是 null。
-
-- `--disable-merge-table`  批量打表时，若在配置表中配置了 `merge` 字段，默认会为这些表生成 `mergeTable` 的代码和二进制，不想要此功能可禁用。
-
-- `--disable-incremental` 批量打表默认开启增量打表，也可以手动关闭。
-
-- `--enable-streaming-read` 开启 .xlsx 格式的流式读取，速度快，内存小，中文可能会乱码😠，还有不稳定出现数据变成 sharedString 的 bug，建议先**不要用**，等 ExcelJS 项目修复。
-
-- `--data-class-suffix <suffix>` 生成的表格数据类名后缀，默认是 `Info`。比如 `item.xlsx` 表生成的每行数据的类名就是 `ItemInfo`；必须避免出现使用类后缀结尾命名的表，比如批量打表时，目录下同时有 `drop.xlsx` 和 `dropInfo.xlsx`，那么第一张表的数据类名会和第二张表的主类名冲突，BOOM💥。
-
-- `--multi-thread <number>` 批量打表时的多线程数量，默认 4 。
-
-- `--minimal-info` 最小化输出信息，可选范围 `log < info < warn < error`，默认 `info`。
-
-- `--allow-wild-table` 批量打表时允许打野表（$tables.xlsx中未配置的表）。慎用，确保不会把奇怪的东西打出来。
-
-- `--property-order` 自定义属性页顺序，默认 ABCDE。可根据实际表格中列的顺序来定义，例如想直接用表格属性页中 A 列的字段名作为变量名，B列已经定义了类型，并且 C 列被注释占用，那就传入 AABDE，顺序与 **字段名->变量名->类型->默认值->属性** 对应即可。
-
-    >    属性页的默认值：
-    >    - A: 数据页的字段名（可随意填写，和属性页做映射关系，并作为生成的 .fbs 中的字段名注释）
-    >    - B: 字段对应的变量名（对应 .fbs 中的 field，和代码中的成员字段名）
-    >    - C: 字段对应的类型（`short`, `int`, `string` ... 等）
-    >    - D: 字段的默认值 （对应 .fbs 中的默认值）
-    >    - E: 字段的属性 （对应 .fbs 中的 Attribute）
-
-- `--js` 打包 js。 浏览器用输出的 `.js`, node 用 `.cjs.js` 或 `.esm.js`。 “💩在 JS 里用 FlatBuffers？你是不是疯了？你还好吧？”
-
-- `--js-sourcemap`
-
-- `--js-exclude-flatbuffers` 打包的 js 中移除 flatbuffers 代码，确保在外部正确引入。
-
-- `--js-browser-target <target>` 默认 `es2017`，可以传哪些[自己研究](https://esbuild.github.io/api/#target)，使用 `,` 连接，比如 `--js-browser-target "es2020,chrome58,edge16,firefox57"`
-
-- `--js-node-target <target>` 默认 `node20`。
-
-    > PS: 本项目生成 js 是为脚本构建二进制做准备。 
+#### 属性页的默认值：
+>    - A: 数据页的字段名（可随意填写，和属性页做映射关系，并作为生成的 .fbs 中的字段名注释）
+>    - B: 字段对应的变量名（对应 .fbs 中的 field，和代码中的成员字段名）
+>    - C: 字段对应的类型（`short`, `int`, `string` ... 等）
+>    - D: 字段的默认值 （对应 .fbs 中的默认值）
+>    - E: 字段的属性 （对应 .fbs 中的 Attribute）
 
 #### 示例
 
-- 转换单张表：
+```
+# 单表
+x2f item.xlsx --ts -n xls -o ./output
 
-    ```shell
-    xlsx-fbs item.xlsx --cpp --csharp [-o /path/to/output]
-    ```
+# 批量
+x2f ./example/batchConvert --csharp -n CustomData -k id -o ./all --censored-output ./censored
+```
 
-- 批量转换目录下的表，使用 **xls** 作为命名空间， 使用 **id** 字段作为二分查找的 key：
+### 三、输出目录结构
 
-    ```shell
-    xlsx-fbs /path/to/xlsx/files --csharp --typescript -n xls -k id [-o /path/to/output]
-    ```
-
-### 3. 输出文件
-
-输出的目录结构如下：
 
 ```
 output[_censored]/
-├── fbs/         # 生成的 .fbs 文件
-├── bin/         # 生成的二进制文件
-├── scripts/     # 生成的代码文件
-│   ├── cpp/     # C++ 代码
-│   ├── csharp/  # C# 代码
-│   └── ts/      # TypeScript 代码
-└── json/        # 由二进制文件生成的 json
+├── fbs/         # .fbs 文件
+├── bin/         # 二进制文件
+├── scripts/     # 各语言代码
+│   ├── cpp/
+│   ├── csharp/
+│   └── ts/
+└── json/        # JSON 文件（由 bin 转）
 ```
 
-# 附录
+## 附录
 
-## 数据表-配表规范
+### 数据表命名规范
 
-### 表名规范
+- 文件名用英文小驼峰，不要 Emoji（我真的要说这个吗）
 
-- 表名请用英文字符，最好小驼峰（lowerCamel）命名，**不要用** 中文字符、特殊符号 和 Emoji💩。
+- 表名就是类名，所以别整些 C++ 关键字出来
 
-- 表名会被用来生成类名，所以不要出现任何编程语言相关的保留关键字。
+### 属性页注意事项
 
-### 数据页规范
+- 字段顺序 = .fbs 字段顺序，不能随便改！
 
-- 数据页 Sheet 名称使用 **表名**
+- 新增字段只能加在最后一行（历史的惯性）
 
-- 数据页没有太多限制，字段的顺序可以与属性页不同，只需要字段名和属性页对应、类型符合规范即可。剩下的就让策划背锅。
+- 想删除字段？请标记 `deprecated`，别直接删。
 
-- 废弃的字段数据页中可以删除该列。
+- 改了字段名？记得同步改代码。
 
-### 属性页规范
+- 改类型/默认值？自己承担后果。
 
-- 属性页 Sheet 名称使用 **property** 或者 **属性**
-
-以下规范基于 FlatBuffers [Schema (.fbs) 规则](https://flatbuffers.dev/evolution/#rules)：
-
-- 属性页定义的字段顺序决定了 .fbs 文件中的字段顺序，所以不能随意更改，也不能随意删除！除非你知道自己在做什么😈
-
-- 新增的字段必须添加在属性页中的最后一行，理由同上。
-
-- 废弃的字段不能删除，乖乖在 **属性** 列填上 `deprecated`。
-
-- 字段名和变量名可以改，你得记得把代码也更新了。
-
-- 字段类型尽量别动，改完老数据可能爆炸。
-
-- 别乱改默认值，一条有用的建议。
-
-PS: 如果能保证上线的代码与数据一致，那你应该知道可以做些什么。
-
-#### 类型
+### 支持类型（标量、向量、结构、子表、枚举）
 
 字段的 **类型**（ C 列），最好填写 *明确的类型*，如：
 
@@ -375,59 +242,25 @@ PS: 如果能保证上线的代码与数据一致，那你应该知道可以做�
     32-bit|int (int32)|uint (uint32)|float (float32)
     64-bit|long (int64)|ulong (uint64)|double (float64)
 
-    **取值范围**：
+    不要轻易碰 64-bit 类型，除非你想让数据爆炸。
 
-    8-bit:
-    - byte: -128 ~ 127
-    - bool: true / false
-    - ubyte: 0 ~ 255
+- 枚举：使用 `enum@EnumName` 作为类型名称，**必须配置 默认值**。
 
-    16-bit:
-    - short: -32,768 ~ 32,767
-    - ushort: 0 ~ 65,535
+- 结构体：使用 `struct@StructName` 作为类型名称，用 `{ key: value, key: [value] … }` 这种 json 结构来填写数据，填写时必须按照结构定义，**完整填写数据**。
 
-    32-bit:
-    - int: -2,147,483,648 ~ 2,147,483,647
-    - uint: 0 ~ 4,294,967,295
-    - float: ±1.5×10^-45 ~ ±3.4×10^38
-
-    64-bit:
-    - long: -9,223,372,036,854,775,808 ~ 9,223,372,036,854,775,807
-    - ulong: 0 ~ 18,446,744,073,709,551,615
-    - double: ±5.0×10^-324 ~ ±1.7×10^308
-
-    尽量不要碰 64-bit 的类型，除非你想让数据爆炸。
-
-> 下面是一些比较复杂的类型，枚举（enum）、结构体（struct）和 结构表（子表）（table），建议参考 `example/singleConvert/item.xlsx` 中的用法作为比较。
-
-- 枚举：使用 `enum@EnumName` 作为类型名称，**必须配置 默认值**。在同名 Sheet 下配置枚举定义：
-    
-    - 第一列是枚举名，第二列是类型， 第三列是枚举值（可省略）
-    - 类型仅支持整形标量 `byte, ubyte, short, ushort, int, uint, long, ulong`
-    - 枚举值省略的情况下，默认第一个值为0，后面的值为前一个值加一
-    - 枚举一般只增不减，类型也最好不要随意更改
-
-- 结构体：使用 `struct@StructName` 作为类型名称，用 `{ key: value, key: [value] … }` 这种 json 结构来填写数据，填写时必须按照结构定义，**完整填写数据**。在同名 Sheet 下配置结构定义：
-    
-    - 第一列是字段名，第二列是类型
-    - 类型仅支持标量和定长数组，如 `int, [float] ...`
-
-- 结构表：使用 `table@SubTableName` 作为类型名称，配法和和上面的数据页、属性页规范一致，在数据页中填写结构表中的索引 id。在同名 Sheet 下配置结构定义，在 `property@SubTableName` 中配置属性。
-
-    - 结构表的属性页的顺序固定为 ABCDE, 不可更改。
-    - 结构表必须有 **id** 字段，用于在数据页索引。
+- 结构表：使用 `table@SubTableName` 作为类型名称，配法和和上面的数据页、属性页规范一致，在数据页中填写结构表中的索引 id。
 
 - 向量：任何以上类型的向量（用 `[type]` 表示），向量中元素的数量任意。
 
-    - 向量长度任意，用逗号分隔。如 `6,6,6`
-    - 结构表向量 `[table@SubTable]`，请填写结构表中对应的索引id。如 `1,2,3,4,5`
-    - 结构体向量 `[struct@TestStruct]`，请完整填写结构体数据，用逗号分隔。如 `{x:3, y:2, z:1,v:[1,3,4]},{x:1,y:1,z:1,v:[1,2,3]}`
 
 > #### 关于类型推导
 >
 > 对于字段的值是 **数值**，当使用 *不明确的类型* `number` 时，由程序判断 **标量** 类型。枚举、结构体 **不支持**自动类型推导。
 >
 
+#### uint64/int64 精度问题
+
+在表格中使用文本格式存储大数字，如 9007199254740993。
 
 #### 默认值
 
@@ -435,7 +268,7 @@ PS: 如果能保证上线的代码与数据一致，那你应该知道可以做�
 
 **重要：** 只有 **标量** 和 **枚举** 能设置默认值，你猜是为什么。
 
-#### 属性
+### 属性
 
 字段的 **属性**（ E 列），请参考[官方文档](https://flatbuffers.dev/schema/#attributes)，如果填了会补充在 .fbs 文件中字段的右边，一般用的上的就 `deprecated` 和 `required`。常见的如下：
 
@@ -448,48 +281,30 @@ id|自定义字段编号（用于版本兼容）
 force_align|强制对齐
 bit_flags|枚举值可组合
 
-## uint64/int64 精度问题
+### 索引表 $tables.xlsx 配置项
 
-在表格中存储诸如 9007199254740993 的数字时会丢失精度，可以将单元格设置为文本以保留精度。
+字段名|说明
+-|-
+**tableName** | 表名（不填就不打）
+**merge** | 是否合并到大表`mergeTable`，方便预加载
+**censoredTable** | 敏感表（不输出删减版）
+**censoredFields** | 敏感字段（只删字段）
+**constFields** | 导出常量类（支持 TS / C#）
 
-## 索引表-批量打表配置
-
-批量打表时，在传入的路径放置 `$tables.xlsx` 可用于配置，哪些表要打和一些指定的行为。
-
-索引表的结构和数据表一样，但是配置以下这些 **功能字段**。
-
-- **tableName**: 需要打表的表名，是文件名不需要后缀，若不配置将不会打表。
-- **merge**: 是否合并到一张大表中，方便预加载，标记的表会被合并到 `mergeTable` 中。
-- **censoredTable**: 敏感表，将不会输出到 `output_censored/` 目录中，但是会输出到 `output/` 中。一般用于前后端共用一套打表逻辑时，从前端目录中删除后端表。
-- **censoredFields**: 敏感字段，使用 `,` 连接表中的指定字段（变量名），会删除这些字段后输出到 `output_censored/` 目录中，同时未删减版会输出到 `output/` 中。也是起到将后端使用数据从前端表中移除的作用。
-- **constFields**: 常量字段，会使用表中的指定字段作为常量，值类型仅支持`int`或`string`，并转换到独立的 Xlsx.tableNameConst 类中，配置方式为 `[{"key":"","value":"","desc":""},{"key":"","value":"","desc:"""},...]`。例如想使用 **NPC名** 作为常量获取到 **NPC的id** 时，可以这样配置 `[{"key":"npcName","value":"id","desc":"npcDesc"}]`。
-
-当没有在批量打表目录中放置 $tables.xlsx 时，会默认打目录下的所有表。
-
-常量定义代码仅实现了 C# 和 TS。
-
-## 关于 output_censored 目录
-
-- 打单张表时，若传入 `--censored-fields <fields>` 时，会同时生成 **删减版** 和 **完整版** 两份输出文件，分别对应在 `output_censored/` 和 `output/` 目录中。
-
-- 批量打表时，若 $tables.xlsx 中配置了 `censoredTable` 或 `censoredFields` 字段，会同时生成 **删减版** 和 **完整版** 两份输出文件，其中标记 `censoredTable` 的表，将 **不会** 输出到 `output_censored/` 目录中，只会输出到 `output/` 中。
-
-- 没有配置 `censoredTable` 或 `censoredFields` 字段，只会输出一份 `output/`。
+> 没配 `$tables.xlsx`？那就全打，祝你好运。
 
 
 ## 依赖库
 
-### Node.js v22.12.0+
+### 环境要求
 
-- 没有安装过的朋友，何不试试 [VOLTA](https://docs.volta.sh/guide/getting-started) 进行 node 版本管理。
+- Node.js >= 22.12.0, 推荐配合 [VOLTA](https://docs.volta.sh/guide/getting-started) 使用。
 
-### FlatBuffer
+- FlatBuffers CLR 工具 `flatc`
 
-- **flatc**: FlatBuffers 的官方编译器，专门用来把 .fbs 文件变成一堆你不愿维护的代码。
+> 项目里带的编译工具跑不动？自己去 [FlatBuffers Releases](https://github.com/google/flatbuffers/releases) 下载，放到 `bin` 文件夹。
 
-> 如果仓库里的二进制你跑不动，请参照文档[自行编译](https://flatbuffers.dev/building/)或者下载编译好的[二进制文件](https://github.com/google/flatbuffers/releases)。
-
-### NPM
+### 核心依赖
 
 - [chalk](https://www.npmjs.com/package/chalk): 终端搞颜色。
 
@@ -505,12 +320,6 @@ bit_flags|枚举值可组合
 
 - [xlsx](https://www.npmjs.com/package/xlsx): 一口气吃完内存的表格砖家。
 
-## 坑点记录
+---
 
-- flatc 参数，如 --allow-non-utf8，--natural-utf8 只在二进制转 json 时有用，--force-empty 更是一点用都没，需要在构造二进制时自己处理该逻辑。
-
-- 使用 flatc 转换 bin 到 json 时，必须设置 --strict-json，否则就爆炸；-o 参数需要放在输入前，二进制文件要放在 -- 后，没有设置 file_indentifier 时，需要传入 --raw-binary。
-
-- ExcelJS 流式读取较大的中文表格时，会不稳定出现乱码��，还有多个sheet时会不稳定出现 sharedString bug，最终导致 `TypeError: comment.trim is not a function`，真不是我的锅😭，建议暂时不要用流式加载。
-
-- flatc 生成代码文件夹的命名格式会跟随参数顺序改变，比如命名空间为 `Xlsx`，参数为 `--ts --csharp` 时，输出的代码文件夹为 `xlsx`(kebab)，当参数顺序对调时，文件夹为 `Xlsx`(UpperCamel)。
+> 文档写完了，但你要是不看，那就没人能救你。
