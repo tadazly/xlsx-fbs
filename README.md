@@ -163,7 +163,7 @@ xlsx-fbs [ input ] [ flatc options ] [ xlsx-fbs options ]
 `-o, --output <path>` | 输出路径，默认 `output/`
 `-n, --namespace <name>` | 命名空间，默认 `Xlsx`
 `-k, --default-key <field>` | 若表中未配置 key 属性，使用传入的字段作为 key 属性
-`--binary-extension <ext>` | 输出二进制的后缀，默认 bin
+`--binary-extension <ext>` | 输出二进制的后缀，默认 `bin`
 `--censored-fields <fields>` | 删除字段，生成删减版
 `--censored-output <path>` | 自定义删减版输出路径，默认`${output}_censored/`
 `--clean-output` | 批量打表前，清空输出目录，慎用。
@@ -173,13 +173,13 @@ xlsx-fbs [ input ] [ flatc options ] [ xlsx-fbs options ]
 `--enable-streaming-read` | 开启流式读取，慎用！乱码预警
 `--data-class-suffix <suffix>` | 表格数据类名后缀，默认 `Info`
 `--multi-thread <number>` | 多线程数量，默认 6
-`--minimal-info` | 控制输出日志等级，默认 `info`
+`--minimal-info <level>` | 控制输出日志等级，默认 `info`
 `--allow-wild-table` | 允许打野表（索引表中未配置的表）
-`--property-order` | [属性页顺序](属性页的默认值)自定义，如 `AABDE`
+`--property-order <order>` | [属性页顺序](#属性页的默认值)自定义，默认 `ABCDE`
 `--js`/`--js-sourcemap` | 输出 JS 代码及映射
 `--js-exclude-flatbuffers` | 排除 flatbuffers 代码
 `--js-browser-target/ <target>` | [JS 编译目标](https://esbuild.github.io/api/#target)，默认 `es2017`
-`--js-node-target <target>` | Node编译目标，默认 `node20`。
+`--js-node-target <target>` | Node 编译目标，默认 `node20`。
 
 #### 属性页的默认值：
 >    - A: 数据页的字段名（可随意填写，和属性页做映射关系，并作为生成的 .fbs 中的字段名注释）
