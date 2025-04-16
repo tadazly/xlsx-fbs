@@ -48,9 +48,9 @@ export async function xlsxToJson(filePath, options = {}) {
 
     let parsedResult;
     const extname = path.extname(filePath);
-    if (extname !== '.xls' && extname !== '.xlsx') {
+    if (extname !== '.xls' && extname !== '.xlsx' && extname !== '.xlsm') {
         throw new Error(`${i18n.errorTableNotSupport}: ${filePath}`);
-    } else if (extname === '.xls' || !options.enableStreamingRead) {
+    } else if (extname === '.xls' || extname === '.xlsm' || !options.enableStreamingRead) {
         // 使用 xlsx 加载完整 .xls 文件，未开启流式加载时也使用 xlsx 加载完整的 .xlsx 文件
         parsedResult = await parseWithXlsx(filePath, options);
     } else if (extname === '.xlsx') {

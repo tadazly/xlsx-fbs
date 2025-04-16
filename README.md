@@ -4,6 +4,11 @@
 
 > 🇨🇳 [完整文档](./README.original.md) | 🇺🇸 [English Documentation](./README.en.md)
 
+![License](https://img.shields.io/github/license/tadazly/xlsx-fbs)
+![Node](https://img.shields.io/badge/node-%3E=22.12.0-green)
+![FlatBuffers](https://img.shields.io/badge/flatbuffers-supported-blue)
+<!-- ![npm](https://img.shields.io/npm/v/xlsx-fbs) -->
+
 ## 安装 xlsx-fbs 
 
 0. 克隆本项目

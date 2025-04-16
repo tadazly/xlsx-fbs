@@ -474,7 +474,7 @@ async function getTablesConfig(rootDir) {
     // 遍历根目录中的文件，找到 $tables.xlsx，这里加了兼容匹配，可以让 $items.xls 类似的命名也能匹配
     const files = await fsAsync.readdir(rootDir, { withFileTypes: false, recursive: false });
     const matched = files.filter(name =>
-        /^\$.*\.(xls|xlsx)$/i.test(name)
+        /^\$.*\.(xls|xlsx|xlsm)$/i.test(name)
     );
     if (matched.length === 0) {
         // 找不到文件则默认打根目录中的所有表
@@ -507,7 +507,7 @@ async function getTablesConfig(rootDir) {
     }
 
     /** 递归搜索目录下的所有 excel 文件（不包含 ~$ 和 $ 开头的文件） */
-    const tables = await fsUtil.findFiles(rootDir, /^(?!~\$|\$).*\.xlsx?$/i);
+    const tables = await fsUtil.findFiles(rootDir, /^(?!~\$|\$).*\.(xls|xlsx|xlsm)$/i);
     // const tables = await fsUtil.findFiles(rootDir, /.*\.xlsx?$/);
 
     for (const table of tables) {
