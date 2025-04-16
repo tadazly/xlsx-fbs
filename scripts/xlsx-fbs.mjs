@@ -2,7 +2,7 @@
 // 👆Help to Link to Global
 
 import { getCSharpPath, getFbsHashPath, getFbsHashTablePath, getJsPath, getTableHashPath, getTsPath, i18n } from './environment.mjs'
-import { program } from 'commander';
+import { program, Option } from 'commander';
 import fsAsync from 'fs/promises';
 import * as fsUtil from './utils/fsUtil.mjs';
 import path from 'path';
@@ -38,6 +38,9 @@ async function main() {
         .option('--python', 'Python')
         .option('--...', '\n');
 
+    // TODO: 隐藏一些不对外的选项
+    // program.addOption(new Option('--legacy-mode', i18n.legacyMode).hideHelp());
+
     // options
     program
         .option('--👇[options]', i18n.xlsxFbsOptions)
@@ -50,6 +53,10 @@ async function main() {
         })
         .option('--censored-table', i18n.censoredTable)
         .option('--censored-output <path>', i18n.censoredOutput)
+        .option('--output-bin <path>', i18n.outputBin)
+        .option('--output-csharp <path>', i18n.outputCsharp)
+        .option('--censored-output-bin <path>', i18n.censoredOutputBin)
+        .option('--censored-output-csharp <path>', i18n.censoredOutputCsharp)
         .option('--clean-output', i18n.cleanOutput)
         .option('--empty-string', i18n.emptyString)
         .option('--disable-merge-table', i18n.disableMergeTable)
@@ -98,6 +105,7 @@ async function main() {
 
     // 获取定义的参数
     const args = program.args;
+
     if (args.length > 1 && !args[1].startsWith('-')) {
         error(i18n.errorInvalidInput + `: ${args[0]} => ${args[1]} <=`);
         process.exit(1);
@@ -105,6 +113,12 @@ async function main() {
 
     // 获取定义的选项
     const options = program.opts();
+
+    if (args.length === 0 && Object.keys(options).length <= 2) {
+        program.outputHelp();
+        process.exit(0);
+    }
+
     Object.keys(xlsxFbsOptions)
         .forEach(key => xlsxFbsOptions[key] = options[key] || xlsxFbsOptions[key]);
 

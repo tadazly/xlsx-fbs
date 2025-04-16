@@ -76,7 +76,7 @@ export async function moveDir(src, dest) {
             const srcPath = path.join(src, entry.name)
             const destPath = path.join(dest, entry.name)
             if (entry.isDirectory()) {
-                waitList.push(moveDir(srcPath.destPath))
+                waitList.push(moveDir(srcPath, destPath))
             } else {
                 waitList.push(fsAsync.copyFile(srcPath, destPath))
             }
@@ -86,6 +86,31 @@ export async function moveDir(src, dest) {
         console.info(`移动文件夹：${src} => ${dest}`)
     } catch (err) {
         console.error(`移动失败：${src} => ${dest}`)
+    }
+}
+
+
+/**
+ * 拷贝文件夹
+ */
+export async function copyDir(src, dest) {
+    try {
+        await fsAsync.mkdir(dest, { recursive: true })
+        const entries = await fsAsync.readdir(src, { withFileTypes: true })
+        const waitList = []
+        for (const entry of entries) {
+            const srcPath = path.join(src, entry.name)
+            const destPath = path.join(dest, entry.name)
+            if (entry.isDirectory()) {
+                waitList.push(copyDir(srcPath, destPath))
+            } else {
+                waitList.push(fsAsync.copyFile(srcPath, destPath))
+            }
+        }
+        await Promise.all(waitList)
+        console.info(`拷贝文件夹：${src} => ${dest}`)
+    } catch (err) {
+        console.error(`拷贝失败：${src} => ${dest}`)
     }
 }
 

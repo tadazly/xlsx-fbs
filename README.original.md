@@ -252,9 +252,17 @@ Excel 文件路径或 Excel 所在的文件夹路径，传入文件则转换单�
 
 - `--censored-fields <fields>` 删减字段，使用 `,` 连接，会生成一份删减版本的文件到 `output_censored/` 目录。（注意不是删除数据，而是把整个字段从 .fbs 中删除！）
 
-- `--censored-output` 指定删减表的输出路径，默认是 `${output}_censored/`。
+- `--censored-output <path>` 指定删减表的输出路径，默认是 `${output}_censored/`。
 
-- `--clean-output` 批量打表前，强制清空输出目录，慎用。
+- `--output-bin <path>` 拷贝输出的 bin 到指定路径。此类拷贝参数仅批量打表可用，且都会保留原输出路径下的文件。
+
+- `--output-csharp <path>` 拷贝输出的代码到指定路径，以 C# 为例，其他请替换成对应语言名。
+
+- `--censored-output-bin <path>` 拷贝删减版输出的 bin 到指定路径。
+
+- `--censored-output-csharp <path>` 拷贝删减版输出的代码到指定路径，以 C# 为例，其他请替换成对应语言名。
+
+- `--clean-output` 批量打表前，强制清空输出目录，小心使用，不要误删无辜。
 
 - `--empty-string` 表中字符串类型的字段在创建二进制时默认填充空字符串而不是 null。
 
