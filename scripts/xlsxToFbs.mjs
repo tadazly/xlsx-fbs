@@ -168,6 +168,10 @@ function inferNumberTypeRange(min, max) {
  * @returns 
  */
 function inferNumberType(values) {
+    if (values.length === 0) {
+        return 'int16'; // 空数组，默认 int16
+    }
+
     const uniqueValues = [...new Set(values)];
     const allIntegers = uniqueValues.every(Number.isInteger);
 
@@ -176,6 +180,7 @@ function inferNumberType(values) {
         const maxValue = Math.max(...uniqueValues);
         const minValue = Math.min(...uniqueValues);
         type = inferNumberTypeRange(minValue, maxValue * 2); // 最大值乘以2，避免未来配表溢出
+        // console.log(`inferNumberTypeRange: ${minValue} ~ ${maxValue} => ${type}`);
     } else {
         type = 'float32'; // 'float64' 类型请手配
     }
@@ -688,6 +693,11 @@ function formatProperties(propertyJson, dataJson, options, tableName) {
             // 如果是自动推导的 id 字段，且类型小于 uint，则强制预留为 uint
             if (field.toLowerCase() === 'id' && scalarTypes[type].size < scalarTypes.uint32.size) {
                 type = 'uint32';
+            }
+
+            if (type === 'bool') {
+                // 警告一下，万一配表数据不足导致的错误推断
+                warn(`${i18n.warningInferNumberTypeBool}. table: ${tableName}, field: ${comment}[${field}] => type: ${type}`);
             }
         } else if (scalarTypes[type]) {
             // 根据表中的数值验证类型，若溢出则报错

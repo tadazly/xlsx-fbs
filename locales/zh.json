@@ -44,6 +44,7 @@
     "warningNumberTypeRange": "⚠️ Warning: 数字类型范围过大，请检查表格数据",
     "warningNumberTypeOverflow": "⚠️ Warning: 数字范围超出给定类型，请检查表格数据",
     "warningInferNumberTypeOverSafe": "⚠️ 推断值超出 JS 精度限制，自动使用 float64",
+    "warningInferNumberTypeBool": "⚠️ 推断值为布尔类型，请在表中配置 bool 以消除此警告",
     "warningWildTable": "⚠️ Warning: 打野表（$tables.xlsx中未配置的表）",
     "warningDuplicateTable": "⚠️ Warning: 路径中存在重复的表，你到底要打哪张表？",
     "warningTablesConfigNotFound": "⚠️ Warning: 未找到打表配置文件 $tables.xlsx，默认打所有表",

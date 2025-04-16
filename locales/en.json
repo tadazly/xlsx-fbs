@@ -44,6 +44,7 @@
     "warningNumberTypeRange": "⚠️ Warning: The range of number types is too large, please check the table data",
     "warningNumberTypeOverflow": "⚠️ Warning: The number type overflows the given type, please check the table data",
     "warningInferNumberTypeOverSafe": "⚠️ Warning: The inferred value exceeds the JS precision limit, automatically use float64",
+    "warningInferNumberTypeBool": "⚠️ Warning: The inferred value is a bool type, please configure bool in the table to eliminate this warning",
     "warningWildTable": "⚠️ Warning: Wild table (tables not configured in $tables.xlsx)",
     "warningDuplicateTable": "⚠️ Warning: Duplicate table name in the path, which table do you want to convert?",
     "warningTablesConfigNotFound": "⚠️ Warning: Tables config file $tables.xlsx not found, default to convert all tables",
