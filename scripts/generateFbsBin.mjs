@@ -1,10 +1,11 @@
 import { flatcToBinaryAsync } from './utils/flatcUtil.mjs';
 import * as logUtil from './utils/logUtil.mjs';
-import { getBinPath, getFbsPath, getGenerateScriptPath, getJsonPath, i18n } from './environment.mjs';
+import { getBinPath, getFbsHashPath, getFbsPath, getGenerateScriptPath, getJsonPath, i18n } from './environment.mjs';
 import fsAsync from 'fs/promises';
 import { toSnakeCase, toUpperCamelCase } from './utils/stringUtil.mjs';
 import { fillTemplate, getFbsIncludeTemplate, getFbsMergeFieldTemplate, getFbsMergeTemplate } from './template.mjs';
 import { fbsToCode } from './fbsToCode.mjs';
+import { generateFbsHash } from './xlsxToFbs.mjs';
 
 /**
  * 将 json 文件转换为二进制文件
@@ -61,18 +62,27 @@ export async function generateMergeFbsBin(tableConfigs, options, flatcArgs) {
         const jsonData = JSON.parse(jsonContent);
         mergeData[tableNameSnakeCase] = jsonData;
     }
-    // 生成 json 文件
-    const jsonOutputPath = getJsonPath('mergeTable');
-    await fsAsync.writeFile(jsonOutputPath, JSON.stringify(mergeData, null, 2), 'utf-8');
     // 生成 fbs 文件
     const mergeFbsPath = getFbsPath('mergeTable');
-    const mergeFbsContent = fillTemplate(getFbsMergeTemplate(), {
+    let mergeFbsContent = fillTemplate(getFbsMergeTemplate(), {
         INCLUDE_LIST: includeList.join('\n'),
         FILE_EXTENSION: fileExtension,
         MERGE_FIELD_LIST: mergeFieldList.join('\n'),
         NAMESPACE: namespace,
     });
+    // 生成 fbs hash 文件
+    if (options.generateFbsHash) {
+        const hash = await generateFbsHash(mergeFbsContent);
+        mergeData['fbs_hash'] = Array.from(hash);
+        const fbsHashPath = getFbsHashPath('mergeTable');
+        await fsAsync.writeFile(fbsHashPath, hash.toString('hex'), 'utf-8');
+    } else {
+        mergeFbsContent = mergeFbsContent.replace('  fbs_hash:[uint8];\n', '');
+    }
     await fsAsync.writeFile(mergeFbsPath, mergeFbsContent, 'utf-8');
+    // 生成 json 文件
+    const jsonOutputPath = getJsonPath('mergeTable');
+    await fsAsync.writeFile(jsonOutputPath, JSON.stringify(mergeData, null, 2), 'utf-8');
     // 生成代码
     flatcArgs.push(`-o ${getGenerateScriptPath('mergeTable')}`);
     await fbsToCode(mergeFbsPath, flatcArgs);

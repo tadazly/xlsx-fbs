@@ -74,6 +74,17 @@ export const getFbsPath = (filePath) => {
     }
     return path.join(xlsxFbsOptions.output, 'fbs');
 }
+/** .fbs hash文件路径 */
+export const getFbsHashPath = (filePath) => {
+    if (filePath) {
+        return path.join(xlsxFbsOptions.output, 'fbs', `${getTableName(filePath)}.hash`);
+    }
+    return path.join(xlsxFbsOptions.output, 'fbs');
+}
+/** .fbs hash 表路径 */
+export const getFbsHashTablePath = () => {
+    return path.join(xlsxFbsOptions.output, 'fbs_hash_table.json');
+}
 /** .bin 输出路径 */
 export const getBinPath = (filePath) => {
     if (filePath) {
@@ -108,7 +119,7 @@ export const getJsPath = () => {
 export const getCSharpPath = () => {
     return path.join(getOrganizedScriptPath(), 'csharp');
 }
-/** 表 hash 文件路径 */
+/** 表 hash 文件路径（目前存的是修改时间，用于增量打表） */
 export const getTableHashPath = () => {
-    return path.join(xlsxFbsOptions.output, 'table_hash.json');
+    return path.join(xlsxFbsOptions.output, 'config', 'table_hash.json');
 }

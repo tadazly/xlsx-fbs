@@ -266,7 +266,9 @@ Excel 文件路径或 Excel 所在的文件夹路径，传入文件则转换单�
 
 - `--data-class-suffix <suffix>` 生成的表格数据类名后缀，默认是 `Info`。比如 `item.xlsx` 表生成的每行数据的类名就是 `ItemInfo`；必须避免出现使用类后缀结尾命名的表，比如批量打表时，目录下同时有 `drop.xlsx` 和 `dropInfo.xlsx`，那么第一张表的数据类名会和第二张表的主类名冲突，BOOM💥。
 
-- `--multi-thread <number>` 批量打表时的多线程数量，默认 4 。
+- `--generate-fbs-hash` 在二进制中添加 fbs_hash 值，可用 fbs_hash_table.json 校验数据结构是否匹配。
+
+- `--multi-thread <number>` 批量打表时的多线程数量，默认 6 。
 
 - `--minimal-info` 最小化输出信息，可选范围 `log < info < warn < error`，默认 `info`。
 

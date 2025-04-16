@@ -8,6 +8,7 @@
 
 table {{{ TABLE_CLASS }}} {
   {{{ TABLE_CLASS_SNAKE_CASE }}}_{{{ DATA_CLASS_SUFFIX_SNAKE_CASE }}}s:[{{{ TABLE_CLASS }}}{{{ DATA_CLASS_SUFFIX }}}];
+  fbs_hash:[uint8];
 }
 
 root_type {{{ TABLE_CLASS }}};

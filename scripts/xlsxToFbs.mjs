@@ -18,6 +18,7 @@ import { error, log, warn } from './utils/logUtil.mjs';
  * @property {boolean} [enableStreamingRead] 是否开启流式读取，仅支持 xlsx 格式
  * @property {boolean} [emptyString] 是否生成空字符串
  * @property {string} [dataClassSuffix] 数据类后缀
+ * @property {boolean} [generateFbsHash] 是否生成 fbs 文件的 hash 值
  */
 
 /**
@@ -979,10 +980,10 @@ function formatFbs(property) {
 }
 
 /**
- * 在生成的文件中添加 .fbs 文件的 hash 值，并生成 TableHashConfig 类文件用于运行时校验表的数据结构是否匹配（仅支持 C# 和 TypeScript, 其他语言请自行扩展）
- * @param {*} filePath 
+ * 获取 fbs 文件的 hash 值
+ * @param {string} fbsContent
  */
-export function generateFbsHash(filePath) {
-
+export async function generateFbsHash(fbsContent) {
+    const { createHash } = await import('crypto');
+    return createHash('sha256').update(fbsContent).digest();
 }
-

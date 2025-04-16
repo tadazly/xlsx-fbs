@@ -172,6 +172,7 @@ xlsx-fbs [ input ] [ flatc options ] [ xlsx-fbs options ]
 `--disable-incremental` | 禁用增量打表
 `--enable-streaming-read` | 开启流式读取，慎用！乱码预警
 `--data-class-suffix <suffix>` | 表格数据类名后缀，默认 `Info`
+`--generate-fbs-hash` | 生成 fbs 结构校验
 `--multi-thread <number>` | 多线程数量，默认 6
 `--minimal-info <level>` | 控制输出日志等级，默认 `info`
 `--allow-wild-table` | 允许打野表（索引表中未配置的表）

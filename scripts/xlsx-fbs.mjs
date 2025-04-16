@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 // 👆Help to Link to Global
 
-import { getCSharpPath, getJsPath, getTableHashPath, getTsPath, i18n } from './environment.mjs'
+import { getCSharpPath, getFbsHashPath, getFbsHashTablePath, getJsPath, getTableHashPath, getTsPath, i18n } from './environment.mjs'
 import { program } from 'commander';
 import fsAsync from 'fs/promises';
 import * as fsUtil from './utils/fsUtil.mjs';
 import path from 'path';
-import { xlsxToFbs } from './xlsxToFbs.mjs';
+import { generateFbsHash, xlsxToFbs } from './xlsxToFbs.mjs';
 import { xlsxToJson } from './xlsxToJson.mjs';
 import { fbsToCode, generateCSharpConst, generateJSBundle, generateTsConst, generateTsMain } from './fbsToCode.mjs';
 import { xlsxFbsOptions, getFbsPath, getBinPath, getJsonPath, getGenerateScriptPath, getOrganizedScriptPath } from './environment.mjs';
@@ -161,6 +161,16 @@ async function main() {
  */
 async function singleConvert(input, flatcArgs) {
     async function generateOutput(input, fbs, xlsxData) {
+        // 在生成的文件中添加 .fbs 文件的 hash 值，并在批量打表时生成 fbs_hash_table.json 文件用于运行时校验表的数据结构是否匹配
+        if (xlsxFbsOptions.generateFbsHash) {
+            const hash = await generateFbsHash(fbs);
+            xlsxData['fbs_hash'] = Array.from(hash);
+            const fbsHashPath = getFbsHashPath(input);
+            await fsUtil.writeFile(fbsHashPath, hash.toString('hex'), 'utf-8');
+        } else {
+            fbs = fbs.replace('  fbs_hash:[uint8];\n', '');
+        }
+
         const fbsOutputPath = getFbsPath(input);
         await fsUtil.writeFile(fbsOutputPath, fbs);
         log(`${i18n.successGenerateFbs}: ${getFbsPath(input)}`);
@@ -253,7 +263,7 @@ async function batchConvert(input, flatcArgs) {
     /** @type {TableConfig[]} */
     const constFieldsTableConfigs = [];
 
-    // 通过判断文件修改时间来判断是否需要打表
+    // 使用文件修改时间来判断是否需要打表，最快
     let tableHash = {};
     const tableHashPath = getTableHashPath();
     // hash 文件仅存放在未删减目录
@@ -324,6 +334,9 @@ async function batchConvert(input, flatcArgs) {
     if (xlsxFbsOptions.dataClassSuffix) {
         commonArgs.push('--data-class-suffix', xlsxFbsOptions.dataClassSuffix);
     }
+    if (xlsxFbsOptions.generateFbsHash) {
+        commonArgs.push('--generate-fbs-hash');
+    }
 
     // 限制最大并发数
     const maxThreads = Math.min(os.cpus().length, xlsxFbsOptions.multiThread);
@@ -369,8 +382,8 @@ async function batchConvert(input, flatcArgs) {
     // 生成合并表
     if (mergeTableConfigs.length > 0 && !xlsxFbsOptions.disableMergeTable) {
         await generateMergeFbsBin(mergeTableConfigs, xlsxFbsOptions, flatcArgs.concat());
-        console.log('generate censored merge table ...');
         if (xlsxFbsOptions.censoredOutput) {
+            console.log('generate censored merge table ...');
             const originalOutput = xlsxFbsOptions.output;
             xlsxFbsOptions.output = xlsxFbsOptions.censoredOutput;
             const censoredMergeConfigs = mergeTableConfigs.filter(config => !config.censoredTable);
@@ -378,6 +391,30 @@ async function batchConvert(input, flatcArgs) {
             xlsxFbsOptions.output = originalOutput;
         }
         info(`${i18n.successGenerateMergeTable}`);
+    }
+
+    // 生成 fbsHashTable.json
+    if (xlsxFbsOptions.generateFbsHash) {
+        async function generateFbsHashTable() {
+            const fbsHashTablePath = getFbsHashTablePath();
+            const fbsHashFiles = await fsUtil.findFiles(getFbsHashPath(), /\.hash$/);
+            const fbsHashTable = {};
+            for (const fbsHashFile of fbsHashFiles) {
+                const tableName = path.basename(fbsHashFile, '.hash');
+                const fbsHashContent = await fsAsync.readFile(fbsHashFile, 'utf-8');
+                fbsHashTable[tableName] = fbsHashContent;
+            }
+            await fsUtil.writeFile(fbsHashTablePath, JSON.stringify(fbsHashTable, null, 2), 'utf-8');
+            info(`${i18n.successGenerateFbsHashTable}: ${fbsHashTablePath}`);
+        }
+        await generateFbsHashTable();
+        if (xlsxFbsOptions.censoredOutput) {
+            console.log('generate censored fbs_hash_table.json ...');
+            const originalOutput = xlsxFbsOptions.output;
+            xlsxFbsOptions.output = xlsxFbsOptions.censoredOutput;
+            await generateFbsHashTable();
+            xlsxFbsOptions.output = originalOutput;
+        }
     }
 
     // 生成 C# 常量代码
@@ -430,7 +467,7 @@ async function batchConvert(input, flatcArgs) {
     }
 
     // 所有后处理完成后，记录文件的修改日期，作为增量打表标志
-    await fsAsync.writeFile(tableHashPath, JSON.stringify(tableHash, null, 2), 'utf-8');
+    await fsUtil.writeFile(tableHashPath, JSON.stringify(tableHash, null, 2), 'utf-8');
 }
 
 /**
