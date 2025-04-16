@@ -156,6 +156,9 @@ async function main() {
     }
 }
 
+/**
+ * 打单张表
+ */
 async function singleConvert(input, flatcArgs) {
     async function generateOutput(input, fbs, xlsxData) {
         const fbsOutputPath = getFbsPath(input);
@@ -201,6 +204,7 @@ async function singleConvert(input, flatcArgs) {
     }
 }
 
+/** 这个不用看，和 xlsx-fbs 逻辑无关 */
 async function singleConvertLegacy(input) {
     async function generateLegacyOutput(input, xlsxData) {
         for (const content of xlsxData) {
@@ -228,6 +232,9 @@ async function singleConvertLegacy(input) {
     info(`Finished: ${input} cost: ${endTime - startTime}ms`);
 }
 
+/**
+ * 批量打表
+ */
 async function batchConvert(input, flatcArgs) {
     const os = await import('os');
     const { spawnAsync } = await import('./utils/processUtil.mjs');

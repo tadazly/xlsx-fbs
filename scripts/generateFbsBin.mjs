@@ -41,8 +41,6 @@ export async function generateMergeFbsBin(tableConfigs, options, flatcArgs) {
     const fileExtension = options.binaryExtension
         ? `file_extension "${options.binaryExtension.replace(/^\./, '')}";`
         : '';
-    const dataClassSuffix = options.dataClassSuffix;
-    const dataClassSuffixSnakeCase = toSnakeCase(dataClassSuffix);
     for (const config of tableConfigs) {
         const { tableName } = config;
         const tableClassName = toUpperCamelCase(tableName);
@@ -55,16 +53,13 @@ export async function generateMergeFbsBin(tableConfigs, options, flatcArgs) {
         mergeFieldList.push(fillTemplate(getFbsMergeFieldTemplate(), {
             TABLE_CLASS: tableClassName,
             TABLE_CLASS_SNAKE_CASE: tableNameSnakeCase,
-            DATA_CLASS_SUFFIX: dataClassSuffix,
-            DATA_CLASS_SUFFIX_SNAKE_CASE: dataClassSuffixSnakeCase,
         }));
 
         const jsonPath = getJsonPath(tableName);
         const jsonContent = await fsAsync.readFile(jsonPath, 'utf-8');
 
         const jsonData = JSON.parse(jsonContent);
-        const tableInfosFiled = `${tableNameSnakeCase}_${dataClassSuffixSnakeCase}s`;
-        mergeData[tableInfosFiled] = jsonData[tableInfosFiled];
+        mergeData[tableNameSnakeCase] = jsonData;
     }
     // 生成 json 文件
     const jsonOutputPath = getJsonPath('mergeTable');
