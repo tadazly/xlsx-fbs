@@ -48,7 +48,7 @@
     "warningInferNumberTypeBool": "⚠️ Warning: The inferred value is a bool type, please configure bool in the table to eliminate this warning",
     "warningWildTable": "⚠️ Warning: Wild table (tables not configured in $tables.xlsx)",
     "warningDuplicateTable": "⚠️ Warning: Duplicate table name in the path, which table do you want to convert?",
-    "warningTablesConfigNotFound": "⚠️ Warning: Tables config file $tables.xlsx not found, default to convert all tables",
+    "warningTablesConfigNotFound": "⚠️ Warning: $tables.xlsx not found, default to convert all, duplicate name will cause conversion failure",
     "warningReservedKeyword": "⚠️ Warning: The name contains reserved keywords, please change the name",
     "warningMissingFlatcOptions": "⚠️ Warning: Flatc options not provided, only generate .fbs file",
     "errorInvalidInput": "❌ Error: Input parameter error, please check the input parameter",
