@@ -10,12 +10,20 @@ import { projectPath, i18n } from "../environment.mjs";
  */
 export async function flatcAsync(flatcOptions, files, binaryFiles) {
     let flatcBin;
-    if (process.platform === 'win32') {
-        flatcBin = path.join(projectPath, 'bin', 'flatc.exe');
-    } else if (process.platform === 'darwin') {
-        flatcBin = path.join(projectPath, 'bin', 'flatc');
-    } else {
-        throw new Error(`${i18n.errorUnsupportedPlatform}: ${process.platform}`);
+    const platform = process.platform;
+
+    switch (platform) {
+        case 'win32':
+            flatcBin = path.join(projectPath, 'bin/windows/flatc.exe');
+            break;
+        case 'darwin':
+            flatcBin = path.join(projectPath, 'bin/mac/flatc');
+            break;
+        case 'linux':
+            flatcBin = path.join(projectPath, 'bin/linux/flatc');
+            break;
+        default:
+            throw new Error(`${i18n.errorUnsupportedPlatform}: ${process.platform}`);
     }
     await execAsync(`${flatcBin} ${flatcOptions.join(' ')} ${files.join(' ')}${binaryFiles ? ` -- ${binaryFiles.join(' ')}` : ''}`, null, false);
 }

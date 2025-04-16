@@ -77,7 +77,7 @@ x2f --ts --csharp
 
 ### 一、 创建符合规范的 Excel
 
-#### 示例结构，完整规范请看[配表规范](#数据表-配表规范)
+#### 示例结构，完整规范请看[配表规范](./README.original.md#数据表-配表规范)
 
 **item.xls:**
 
@@ -275,7 +275,7 @@ output[_censored]/
 
 ### 属性
 
-字段的 **属性**（ E 列），请参考[官方文档](https://flatbuffers.dev/schema/#attributes)，如果填了会补充在 .fbs 文件中字段的右边，一般用的上的就 `deprecated` 和 `required`。常见的如下：
+字段的 **属性**（ E 列），请参考[FlatBuffers文档](https://flatbuffers.dev/schema/#attributes)，如果填了会补充在 .fbs 文件中字段的右边，一般用的上的就 `deprecated` 和 `required`。常见的如下：
 
 属性|用途
 -|-
