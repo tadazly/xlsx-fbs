@@ -9,6 +9,18 @@
 ![FlatBuffers](https://img.shields.io/badge/flatbuffers-supported-blue)
 <!-- ![npm](https://img.shields.io/npm/v/xlsx-fbs) -->
 
+### 🧬 FlatBuffers 类型支持
+
+配表支持类型如下：
+
+- [标量（Scalars）](./README.original.md#标量-scalars)
+- [向量（Vectors）](./README.original.md#向量-vectors)
+- [字符串（Strings）](./README.original.md#字符串-strings)
+- [结构体（Structs）](./README.original.md#结构体-structs)
+- [结构表/子表（Tables）](./README.original.md#结构表子表-tables)
+- [枚举（Enums）](./README.original.md#枚举-enums)
+
+
 ## 安装 xlsx-fbs 
 
 0. 克隆本项目

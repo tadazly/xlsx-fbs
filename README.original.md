@@ -370,13 +370,17 @@ output[_censored]/
 
 PS: 如果能保证上线的代码与数据一致，那你应该知道可以做些什么。
 
-#### 类型
+### 类型
 
 字段的 **类型**（ C 列），最好填写 *明确的类型*，如：
 
-- 字符串：`string`
+#### 字符串 Strings
 
-- 标量：如 `byte`，`short`，`int`，下面给出具体的表格：
+- `string`
+
+#### 标量 Scalars
+
+- 如 `byte`，`short`，`int`，下面给出具体的表格：
 
     大小|有符号|无符号|浮点数
     -|-|-|-
@@ -408,26 +412,34 @@ PS: 如果能保证上线的代码与数据一致，那你应该知道可以做�
 
     尽量不要碰 64-bit 的类型，除非你想让数据爆炸。
 
-> 下面是一些比较复杂的类型，枚举（enum）、结构体（struct）和 结构表（子表）（table），建议参考 `example/singleConvert/item.xlsx` 中的用法作为比较。
+> 下面是一些比较复杂的类型，枚举（enum）、结构体（struct）和 结构表（子表）（table），建议参考 `example/singleConvert/itemTable.xlsx` 中的用法作为比较。
 
-- 枚举：使用 `enum@EnumName` 作为类型名称，**必须配置 默认值**。在同名 Sheet 下配置枚举定义：
+#### 枚举 Enums
+
+- 使用 `enum@EnumName` 作为类型名称，**必须配置 默认值**。在同名 Sheet 下配置枚举定义：
     
     - 第一列是枚举名，第二列是类型， 第三列是枚举值（可省略）
     - 类型仅支持整形标量 `byte, ubyte, short, ushort, int, uint, long, ulong`
     - 枚举值省略的情况下，默认第一个值为0，后面的值为前一个值加一
     - 枚举一般只增不减，类型也最好不要随意更改
 
-- 结构体：使用 `struct@StructName` 作为类型名称，用 `{ key: value, key: [value] … }` 这种 json 结构来填写数据，填写时必须按照结构定义，**完整填写数据**。在同名 Sheet 下配置结构定义：
+#### 结构体 Structs
+
+- 使用 `struct@StructName` 作为类型名称，用 `{ key: value, key: [value] … }` 这种 json 结构来填写数据，填写时必须按照结构定义，**完整填写数据**。在同名 Sheet 下配置结构定义：
     
     - 第一列是字段名，第二列是类型
     - 类型仅支持标量和定长数组，如 `int, [float] ...`
 
-- 结构表：使用 `table@SubTableName` 作为类型名称，配法和和上面的数据页、属性页规范一致，在数据页中填写结构表中的索引 id。在同名 Sheet 下配置结构定义，在 `property@SubTableName` 中配置属性。
+#### 结构表/子表 Tables
+
+- 使用 `table@SubTableName` 作为类型名称，配法和和上面的数据页、属性页规范一致，在数据页中填写结构表中的索引 id。在同名 Sheet 下配置结构定义，在 `property@SubTableName` 中配置属性。
 
     - 结构表的属性页的顺序固定为 ABCDE, 不可更改。
     - 结构表必须有 **id** 字段，用于在数据页索引。
 
-- 向量：任何以上类型的向量（用 `[type]` 表示），向量中元素的数量任意。
+#### 向量 Vectors
+
+- 任何以上类型的向量（用 `[type]` 表示），向量中元素的数量任意。
 
     - 向量长度任意，用逗号分隔。如 `6,6,6`
     - 结构表向量 `[table@SubTable]`，请填写结构表中对应的索引id。如 `1,2,3,4,5`
