@@ -225,6 +225,7 @@ output[_censored]/
 ### Property Sheet Notes
 
 - Column order defines field order. Don’t mess with it.
+- Field names can’t be keywords, and can’t start with `add`.
 - Add new fields only at the bottom.
 - Deprecated fields? Mark with `deprecated`, don’t delete.
 - Renamed a field? Update your code.

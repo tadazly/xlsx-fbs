@@ -670,6 +670,10 @@ function formatProperties(propertyJson, dataJson, options, tableName) {
         type = type.trim();
 
         // field: 直接处理好 fbs 使用的 蛇形命名
+        if (field.startsWith('add')) { // 避免与代码中的 addFie 接口冲突
+            field = 'append' + field.slice(3);
+        }
+
         const fbsField = toSnakeCase(field);
 
         const { tagType, tagName, formatted } = parseAtTag(type);

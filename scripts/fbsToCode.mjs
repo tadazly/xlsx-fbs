@@ -115,7 +115,11 @@ export async function generateLangConst(scriptRoot, jsonPath, namespace, configs
             const fieldMap = new Map();
             for (const info of tableInfos) {
                 if (info[keyField] !== undefined) {
-                    fieldMap.set(info[keyField], { value: info[valueField], desc: info[descField] });
+                    let desc = info[descField];
+                    if (desc) {
+                        desc = desc.replace(/[\r\n]+/g, ' ');   // 去除换行符
+                    }
+                    fieldMap.set(info[keyField], { value: info[valueField], desc });
                 }
             }
 
