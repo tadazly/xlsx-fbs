@@ -61,6 +61,10 @@ export const xlsxFbsOptions = {
     jsExcludeFlatbuffers: false,
     jsBrowserTarget: [ 'es2017' ],
     jsNodeTarget: [ 'node20' ],
+    outputBin: null,
+    outputCode: {},
+    censoredOutputBin: null,
+    censoredOutputCode: {},
 }
 
 /** 获取表名 */

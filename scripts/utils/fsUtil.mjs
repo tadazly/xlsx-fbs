@@ -83,9 +83,9 @@ export async function moveDir(src, dest) {
         }
         await Promise.all(waitList)
         await fsAsync.rm(src, { recursive: true, force: true })
-        console.info(`移动文件夹：${src} => ${dest}`)
+        console.info(`Move Dir Success: ${src} => ${dest}`)
     } catch (err) {
-        console.error(`移动失败：${src} => ${dest}`)
+        console.error(`Move Dir Failed: ${src} => ${dest}`)
     }
 }
 
@@ -108,9 +108,9 @@ export async function copyDir(src, dest) {
             }
         }
         await Promise.all(waitList)
-        console.info(`拷贝文件夹：${src} => ${dest}`)
+        console.info(`Copy Dir Success: ${src} => ${dest}`)
     } catch (err) {
-        console.error(`拷贝失败：${src} => ${dest}`)
+        console.error(`Copy Dir Failed: ${src} => ${dest}`)
     }
 }
 

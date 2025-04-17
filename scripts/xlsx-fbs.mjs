@@ -8,7 +8,7 @@ import * as fsUtil from './utils/fsUtil.mjs';
 import path from 'path';
 import { generateFbsHash, xlsxToFbs } from './xlsxToFbs.mjs';
 import { xlsxToJson } from './xlsxToJson.mjs';
-import { fbsToCode, generateCSharpConst, generateJSBundle, generateTsConst, generateTsMain } from './fbsToCode.mjs';
+import { fbsToCode, generateCSharpConst, generateJSBundle, generateTsConst, generateTsMain, LANGUAGE_EXTENSIONS } from './fbsToCode.mjs';
 import { xlsxFbsOptions, getFbsPath, getBinPath, getJsonPath, getGenerateScriptPath, getOrganizedScriptPath } from './environment.mjs';
 import { generateMergeFbsBin, jsonToBin } from './generateFbsBin.mjs';
 import { encodeHtml, toUpperCamelCase } from './utils/stringUtil.mjs';
@@ -38,8 +38,13 @@ async function main() {
         .option('--python', 'Python')
         .option('--...', '\n');
 
-    // TODO: 隐藏一些不对外的选项
-    // program.addOption(new Option('--legacy-mode', i18n.legacyMode).hideHelp());
+    // 隐藏一些不对外的选项
+    program.addOption(new Option('--censored-table', i18n.censoredTable).hideHelp());
+    program.addOption(new Option('--legacy-mode', i18n.legacyMode).hideHelp());
+    Object.keys(LANGUAGE_EXTENSIONS).forEach(key => {
+        if (key === 'csharp') return;
+        program.addOption(new Option(`--output-${key} <path>`, '').hideHelp());
+    });
 
     // options
     program
@@ -51,7 +56,6 @@ async function main() {
         .option('--censored-fields <fields>', i18n.censoredFields, (value) => {
             return value.split(',').map(field => field.trim()).filter(Boolean);  // 在控制台直接调用的时候记得输入双引号，比如 "aa,bb,cc"
         })
-        .option('--censored-table', i18n.censoredTable)
         .option('--censored-output <path>', i18n.censoredOutput)
         .option('--output-bin <path>', i18n.outputBin)
         .option('--output-csharp <path>', i18n.outputCsharp)
@@ -82,7 +86,6 @@ async function main() {
             }
             return value;
         }, 'info')
-        .option('--legacy-mode', i18n.legacyMode)
         .option('--property-order <order>', i18n.propertyOrder, (value) => {
             if (!/^[A-Za-z]{5}$/.test(value)) {
                 error(i18n.errorInvalidPropertyOrder);
@@ -133,11 +136,25 @@ async function main() {
         setLogLevel(xlsxFbsOptions.minimalInfo);
     }
 
-    log('xlsx-fbs 参数：', JSON.stringify(xlsxFbsOptions, null, 2));
-
     // 获取未定义的选项
-    const parsed = program.parseOptions(process.argv);
+    const parsed = program.parseOptions(process.argv);  // 这步会给 options 重新赋值
     const unknownArgs = parsed.unknown;
+
+    // 将 代码拷贝 选项从 options 中移除
+    Object.keys(options).forEach(key => {
+        const match = key.match(/^(?:censoredOutput|output)(.*)$/);
+        if (match) {
+            const codeType = match[1].toLowerCase();
+            if (LANGUAGE_EXTENSIONS[codeType]) {
+                if (key.startsWith('censoredOutput')) {
+                    xlsxFbsOptions.censoredOutputCode[codeType] = options[key];
+                } else {
+                    xlsxFbsOptions.outputCode[codeType] = options[key];
+                }
+                delete options[key];
+            }
+        }
+    });
 
     // 拼接 flatc 参数
     const flatcArgs = [
@@ -152,6 +169,7 @@ async function main() {
         flatcArgs.push('--ts');
     }
 
+    log('xlsx-fbs 参数：', JSON.stringify(xlsxFbsOptions, null, 2));
     log(`flatc 参数：${flatcArgs}`);
 
     const input = !args[0] || args[0].startsWith('-') ? process.cwd() : args[0];
@@ -287,6 +305,10 @@ async function batchConvert(input, flatcArgs) {
     }
 
     for (const config of fullTablesConfig) {
+        if (config.censoredTable) censoredTableCount++;
+        if (config.censoredFields.length > 0) censoredFieldsCount++;
+        if (config.merge) mergeTableConfigs.push(config);
+        if (config.constFields.length > 0) constFieldsTableConfigs.push(config);
         if (!xlsxFbsOptions.disableIncremental) {
             const stat = await fsAsync.stat(config.filePath);
             if (stat.mtimeMs === tableHash[config.filePath]) {
@@ -296,10 +318,6 @@ async function batchConvert(input, flatcArgs) {
             tableHash[config.filePath] = stat.mtimeMs;
         }
         tablesConfig.push(config);
-        if (config.censoredTable) censoredTableCount++;
-        if (config.censoredFields.length > 0) censoredFieldsCount++;
-        if (config.merge) mergeTableConfigs.push(config);
-        if (config.constFields.length > 0) constFieldsTableConfigs.push(config);
     }
 
     // 如果有删减表或者删减字段，则创建删减打表目录
@@ -475,8 +493,49 @@ async function batchConvert(input, flatcArgs) {
         await generateTsJs();
         if (xlsxFbsOptions.censoredOutput) {
             console.log('generate censored ts/js ...');
+            const originalOutput = xlsxFbsOptions.output;
             xlsxFbsOptions.output = xlsxFbsOptions.censoredOutput;
             await generateTsJs();
+            xlsxFbsOptions.output = originalOutput;
+        }
+    }
+
+    // 拷贝 bin
+    {
+        if (xlsxFbsOptions.outputBin) {
+            await fsUtil.copyDir(getBinPath(), xlsxFbsOptions.outputBin);
+            info(`${i18n.successCopyBin}: ${xlsxFbsOptions.outputBin}`);
+        }
+        if (xlsxFbsOptions.censoredOutput && xlsxFbsOptions.censoredOutputBin) {
+            console.log('copy censored bin ...');
+            const originalOutput = xlsxFbsOptions.output;
+            xlsxFbsOptions.output = xlsxFbsOptions.censoredOutput;
+            await fsUtil.copyDir(getBinPath(), xlsxFbsOptions.censoredOutputBin);
+            xlsxFbsOptions.output = originalOutput;
+            info(`${i18n.successCopyBin}: ${xlsxFbsOptions.censoredOutputBin}`);
+        }
+    }
+
+    // 拷贝代码
+    {
+        async function copyCode(codeMap) {
+            const promises = Object.entries(codeMap).map(async ([codeType, outputPath]) => {
+                const src = path.join(getOrganizedScriptPath(), codeType);
+                const dest = outputPath;
+                await fsUtil.copyDir(src, dest);
+                info(`${i18n.successCopyCode}: ${dest}`);
+            });
+            await Promise.all(promises);
+        }
+        if (xlsxFbsOptions.outputCode) {
+            await copyCode(xlsxFbsOptions.outputCode);
+        }
+        if (xlsxFbsOptions.censoredOutput && Object.keys(xlsxFbsOptions.censoredOutputCode).length > 0) {
+            console.log('copy censored code ...');
+            const originalOutput = xlsxFbsOptions.output;
+            xlsxFbsOptions.output = xlsxFbsOptions.censoredOutput;
+            await copyCode(xlsxFbsOptions.censoredOutputCode);
+            xlsxFbsOptions.output = originalOutput;
         }
     }
 

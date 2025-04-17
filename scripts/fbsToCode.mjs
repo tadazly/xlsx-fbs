@@ -273,7 +273,7 @@ export async function generateJSBundle(tsPath, jsPath, options = {}) {
     await Promise.all(buildList);
 }
 
-const LANGUAGE_EXTENSIONS = {
+export const LANGUAGE_EXTENSIONS = {
     'cpp': ['.cpp', '.h', '.hpp'],
     'csharp': ['.cs'],
     'go': ['.go'],
@@ -283,7 +283,9 @@ const LANGUAGE_EXTENSIONS = {
     'ts': ['.ts', '.tsx'],
     'python': ['.py'],
     'rust': ['.rs'],
-    'swift': ['.swift']
+    'swift': ['.swift'],
+    'php': ['.php'],
+    'dart': ['.dart'],
 };
 
 /**

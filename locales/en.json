@@ -44,6 +44,8 @@
     "successGenerateJsBundle": "Successfully generate js bundle",
     "successGenerateMergeTable": "Successfully generate merge table",
     "successGenerateFbsHashTable": "Successfully generate fbs hash table",
+    "successCopyBin": "Successfully copy bin",
+    "successCopyCode": "Successfully copy code",
     "warningSignedNumberType": "⚠️ Warning: There are signed numbers in the table, please check the table data",
     "warningFloatNumberType": "⚠️ Warning: There are floating-point numbers in the table, please check the table data",
     "warningNumberTypeRange": "⚠️ Warning: The range of number types is too large, please check the table data",

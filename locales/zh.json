@@ -44,6 +44,8 @@
     "successGenerateJsBundle": "成功生成 js 代码",
     "successGenerateMergeTable": "成功生成合并表",
     "successGenerateFbsHashTable": "成功生成 fbs hash 表",
+    "successCopyBin": "成功拷贝 bin",
+    "successCopyCode": "成功拷贝代码",
     "warningSignedNumberType": "⚠️ Warning: 表格中存在有符号数，请检查表格数据",
     "warningFloatNumberType": "⚠️ Warning: 表格中存在浮点数，请检查表格数据",
     "warningNumberTypeRange": "⚠️ Warning: 数字类型范围过大，请检查表格数据",
