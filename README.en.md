@@ -161,20 +161,34 @@ See [FlatBuffers Docs](https://flatbuffers.dev/flatc/) — common ones:
 | `--binary-extension` | File extension for binaries (default: `bin`) |
 | `--censored-fields` | Remove fields, generate censored version |
 | `--censored-output` | Output path for censored files |
-| `--clean-output` | Clear output folder before writing |
+| `--output-bin` * | Copy output bin to specified path |
+| `--output-csharp` * | Copy output code to specified path |
+| `--censored-output-bin` * | Copy censored bin to specified path |
+| `--censored-output-csharp` * | Copy censored code to specified path |
+| `--clean-output` * | Clear output folder before writing |
 | `--empty-string` | Use empty string instead of null for strings |
-| `--disable-merge-table` | Disable mergeTable generation |
-| `--disable-incremental` | Disable incremental updates |
+| `--disable-merge-table` * | Disable mergeTable generation |
+| `--disable-incremental` * | Disable incremental updates |
 | `--enable-streaming-read` | Enable streaming read (buggy, enjoy at your risk) |
 | `--data-class-suffix` | Suffix for row data class (default: `Info`) |
-| `--generate-fbs-hash` | Generate fbs schema hash table |
+| `--generate-fbs-hash` * | Generate fbs schema hash table |
 | `--multi-thread` | Number of threads (default: 6) |
 | `--minimal-info` | Log level: `log < info < warn < error` |
-| `--allow-wild-table` | Include rogue tables not listed in index |
+| `--allow-wild-table` * | Include rogue tables not listed in index |
 | `--property-order` | Custom column mapping order like `AABDE` |
 | `--js` / `--js-sourcemap` | Output JavaScript and source maps |
 | `--js-exclude-flatbuffers` | Exclude flatbuffers code from JS |
 | `--js-browser-target` / `--js-node-target` | Target environment |
+
+> Marked * are only effective for batch conversion
+
+#### Property Sheet Default Values
+
+> - A: Field name in data sheet 
+> - B: Field name in property sheet (fbs schema field name)
+> - C: Field type (`short`, `int`, `string` ...)
+> - D: Field default value (fbs schema default value)
+> - E: Field attribute (fbs schema attribute)
 
 #### Examples
 
