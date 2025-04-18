@@ -1,5 +1,5 @@
-{{{ FILE_EXTENSION }}}
 {{{ INCLUDE_LIST }}}
+{{{ FILE_EXTENSION }}}
 namespace {{{ NAMESPACE }}};
 
 table MergeTable {
