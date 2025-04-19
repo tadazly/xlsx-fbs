@@ -40,7 +40,7 @@ export async function generateMergeFbsBin(tableConfigs, options, flatcArgs) {
     const mergeFieldList = [];
     const namespace = options.namespace;
     const fileExtension = options.binaryExtension
-        ? `file_extension "${options.binaryExtension.replace(/^\./, '')}";`
+        ? `file_extension "${options.binaryExtension}";`
         : '';
     for (const config of tableConfigs) {
         const { tableName } = config;

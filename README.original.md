@@ -186,7 +186,7 @@ item.xls:
 
     A|B|C|D|E|F
     -|-|-|-|-|-
-    道具id|id|number|||一些功能注释
+    道具id|id|uint|||一些功能注释
     道具名|name|string||required|
     描述|desc|string|||
     策划偷偷删掉的|wtf|uint||deprecated|字段就算不用了也最好保留，手动标记废弃
@@ -202,7 +202,7 @@ item.xls:
 
     table ItemInfo {
       /// 道具id
-      id:short;
+      id:uint;
       /// 道具名
       name:string (required);
       /// 描述
@@ -349,6 +349,8 @@ output[_censored]/
 - 数据页没有太多限制，字段的顺序可以与属性页不同，只需要字段名和属性页对应、类型符合规范即可。剩下的就让策划背锅。
 
 - 废弃的字段数据页中可以删除该列。
+
+- 为规范表数据结构，尽量统一使用 id 字段（uint/int）作为索引。
 
 ### 属性页规范
 

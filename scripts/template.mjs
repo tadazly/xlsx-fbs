@@ -6,6 +6,7 @@ const templatePath = path.join(projectPath, 'template');
 const fbsTemplatePath = path.join(templatePath, 'fbs');
 const tsTemplatePath = path.join(templatePath, 'ts');
 const csharpTemplatePath = path.join(templatePath, 'csharp');
+const unityTemplatePath = path.join(templatePath, 'unity');
 const templateMap = new Map();
 const readTemplate = filePath => {
     if (templateMap.has(filePath)) {
@@ -39,6 +40,10 @@ export const getTsConstFieldTemplate = () => readTemplate(path.join(tsTemplatePa
 //#region csharp
 export const getCSharpConstTemplate = () => readTemplate(path.join(csharpTemplatePath, 'csharpConstTemplate.cs'));
 export const getCSharpConstFieldTemplate = () => readTemplate(path.join(csharpTemplatePath, 'csharpConstFieldTemplate.cs'));
+//#endregion
+
+//#region unity
+export const getUnityTableTemplate = () => readTemplate(path.join(unityTemplatePath, 'unityTableTemplate.cs'));
 //#endregion
 
 /**

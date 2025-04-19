@@ -52,7 +52,9 @@ async function main() {
         .option('-o, --output <path>', i18n.output)
         .option('-n, --namespace <name>', i18n.namespace)
         .option('-k, --default-key <field>', i18n.defaultKey)
-        .option('--binary-extension <ext>', i18n.binaryExtension)
+        .option('--binary-extension <ext>', i18n.binaryExtension, (value) => {
+            return value.replace(/^\./, '');
+        })
         .option('--censored-fields <fields>', i18n.censoredFields, (value) => {
             return value.split(',').map(field => field.trim()).filter(Boolean);  // 在控制台直接调用的时候记得输入双引号，比如 "aa,bb,cc"
         })

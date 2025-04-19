@@ -65,8 +65,8 @@ import { error, log, warn } from './utils/logUtil.mjs';
  * @typedef {Object} FbsProperty
  * @property {string} fileName 文件名
  * @property {string} namespace 命名空间
- * @property {string} tableClass 表名
- * @property {string} dataClassSuffix 数据类后缀
+ * @property {string} tableClass 表类
+ * @property {string} dataClass 数据类
  * @property {string} fileExtension 文件扩展名
  * @property {FbsFieldProperty[]} fieldProperties 字段
  * @property {FbsEnumProperty[]} enumProperties 枚举
@@ -273,7 +273,7 @@ export async function xlsxToFbs(filePath, options = {}) {
     const fileName = path.basename(filePath);
     const namespace = options.namespace;
     const tableClass = toUpperCamelCase(path.basename(filePath, path.extname(filePath)));
-    const dataClassSuffix = options.dataClassSuffix;
+    const dataClass = tableClass + options.dataClassSuffix;
 
     const fieldProperties = formatProperties(parsedResult.propertyJson, parsedResult.dataJson, options, tableClass);
 
@@ -282,7 +282,7 @@ export async function xlsxToFbs(filePath, options = {}) {
         fileName,
         namespace,
         tableClass,
-        dataClassSuffix,
+        dataClass,
         fileExtension: options.binaryExtension,
         fieldProperties,
         enumProperties,
@@ -322,7 +322,7 @@ export async function xlsxToFbs(filePath, options = {}) {
     }
 
     const fbs = formatFbs(fbsProperty);
-    const tableInfosFiled = `${toSnakeCase(tableClass)}_${toSnakeCase(dataClassSuffix)}s`;
+    const tableInfosFiled = `${toSnakeCase(dataClass)}s`;
     const xlsxData = {};
     xlsxData[tableInfosFiled] = fullDataJson;
 
@@ -956,12 +956,12 @@ function formatFbsField(property) {
  */
 function formatFbs(property) {
     const {
-        fileName, namespace, tableClass, dataClassSuffix, fileExtension,
+        fileName, namespace, tableClass, dataClass, fileExtension,
         fieldProperties, enumProperties, structProperties, subTableProperties,
     } = property;
 
     const fileExtensionString = fileExtension
-        ? `file_extension "${fileExtension.replace(/^\./, '')}";\n\n`
+        ? `file_extension "${fileExtension}";\n\n`
         : '';
     const enums = enumProperties.length ? enumProperties.map(formatFbsEnum).join('\n\n') + '\n\n' : '';
     const structs = structProperties.length ? structProperties.map(formatFbsStruct).join('\n\n') + '\n\n' : '';
@@ -977,8 +977,8 @@ function formatFbs(property) {
         SUB_TABLE_LIST: subTables,
         TABLE_CLASS: tableClass,
         TABLE_CLASS_SNAKE_CASE: toSnakeCase(tableClass),
-        DATA_CLASS_SUFFIX: dataClassSuffix,
-        DATA_CLASS_SUFFIX_SNAKE_CASE: toSnakeCase(dataClassSuffix),
+        DATA_CLASS: dataClass,
+        DATA_CLASS_SNAKE_CASE: toSnakeCase(dataClass),
         FIELD_LIST: fields,
     });
 }

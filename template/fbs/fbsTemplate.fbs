@@ -2,12 +2,12 @@
 
 {{{ FILE_EXTENSION }}}namespace {{{ NAMESPACE }}};
 
-{{{ ENUM_LIST }}}{{{ STRUCT_LIST }}}{{{ SUB_TABLE_LIST }}}table {{{ TABLE_CLASS }}}{{{ DATA_CLASS_SUFFIX }}} {
+{{{ ENUM_LIST }}}{{{ STRUCT_LIST }}}{{{ SUB_TABLE_LIST }}}table {{{ DATA_CLASS }}} {
 {{{ FIELD_LIST }}}
 }
 
 table {{{ TABLE_CLASS }}} {
-  {{{ TABLE_CLASS_SNAKE_CASE }}}_{{{ DATA_CLASS_SUFFIX_SNAKE_CASE }}}s:[{{{ TABLE_CLASS }}}{{{ DATA_CLASS_SUFFIX }}}];
+  {{{ DATA_CLASS_SNAKE_CASE }}}s:[{{{ DATA_CLASS }}}];
   fbs_hash:[uint8];
 }
 
