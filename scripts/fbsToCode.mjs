@@ -5,7 +5,7 @@ import fsAsync from 'fs/promises';
 import { flatcAsync } from './utils/flatcUtil.mjs';
 import { log, warn } from './utils/logUtil.mjs';
 import { toKebabCase, toUpperCamelCase, toSnakeCase, toTableConstantStyle } from './utils/stringUtil.mjs';
-import { getTsMainTemplate, getTsClassListTemplate, fillTemplate, getTsImportClassTemplate, getTsConstFieldTemplate, getTsConstTemplate, getCSharpConstTemplate, getCSharpConstFieldTemplate } from './template.mjs';
+import { getTsMainTemplate, getTsClassListTemplate, fillTemplate, getTsImportClassTemplate, getTsConstFieldTemplate, getTsConstTemplate, getCSharpConstTemplate, getCSharpConstFieldTemplate, getUnityTableLoaderBaseTemplate, getUnityTableTemplate } from './template.mjs';
 
 /**
  * 通过 .fbs 文件生成对应的代码
@@ -189,6 +189,48 @@ export async function generateCSharpConst(csharpPath, jsonPath, namespace, confi
         getConstTemplate: getCSharpConstTemplate,
         getFieldTemplate: getCSharpConstFieldTemplate,
     });
+}
+
+/**
+ * 生成 Unity 的表格加载类
+ * @param {string} csharpPath 
+ * @param {string} namespace 
+ * @param {import('./xlsx-fbs.mjs').TableConfig[]} configs 
+ * @param {import('./xlsxToFbs.mjs').XlsxToFbsOptions} options 
+ */
+export async function generateCSharpUnityLoader(csharpPath, namespace, configs, options) {
+    const namespaceStyled = toUpperCamelCase(namespace);
+    const scriptsPath = path.join(csharpPath, ...namespaceStyled.split('.'));
+    const outputList = [];
+
+    const tableLoaderBaseContent = fillTemplate(getUnityTableLoaderBaseTemplate(), {
+        NAMESPACE: namespace,
+    });
+    const tableLoaderBasePath = path.join(scriptsPath, 'TableLoaderBase.cs');
+    await writeFile(tableLoaderBasePath, tableLoaderBaseContent, 'utf-8');
+    outputList.push(tableLoaderBasePath);
+
+    for (const config of configs) {
+        const { tableName } = config;
+
+        const tableClass = toUpperCamelCase(tableName);
+        const dataClass =  tableClass + options.dataClassSuffix;
+        const tableLoaderClass = tableClass + options.csharpUnityLoaderSuffix;
+
+        const TableClassContent = fillTemplate(getUnityTableTemplate(), {
+            NAMESPACE: namespace,
+            TABLE_NAME: tableName,
+            TABLE_CLASS: tableClass,
+            DATA_CLASS: dataClass,
+            TABLE_LOADER_CLASS: tableLoaderClass,
+        });
+
+        const filePath = path.join(scriptsPath, `${tableLoaderClass}.cs`);
+        await writeFile(filePath, TableClassContent, 'utf-8');
+        outputList.push(filePath);
+    }
+
+    return outputList;
 }
 
 /**

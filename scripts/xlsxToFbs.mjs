@@ -19,6 +19,8 @@ import { error, log, warn } from './utils/logUtil.mjs';
  * @property {boolean} [emptyString] 是否生成空字符串
  * @property {string} [dataClassSuffix] 数据类后缀
  * @property {boolean} [generateFbsHash] 是否生成 fbs 文件的 hash 值
+ * @property {boolean} [csharpUnityLoader] 是否生成 Unity 的表格加载类
+ * @property {string} [csharpUnityLoaderSuffix] 表格加载类后缀
  */
 
 /**

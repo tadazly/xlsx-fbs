@@ -8,7 +8,7 @@ import * as fsUtil from './utils/fsUtil.mjs';
 import path from 'path';
 import { generateFbsHash, xlsxToFbs } from './xlsxToFbs.mjs';
 import { xlsxToJson } from './xlsxToJson.mjs';
-import { fbsToCode, generateCSharpConst, generateJSBundle, generateTsConst, generateTsMain, LANGUAGE_EXTENSIONS } from './fbsToCode.mjs';
+import { fbsToCode, generateCSharpConst, generateCSharpUnityLoader, generateJSBundle, generateTsConst, generateTsMain, LANGUAGE_EXTENSIONS } from './fbsToCode.mjs';
 import { xlsxFbsOptions, getFbsPath, getBinPath, getJsonPath, getGenerateScriptPath, getOrganizedScriptPath } from './environment.mjs';
 import { generateMergeFbsBin, jsonToBin } from './generateFbsBin.mjs';
 import { encodeHtml, toUpperCamelCase } from './utils/stringUtil.mjs';
@@ -95,6 +95,8 @@ async function main() {
             }
             return value.toUpperCase().split('');
         })
+        .option('--csharp-unity-loader', i18n.csharpUnityLoader)
+        .option('--csharp-unity-loader-suffix <suffix>', i18n.csharpUnityLoaderSuffix)
         .option('--js', 'JavaScript')
         .option('--js-sourcemap', i18n.jsSourcemap)
         .option('--js-exclude-flatbuffers', i18n.jsExcludeFlatbuffers)
@@ -306,21 +308,25 @@ async function batchConvert(input, flatcArgs) {
         tableHash = JSON.parse(tableHashContent);
     }
 
+    const currentArgs = process.argv.slice(2).join(' ');
+
     for (const config of fullTablesConfig) {
         if (config.censoredTable) censoredTableCount++;
         if (config.censoredFields.length > 0) censoredFieldsCount++;
         if (config.merge) mergeTableConfigs.push(config);
         if (config.constFields.length > 0) constFieldsTableConfigs.push(config);
-        if (!xlsxFbsOptions.disableIncremental) {
-            const stat = await fsAsync.stat(config.filePath);
+        const stat = await fsAsync.stat(config.filePath);
+        if (!xlsxFbsOptions.disableIncremental && tableHash.lastArgs === currentArgs) {
             if (stat.mtimeMs === tableHash[config.filePath]) {
                 // 跳过未改变的表
                 continue;
             }
-            tableHash[config.filePath] = stat.mtimeMs;
         }
+        tableHash[config.filePath] = stat.mtimeMs;
         tablesConfig.push(config);
     }
+
+    tableHash.lastArgs = currentArgs;
 
     // 如果有删减表或者删减字段，则创建删减打表目录
     if ((censoredFieldsCount > 0 || censoredTableCount > 0) && !xlsxFbsOptions.censoredOutput) {
@@ -451,14 +457,24 @@ async function batchConvert(input, flatcArgs) {
         }
     }
 
-    // 生成 C# 常量代码
-    if (flatcArgs.includes('--csharp') && constFieldsTableConfigs.length > 0) {
+    // 生成 C# 相关代码
+    if (flatcArgs.includes('--csharp') && (constFieldsTableConfigs.length > 0 || xlsxFbsOptions.csharpUnityLoader)) {
         async function generateCSharp() {
             const namespace = xlsxFbsOptions.namespace;
             const csharpOutputPath = getCSharpPath();
             const jsonOutputPath = getJsonPath();
-            const csharpConstPaths = await generateCSharpConst(csharpOutputPath, jsonOutputPath, namespace, constFieldsTableConfigs);
-            info(`${i18n.successGenerateConst}: ${csharpConstPaths.join('\n')}`);
+            
+            if (constFieldsTableConfigs.length > 0) {
+                const csharpConstPaths = await generateCSharpConst(csharpOutputPath, jsonOutputPath, namespace, constFieldsTableConfigs);
+                // info(`${i18n.successGenerateConst}: ${csharpConstPaths.join('\n')}`);
+                info(`${i18n.successGenerateConst} files: ${csharpConstPaths.length} ${path.dirname(csharpConstPaths[0])}`);
+            }
+
+            if (xlsxFbsOptions.csharpUnityLoader) {
+                const csharpUnityPaths = await generateCSharpUnityLoader(csharpOutputPath, namespace, tablesConfig, xlsxFbsOptions);
+                // info(`${i18n.successGenerateCSharpUnity}: ${csharpUnityPaths.join('\n')}`);
+                info(`${i18n.successGenerateCSharpUnityLoader} files: ${csharpUnityPaths.length} ${path.dirname(csharpUnityPaths[0])}`);
+            }
         }
         await generateCSharp();
         if (xlsxFbsOptions.censoredOutput) {

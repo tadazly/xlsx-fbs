@@ -56,6 +56,8 @@ export const xlsxFbsOptions = {
     propertyOrder: [ 'A', 'B', 'C', 'D', 'E' ],
     multiThread: 6,
     minimalInfo: 'info',
+    csharpUnityLoader: false,
+    csharpUnityLoaderSuffix: 'Table',
     js: false,
     jsSourceMap: false,
     jsExcludeFlatbuffers: false,
