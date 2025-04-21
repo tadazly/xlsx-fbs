@@ -12,8 +12,8 @@ namespace {{{ NAMESPACE }}}
 
         protected override string AssetPath => "{{{ TABLE_NAME }}}";
         protected override {{{ TABLE_CLASS }}} GetTableRoot(ByteBuffer buffer) => {{{ TABLE_CLASS }}}.GetRootAs{{{ TABLE_CLASS }}}(buffer);
-        protected override int GetDataLength({{{ TABLE_CLASS }}} root) => root.{{{ DATA_CLASS }}}sLength;
-        protected override {{{ DATA_CLASS }}} GetData({{{ TABLE_CLASS }}} root, int index) => root.{{{ DATA_CLASS }}}s(index).Value;
+        protected override int GetDataLength({{{ TABLE_CLASS }}} root) => root.{{{ DATA_CLASS_SNAKE_UPPER_CASE }}}sLength;
+        protected override {{{ DATA_CLASS }}} GetData({{{ TABLE_CLASS }}} root, int index) => root.{{{ DATA_CLASS_SNAKE_UPPER_CASE }}}s(index).Value;
         protected override int GetDataId({{{ DATA_CLASS }}} data) => data.Id;
     }
 }

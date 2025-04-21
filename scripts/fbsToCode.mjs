@@ -233,12 +233,17 @@ export async function generateCSharpUnityLoader(csharpPath, namespace, configs, 
         const dataClass =  tableClass + options.dataClassSuffix;
         const tableLoaderClass = tableClass + options.csharpUnityLoaderSuffix;
 
+        // 字段名需要先转换成蛇形命名，再转换成大驼峰，来与 flatc 的命名规则进行匹配
+        const tableClassSnakeUpperCase = toUpperCamelCase(toSnakeCase(tableClass));
+        const dataClassSnakeUpperCase = toUpperCamelCase(toSnakeCase(dataClass));
+
         const TableClassContent = fillTemplate(getUnityTableTemplate(), {
             NAMESPACE: namespace,
             TABLE_NAME: tableName,
             TABLE_CLASS: tableClass,
             DATA_CLASS: dataClass,
             TABLE_LOADER_CLASS: tableLoaderClass,
+            DATA_CLASS_SNAKE_UPPER_CASE: dataClassSnakeUpperCase,
         });
 
         const filePath = path.join(scriptsPath, `${tableLoaderClass}.cs`);
@@ -246,7 +251,7 @@ export async function generateCSharpUnityLoader(csharpPath, namespace, configs, 
         outputList.push(filePath);
 
         if (merge) {
-            mergeList.push({ TABLE_CLASS: tableClass, TABLE_LOADER_CLASS: tableLoaderClass });
+            mergeList.push({ TABLE_CLASS_SNAKE_UPPER_CASE: tableClassSnakeUpperCase, TABLE_LOADER_CLASS: tableLoaderClass });
         }
     }
 

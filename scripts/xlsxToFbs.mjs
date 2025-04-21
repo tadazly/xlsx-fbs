@@ -141,11 +141,12 @@ const isLargeScalarType = (type) => scalarTypes[type] && scalarTypes[type].size 
 
 const scalarTypeOrder = [
     'bool',
-    'uint8', 'int8',
-    'uint16', 'int16',
-    'uint32', 'int32',
-    'uint64', 'int64',
+    'int8', 'uint8',
+    'int16', 'uint16',
+    'int32', 'uint32',
+    'int64', 'uint64',
 ];
+
 /**
  * 推导数字类型范围，不考虑浮点数，所以需要在外部判断是否所有数字是整数
  * @param {number} min 最小值
@@ -672,8 +673,12 @@ function formatProperties(propertyJson, dataJson, options, tableName) {
         type = type.trim();
 
         // field: 直接处理好 fbs 使用的 蛇形命名
-        if (field.startsWith('add')) { // 避免与代码中的 addFie 接口冲突
-            field = 'append' + field.slice(3);
+        if (field.startsWith('add')) { // 避免与代码中的 addField 接口冲突
+            warn(`${i18n.warningInvalidField}. table: ${tableName}, field: ${comment}[${field}] => field: ${field}`);
+            field = 'addFix' + field.slice(3);
+        } else if (field === 'getType') { // 避免与 C# 的 GetType 方法冲突
+            warn(`${i18n.warningInvalidField}. table: ${tableName}, field: ${comment}[${field}] => field: ${field}`);
+            field = 'getTypeFix';
         }
 
         const fbsField = toSnakeCase(field);
@@ -697,9 +702,9 @@ function formatProperties(propertyJson, dataJson, options, tableName) {
 
             type = inferNumberType(values);
 
-            // 如果是自动推导的 id 字段，且类型小于 uint，则强制预留为 uint
-            if (field.toLowerCase() === 'id' && scalarTypes[type].size < scalarTypes.uint32.size) {
-                type = 'uint32';
+            // 如果是自动推导的 id 字段，且类型小于 int，则强制预留为 int
+            if (field.toLowerCase() === 'id' && scalarTypes[type].size < scalarTypes.int.size) {
+                type = 'int';
             }
 
             if (type === 'bool') {
@@ -715,6 +720,11 @@ function formatProperties(propertyJson, dataJson, options, tableName) {
             if (!validateResult) {
                 warn(`${i18n.warningNumberTypeOverflow}. table: ${tableName}, field: ${comment}[${field}] => type: ${type}`);
             }
+        }
+
+        if (fbsField === 'id' && type !== 'int' && type !== 'int32') {
+            warn(`${i18n.warningUnityIdType}. table: ${tableName}, field: ${comment}[${field}] => type: ${type}`);
+            type = 'int';
         }
 
         if (isLargeScalarType(type)) { // 配表用这么大数据，确定 ok 吗？

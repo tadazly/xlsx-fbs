@@ -60,6 +60,8 @@
     "warningTablesConfigNotFound": "⚠️ Warning: $tables.xlsx not found, default to convert all, duplicate name will cause conversion failure",
     "warningReservedKeyword": "⚠️ Warning: The name contains reserved keywords, please change the name",
     "warningMissingFlatcOptions": "⚠️ Warning: Flatc options not provided, only generate .fbs file",
+    "warningUnityIdType": "⚠️ Warning: When generating Unity loader class, the id field type is forced to int",
+    "warningInvalidField": "⚠️ Warning: Invalid field name, please check the field name, avoid conflict with the code interface",
     "errorInvalidInput": "❌ Error: Input parameter error, please check the input parameter",
     "errorInvalidPropertyOrder": "❌ Error: --property-order parameter must be a 5-character string representing table columns, like ABCDE",
     "errorInvalidRootDir": "❌ Error: Tables root directory not found",

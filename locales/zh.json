@@ -60,6 +60,8 @@
     "warningTablesConfigNotFound": "⚠️ Warning: 未找到打表配置文件 $tables.xlsx，默认打所有表，同名表会打表失败",
     "warningReservedKeyword": "⚠️ Warning: 名称中包含保留关键字，请更换命名",
     "warningMissingFlatcOptions": "⚠️ Warning: 未传入 flatc 选项，只生成 .fbs 文件",
+    "warningUnityIdType": "⚠️ Warning: 生成 Unity 加载类时，id 字段类型强制转换为 int",
+    "warningInvalidField": "⚠️ Warning: 字段名非法，请检查字段名，避免与代码中的接口冲突",
     "errorInvalidInput": "❌ Error: 输入参数错误，请检查输入参数",
     "errorInvalidPropertyOrder": "❌ Error: --property-order 传入的参数必须是长度为5的字符串表格列，比如 ABCDE",
     "errorInvalidRootDir": "❌ Error: 不合法的根目录",
