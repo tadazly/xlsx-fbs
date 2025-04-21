@@ -583,15 +583,15 @@ AssetBundle Collector:
 ```csharp
 async void Start()
 {
-    // 使用封装好的方法初始化并加载 TablePackage
+    // 使用你自己封装的方法加载 TablePackage
     await AssetLoader.DownloadPackageAsync("TablePackage");
 
     // 加载单张表表
-    await Xls.ItemTable.Instance.Load();
-    await Xls.ModuleTable.Instance.Load();
+    await Xls.ItemTable.Instance.LoadAsync();
+    await Xls.ModuleTable.Instance.LoadAsync();
 
     // 如果配置了 $tables.xlsx 中的 merge 字段，可以直接加载合并表。
-    await Xls.MergeTableLoader.LoadAll();  
+    await Xls.MergeTableLoader.LoadAllAsync();  
     // 这行和上面两行单张表的加载是等价的，具体可以看 MergeTableLoader.cs 中的实现。
 
     // 获取单行数据

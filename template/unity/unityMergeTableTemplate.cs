@@ -18,7 +18,7 @@ namespace {{{ NAMESPACE }}}
         /// Load all sub-tables in the merge table
         /// </summary>
         /// <returns></returns>
-        public static async UniTask<bool> LoadAll()
+        public static async UniTask<bool> LoadAllAsync()
         {
             if (_loaded) return true;
 

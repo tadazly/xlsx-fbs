@@ -32,17 +32,17 @@ namespace {{{ NAMESPACE }}}
         /// Initialize and load table data
         /// </summary>
         /// <returns></returns>
-        public UniTask<bool> Load()
+        public UniTask<bool> LoadAsync()
         {
             if (_loaded) return UniTask.FromResult(true);
 
             if (_loadingTask.HasValue) return _loadingTask.Value;
 
-            _loadingTask = InternalLoad();
+            _loadingTask = InternalLoadAsync();
             return _loadingTask.Value;
         }
 
-        private async UniTask<bool> InternalLoad()
+        private async UniTask<bool> InternalLoadAsync()
         {
             var package = YooAssets.TryGetPackage("TablePackage");
             if (package == null)
