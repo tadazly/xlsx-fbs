@@ -20,7 +20,7 @@
 - [结构表/子表（Tables）](./README.original.md#结构表子表-tables)
 - [枚举（Enums）](./README.original.md#枚举-enums)
 
-完整文档包含一个简单的 [Unity 使用例子](./README.original.md#unity-loader-用法)。
+完整文档包含一个简单的 [Unity Example](./README.original.md#unity-loader-用法)。
 
 ## 安装 xlsx-fbs 
 

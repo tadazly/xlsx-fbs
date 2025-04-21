@@ -607,7 +607,7 @@ async void Start()
 
     // 获取常量定义指向的数据
     var module = Xls.ModuleTable.Instance.Get(Xls.ModuleConst.CHAT_PANEL);
-    DDebug.Log(module.Name);
+    Debug.Log(module.Name);
 }
 ```
 
