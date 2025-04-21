@@ -67,6 +67,7 @@ namespace {{{ NAMESPACE }}}
             var root = GetTableRoot(buffer);
             LoadDataFromTableRoot(root);
 
+            handle.Release();
             _loadingTask = null;
             return true;
         }

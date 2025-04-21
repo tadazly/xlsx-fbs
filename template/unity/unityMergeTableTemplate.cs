@@ -45,6 +45,7 @@ namespace {{{ NAMESPACE }}}
             // Load all sub-tables
 {{{ LOAD_TABLE_LIST }}}
 
+            handle.Release();
             _loaded = true;
             return true;
         }
