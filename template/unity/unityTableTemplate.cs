@@ -10,10 +10,10 @@ namespace {{{ NAMESPACE }}}
     {
         public static readonly {{{ TABLE_LOADER_CLASS }}} Instance = new();
 
-        protected override string AssetPath => "{{{ TABLE_NAME }}}"; // 资源名，YooAsset 中配置以文件名索引资源
+        protected override string AssetPath => "{{{ TABLE_NAME }}}";
         protected override {{{ TABLE_CLASS }}} GetTableRoot(ByteBuffer buffer) => {{{ TABLE_CLASS }}}.GetRootAs{{{ TABLE_CLASS }}}(buffer);
         protected override int GetDataLength({{{ TABLE_CLASS }}} root) => root.{{{ DATA_CLASS }}}sLength;
         protected override {{{ DATA_CLASS }}} GetData({{{ TABLE_CLASS }}} root, int index) => root.{{{ DATA_CLASS }}}s(index).Value;
-        protected override uint GetDataId({{{ DATA_CLASS }}} data) => data.Id;
+        protected override int GetDataId({{{ DATA_CLASS }}} data) => data.Id;
     }
 }

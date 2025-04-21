@@ -9,7 +9,7 @@ const {{{ NAMESPACE }}} = {
 {{{ CLASS_LIST }}}
 };
 
-// 挂到全局变量
+// Attach to global variable
 if (typeof window !== 'undefined') {
   (window as any).flatbuffers = flatbuffers;
   (window as any).{{{ NAMESPACE }}} = {{{ NAMESPACE }}};
@@ -18,5 +18,5 @@ if (typeof window !== 'undefined') {
   (global as any).{{{ NAMESPACE }}} = {{{ NAMESPACE }}};
 }
 
-// 可以导出给 Node 模块使用（CommonJS/ESM）
+// Export to Node module
 export { flatbuffers, {{{ NAMESPACE }}} };

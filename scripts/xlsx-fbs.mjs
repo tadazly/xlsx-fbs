@@ -459,21 +459,21 @@ async function batchConvert(input, flatcArgs) {
 
     // 生成 C# 相关代码
     if (flatcArgs.includes('--csharp') && (constFieldsTableConfigs.length > 0 || xlsxFbsOptions.csharpUnityLoader)) {
-        async function generateCSharp() {
+        async function generateCSharp(isCensored = false) {
             const namespace = xlsxFbsOptions.namespace;
             const csharpOutputPath = getCSharpPath();
             const jsonOutputPath = getJsonPath();
             
             if (constFieldsTableConfigs.length > 0) {
-                const csharpConstPaths = await generateCSharpConst(csharpOutputPath, jsonOutputPath, namespace, constFieldsTableConfigs);
-                // info(`${i18n.successGenerateConst}: ${csharpConstPaths.join('\n')}`);
-                info(`${i18n.successGenerateConst} files: ${csharpConstPaths.length} ${path.dirname(csharpConstPaths[0])}`);
+                const configs = isCensored ? constFieldsTableConfigs.filter(config => !config.censoredTable) : constFieldsTableConfigs;
+                const csharpConstPaths = await generateCSharpConst(csharpOutputPath, jsonOutputPath, namespace, configs);
+                logGenerateFiles(csharpConstPaths, i18n.successGenerateConst);
             }
 
             if (xlsxFbsOptions.csharpUnityLoader) {
-                const csharpUnityPaths = await generateCSharpUnityLoader(csharpOutputPath, namespace, tablesConfig, xlsxFbsOptions);
-                // info(`${i18n.successGenerateCSharpUnity}: ${csharpUnityPaths.join('\n')}`);
-                info(`${i18n.successGenerateCSharpUnityLoader} files: ${csharpUnityPaths.length} ${path.dirname(csharpUnityPaths[0])}`);
+                const configs = isCensored ? tablesConfig.filter(config => !config.censoredTable) : tablesConfig;
+                const csharpUnityPaths = await generateCSharpUnityLoader(csharpOutputPath, namespace, configs, xlsxFbsOptions);
+                logGenerateFiles(csharpUnityPaths, i18n.successGenerateCSharpUnityLoader);
             }
         }
         await generateCSharp();
@@ -481,7 +481,7 @@ async function batchConvert(input, flatcArgs) {
             console.log('generate censored csharp ...');
             const originalOutput = xlsxFbsOptions.output;
             xlsxFbsOptions.output = xlsxFbsOptions.censoredOutput;
-            await generateCSharp();
+            await generateCSharp(true);
             xlsxFbsOptions.output = originalOutput;
         }
     }
@@ -495,7 +495,7 @@ async function batchConvert(input, flatcArgs) {
 
             if (constFieldsTableConfigs.length > 0) {
                 const tsConstPaths = await generateTsConst(tsOutputPath, jsonOutputPath, namespace, constFieldsTableConfigs);
-                info(`${i18n.successGenerateConst}: ${tsConstPaths.join('\n')}`);
+                logGenerateFiles(tsConstPaths, i18n.successGenerateConst);
             }
 
             const tsMainPath = await generateTsMain(tsOutputPath, namespace);
@@ -559,6 +559,21 @@ async function batchConvert(input, flatcArgs) {
 
     // 所有后处理完成后，记录文件的修改日期，作为增量打表标志
     await fsUtil.writeFile(tableHashPath, JSON.stringify(tableHash, null, 2), 'utf-8');
+}
+
+/**
+ * 打印生成的文件列表
+ * @param {string[]} files 
+ * @param {string} i18nKey 
+ */
+function logGenerateFiles(files, i18nKey) {
+    if (files.length <= 10) {
+        info(`${i18nKey}:\n  ${files.join('\n  ')}`);
+    } else {
+        const sliced = files.slice(0, 10);
+        const left = files.length - sliced.length;
+        info(`${i18nKey}:\n  ${sliced.join('\n  ')}\n  ... and ${left} more files`);
+    }
 }
 
 /**

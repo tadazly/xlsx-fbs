@@ -5,7 +5,7 @@ import fsAsync from 'fs/promises';
 import { flatcAsync } from './utils/flatcUtil.mjs';
 import { log, warn } from './utils/logUtil.mjs';
 import { toKebabCase, toUpperCamelCase, toSnakeCase, toTableConstantStyle } from './utils/stringUtil.mjs';
-import { getTsMainTemplate, getTsClassListTemplate, fillTemplate, getTsImportClassTemplate, getTsConstFieldTemplate, getTsConstTemplate, getCSharpConstTemplate, getCSharpConstFieldTemplate, getUnityTableLoaderBaseTemplate, getUnityTableTemplate } from './template.mjs';
+import { fillTemplate } from './template.mjs';
 
 /**
  * 通过 .fbs 文件生成对应的代码
@@ -30,6 +30,7 @@ export async function fbsToCode(fbsPath, flatcOptions) {
  */
 export async function generateTsMain(tsPath, namespace) {
     const { Project } = await import('ts-morph'); // 动态导入，加快运行时间
+    const { getTsMainTemplate, getTsImportClassTemplate, getTsClassListTemplate } = await import('./template.mjs');
 
     const namespaceKebabCase = toKebabCase(namespace);
     const tsScriptsPath = path.join(tsPath, namespaceKebabCase, `**/*.ts`);
@@ -157,6 +158,8 @@ export async function generateLangConst(scriptRoot, jsonPath, namespace, configs
  * @param {import('./xlsx-fbs.mjs').TableConfig[]} configs 
  */
 export async function generateTsConst(tsPath, jsonPath, namespace, configs) {
+    const { getTsConstTemplate, getTsConstFieldTemplate } = await import('./template.mjs');
+
     return generateLangConst(tsPath, jsonPath, namespace, configs, {
         fileExt: 'ts',
         getFileName: toKebabCase,
@@ -178,6 +181,8 @@ export async function generateTsConst(tsPath, jsonPath, namespace, configs) {
  * @param {import('./xlsx-fbs.mjs').TableConfig[]} configs 
  */
 export async function generateCSharpConst(csharpPath, jsonPath, namespace, configs) {
+    const { getCSharpConstTemplate, getCSharpConstFieldTemplate } = await import('./template.mjs');
+
     return generateLangConst(csharpPath, jsonPath, namespace, configs, {
         fileExt: 'cs',
         getFileName: toUpperCamelCase,
@@ -199,6 +204,14 @@ export async function generateCSharpConst(csharpPath, jsonPath, namespace, confi
  * @param {import('./xlsxToFbs.mjs').XlsxToFbsOptions} options 
  */
 export async function generateCSharpUnityLoader(csharpPath, namespace, configs, options) {
+    const { 
+        getUnityTableLoaderBaseTemplate, 
+        getUnityTableTemplate, 
+        getUnityMergeTableTemplate, 
+        getUnityMergeTableLoadTemplate, 
+        getUnityMergeTableUnloadTemplate 
+    } = await import('./template.mjs');
+
     const namespaceStyled = toUpperCamelCase(namespace);
     const scriptsPath = path.join(csharpPath, ...namespaceStyled.split('.'));
     const outputList = [];
@@ -210,8 +223,11 @@ export async function generateCSharpUnityLoader(csharpPath, namespace, configs, 
     await writeFile(tableLoaderBasePath, tableLoaderBaseContent, 'utf-8');
     outputList.push(tableLoaderBasePath);
 
+    /** @type {{ TABLE_CLASS: string, TABLE_LOADER_CLASS: string }[]} */
+    const mergeList = [];
+
     for (const config of configs) {
-        const { tableName } = config;
+        const { tableName, merge } = config;
 
         const tableClass = toUpperCamelCase(tableName);
         const dataClass =  tableClass + options.dataClassSuffix;
@@ -228,6 +244,22 @@ export async function generateCSharpUnityLoader(csharpPath, namespace, configs, 
         const filePath = path.join(scriptsPath, `${tableLoaderClass}.cs`);
         await writeFile(filePath, TableClassContent, 'utf-8');
         outputList.push(filePath);
+
+        if (merge) {
+            mergeList.push({ TABLE_CLASS: tableClass, TABLE_LOADER_CLASS: tableLoaderClass });
+        }
+    }
+
+    if (mergeList.length > 0) {
+        const mergeTableContent = fillTemplate(getUnityMergeTableTemplate(), {
+            NAMESPACE: namespace,
+            LOAD_TABLE_LIST: mergeList.map(item => fillTemplate(getUnityMergeTableLoadTemplate(), item)).join('\n'),
+            UNLOAD_TABLE_LIST: mergeList.map(item => fillTemplate(getUnityMergeTableUnloadTemplate(), item)).join('\n'),
+        });
+
+        const filePath = path.join(scriptsPath, 'MergeTableLoader.cs');
+        await writeFile(filePath, mergeTableContent, 'utf-8');
+        outputList.unshift(filePath);
     }
 
     return outputList;

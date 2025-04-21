@@ -43,8 +43,11 @@ export const getCSharpConstFieldTemplate = () => readTemplate(path.join(csharpTe
 //#endregion
 
 //#region unity
-export const getUnityTableLoaderBaseTemplate = () => readTemplate(path.join(unityTemplatePath, 'unityTableLoaderBase.cs'));
+export const getUnityTableLoaderBaseTemplate = () => readTemplate(path.join(unityTemplatePath, 'unityTableLoaderBaseTemplate.cs'));
 export const getUnityTableTemplate = () => readTemplate(path.join(unityTemplatePath, 'unityTableTemplate.cs'));
+export const getUnityMergeTableTemplate = () => readTemplate(path.join(unityTemplatePath, 'unityMergeTableTemplate.cs'));
+export const getUnityMergeTableLoadTemplate = () => readTemplate(path.join(unityTemplatePath, 'unityMergeTableLoadTemplate.cs'));
+export const getUnityMergeTableUnloadTemplate = () => readTemplate(path.join(unityTemplatePath, 'unityMergeTableUnloadTemplate.cs'));
 //#endregion
 
 /**

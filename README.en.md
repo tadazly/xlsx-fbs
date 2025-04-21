@@ -93,7 +93,7 @@ ID|Name|Description|Max|DailyLimit
 
 ```
 A        |B     |C      |D    |E        
-ID       |id    |number |     |Some note
+ID       |id    |int |     |Some note
 Name     |name  |string |     |required
 Desc     |desc  |string |     |
 Removed  |wtf   |uint   |     |deprecated
@@ -110,7 +110,7 @@ namespace Xlsx;
 
 table ItemInfo {
   /// ID
-  id:short;
+  id:int;
   /// Name
   name:string (required);
   /// Description

@@ -20,6 +20,7 @@
 - [结构表/子表（Tables）](./README.original.md#结构表子表-tables)
 - [枚举（Enums）](./README.original.md#枚举-enums)
 
+完整文档包含一个简单的 [Unity 使用例子](./README.original.md#unity-loader-用法)。
 
 ## 安装 xlsx-fbs 
 
@@ -108,7 +109,7 @@ x2f --ts --csharp
 
     A|B|C|D|E|F
     -|-|-|-|-|-
-    道具id|id|number|||一些功能注释
+    道具id|id|int|||一些功能注释
     道具名|name|string||required|
     描述|desc|string|||
     策划偷偷删掉的|wtf|uint||deprecated|字段就算不用了也最好保留，手动标记废弃
@@ -126,7 +127,7 @@ x2f --ts --csharp
 
     table ItemInfo {
       /// 道具id
-      id:short;
+      id:int;
       /// 道具名
       name:string (required);
       /// 描述

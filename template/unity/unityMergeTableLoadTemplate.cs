@@ -1,0 +1,1 @@
+            {{{ TABLE_LOADER_CLASS }}}.Instance.LoadDataFromTableRoot(root.{{{ TABLE_CLASS }}}.Value);

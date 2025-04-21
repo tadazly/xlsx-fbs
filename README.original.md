@@ -186,7 +186,7 @@ item.xls:
 
     A|B|C|D|E|F
     -|-|-|-|-|-
-    道具id|id|uint|||一些功能注释
+    道具id|id|int|||一些功能注释
     道具名|name|string||required|
     描述|desc|string|||
     策划偷偷删掉的|wtf|uint||deprecated|字段就算不用了也最好保留，手动标记废弃
@@ -202,7 +202,7 @@ item.xls:
 
     table ItemInfo {
       /// 道具id
-      id:uint;
+      id:int;
       /// 道具名
       name:string (required);
       /// 描述
@@ -291,9 +291,9 @@ Excel 文件路径或 Excel 所在的文件夹路径，传入文件则转换单�
     >    - D: 字段的默认值 （对应 .fbs 中的默认值）
     >    - E: 字段的属性 （对应 .fbs 中的 Attribute）
 
-- `--csharp-unity-loader` 生成 Unity 的表格加载类，数据页需配置 int (int32) 的 id 字段。
+- `--csharp-unity-loader` 生成 Unity 的表格加载类，数据页需配置 int 类型的 id 字段。
 
-- `--csharp-unity-loader-suffix` 表格加载类后缀，默认 `Table`，要想简便可以用 `s` 。
+- `--csharp-unity-loader-suffix` 表格加载类后缀，默认 `Table`，要想简短可以用 `s` 。
 
 - `--js` 打包 js。 浏览器用输出的 `.js`, node 用 `.cjs.js` 或 `.esm.js`。 “💩在 JS 里用 FlatBuffers？你是不是疯了？你还好吧？”
 
@@ -354,7 +354,7 @@ output[_censored]/
 
 - 废弃的字段数据页中可以删除该列。
 
-- 为规范表数据结构，尽量统一使用 id 字段（uint/int）作为索引。 Unity 中统一使用 int 类型。
+- 为规范表数据结构及避免不必要的问题，尽量使用 `int (int32)` 作为 id 字段类型。 Unity 中数值字段类型也尽量统一使用 `int`。
 
 ### 属性页规范
 
@@ -506,6 +506,114 @@ bit_flags|枚举值可组合
 
 - 没有配置 `censoredTable` 或 `censoredFields` 字段，只会输出一份 `output/`。
 
+## Unity Loader 用法
+
+#### Unity 项目依赖
+
+- [YooAsset 2.3.x](https://www.yooasset.com/): 按照官方教程配置。
+- [UniTask](https://github.com/Cysharp/UniTask/releases): 通过 UPM 的形式安装到项目中。
+- [FlatBuffers](https://github.com/google/flatbuffers/tree/master/net/FlatBuffers): 把 net/FlatBuffers 文件夹下的 .cs 文件复制到项目中。
+
+#### 示例 Unity 项目结构：
+
+```
+Asset/
+├── HotUpdate/       
+│   └── Configs/        
+│   │   └── Xls/           # 放置 x2f 生成的二进制     
+│   └── Scripts/
+│       ├── GameLogic/      # 游戏逻辑
+│       └── Xls/           # 放置 x2f 生成的代码
+└── Plugins/        
+    ├── FlatBuffers/        # 放置 FlatBuffers 库
+    └── UniTask/     
+```
+
+#### 数据规范
+
+- 必须配置 `id` 字段，用于数据索引，且类型为 `int`。
+
+#### 打表命令
+
+下列命令以 macOS/Linux/WSL 举例，使用反引号 `\` 作为换行符；Windows PowerShell 请使用 \` 作为换行符；CMD 不支持换行符，可以写个 bat 脚本，使用 ^ 换行。
+
+- 增量打表
+
+    ```shell
+    x2f ./example/batchConvert \
+    -o "/Path/To/Output" \
+    --output-bin "/UnityProject/Assets/HotUpdate/Configs/Xls" \ 
+    --output-csharp "/UnityProject/Assets/HotUpdate/Scripts" \
+    -n Xls \
+    --binary-extension bytes \ 
+    --data-class-suffix DataInfo \
+    --csharp \
+    --csharp-unity-loader
+    ```
+
+- 全量打表
+
+    ```shell
+    x2f ./example/batchConvert \
+    -o "/Path/To/Output" \
+    --output-bin "/UnityProject/Assets/HotUpdate/Configs/Xls" \ 
+    --output-csharp "/UnityProject/Assets/HotUpdate/Scripts" \
+    -n Xls \
+    --binary-extension bytes \ 
+    --data-class-suffix DataInfo \
+    --csharp \
+    --csharp-unity-loader \
+    --disable-incremental
+    ```
+
+#### 使用 YooAsset 打包二进制
+
+创建一个名为 `TablePackage` 的资源包。
+
+AssetBundle Collector:
+
+<img src="./doc/assets/YooAsset_example.png" width="800">
+
+- 开启 `Enable Addressable`
+- 使用 `AddressByFileName` 寻址模式
+- 若想自定义修改 `unityTableLoaderBaseTemplate.cs` 和 `unityMergeTableTemplate.cs` 即可。
+
+#### 示例代码
+
+```csharp
+async void Start()
+{
+    // 使用封装好的方法初始化并加载 TablePackage
+    await AssetLoader.DownloadPackageAsync("TablePackage");
+
+    // 加载单张表表
+    await Xls.ItemTable.Instance.Load();
+    await Xls.ModuleTable.Instance.Load();
+
+    // 如果配置了 $tables.xlsx 中的 merge 字段，可以直接加载合并表。
+    await Xls.MergeTableLoader.LoadAll();  
+    // 这行和上面两行单张表的加载是等价的，具体可以看 MergeTableLoader.cs 中的实现。
+
+    // 获取单行数据
+    var item = Xls.ItemTable.Instance.Get(101);
+    Debug.Log(item.Name);
+
+    // 获取所有数据
+    var items = Xls.ItemTable.Instance.GetAll();
+    foreach (var itemDataInfo in items)
+    {
+        Debug.Log($"id: {itemDataInfo.Id} name: {itemDataInfo.Name}");
+    }
+
+    // 获取常量定义指向的数据
+    var module = Xls.ModuleTable.Instance.Get(Xls.ModuleConst.CHAT_PANEL);
+    DDebug.Log(module.Name);
+}
+```
+
+#### 关于 Assembly Definition References
+
+- 可以为 `FlatBuffers` 和 `Xls` 创建 asmdef 文件，并在你的项目中添加 `FlatBuffers` 和 `Xls` 的引用。
 
 ## 依赖库
 

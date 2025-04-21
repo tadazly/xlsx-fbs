@@ -12,21 +12,24 @@ namespace {{{ NAMESPACE }}}
 {
     public abstract class TableLoader<TTable, TData>
     {
-        private Dictionary<uint, TData> _dict;
+        private Dictionary<int, TData> _dict;
         private TData[] _items;
         private bool _loaded;
-        private UniTask<bool>? _loadingTask; // 防止同时调用 Load 导致的重复加载
+        private UniTask<bool>? _loadingTask; // Prevents duplicate loading caused by simultaneous calls to Load
 
         public bool IsLoaded => _loaded;
 
+        /// <summary>
+        /// YooAsset => AddressByFileName
+        /// </summary>
         protected abstract string AssetPath { get; }
         protected abstract TTable GetTableRoot(ByteBuffer buffer);
         protected abstract int GetDataLength(TTable root);
         protected abstract TData GetData(TTable root, int index);
-        protected abstract uint GetDataId(TData data);
+        protected abstract int GetDataId(TData data);
 
         /// <summary>
-        /// 初始化加载表数据
+        /// Initialize and load table data
         /// </summary>
         /// <returns></returns>
         public UniTask<bool> Load()
@@ -41,12 +44,20 @@ namespace {{{ NAMESPACE }}}
 
         private async UniTask<bool> InternalLoad()
         {
-            var handle = YooAssets.LoadAssetAsync<TextAsset>(AssetPath);
+            var package = YooAssets.TryGetPackage("TablePackage");
+            if (package == null)
+            {
+                Debug.LogError("[TableLoader] Please init YooAsset 'TablePackage' first");
+                _loadingTask = null;
+                return false;
+            }
+            
+            var handle = package.LoadAssetAsync<TextAsset>(AssetPath);
             await handle.ToUniTask();
 
             if (handle.Status != EOperationStatus.Succeed)
             {
-                Debug.LogError($"[TableLoader] Failed to load: {AssetPath}");
+                Debug.LogError($"[TableLoader] Failed to load '{AssetPath}'");
                 _loadingTask = null;
                 return false;
             }
@@ -61,15 +72,15 @@ namespace {{{ NAMESPACE }}}
         }
 
         /// <summary>
-        /// 通过 FlatBuffers 的 Root 来进行初始化数据
+        /// Initialize data using the Root object from FlatBuffers
         /// </summary>
-        /// <param name="root"></param>
+        /// <param name="root">Root object</param>
         public void LoadDataFromTableRoot(TTable root)
         {
             if (_loaded) return;
 
             int length = GetDataLength(root);
-            _dict = new Dictionary<uint, TData>(length);
+            _dict = new Dictionary<int, TData>(length);
             _items = new TData[length];
 
             for (int i = 0; i < length; i++)
@@ -84,32 +95,43 @@ namespace {{{ NAMESPACE }}}
         }
 
         /// <summary>
-        /// 获取单行数据
+        /// Get a single row of data
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="id">Id of the data to retrieve</param>
         /// <returns></returns>
-        public TData Get(uint id)
+        public TData Get(int id)
         {
             if (!_loaded)
-                Debug.LogError($"[TableLoader] {AssetPath} not loaded.");
+            {
+                Debug.LogError($"[TableLoader] '{AssetPath}' not loaded");
+                return default;
+            }
 
-            return _dict.TryGetValue(id, out var item) ? item : default;
+            if (_dict.TryGetValue(id, out var item))
+                return item;
+            
+            Debug.LogWarning($"[TableLoader] No data found in '{AssetPath}' for id: {id}");
+
+            return default;
         }
 
         /// <summary>
-        /// 获取所有数据
+        /// Get all data values
         /// </summary>
         /// <returns></returns>
         public TData[] GetAll()
         {
             if (!_loaded)
-                Debug.LogError($"[TableLoader] {AssetPath} not loaded.");
+            {
+                Debug.LogError($"[TableLoader] '{AssetPath}' not loaded");
+                return System.Array.Empty<TData>();
+            }
 
             return _items;
         }
 
         /// <summary>
-        /// 卸载表资源
+        /// Unload table resources
         /// </summary>
         public void Unload()
         {

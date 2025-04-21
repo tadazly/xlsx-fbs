@@ -1,0 +1,1 @@
+            {{{ TABLE_LOADER_CLASS }}}.Instance.Unload();
