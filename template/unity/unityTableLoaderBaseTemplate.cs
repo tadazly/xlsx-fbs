@@ -11,6 +11,20 @@ using YooAsset;
 
 namespace {{{ NAMESPACE }}}
 {
+    public static class TableValidator
+    {
+        public static bool Validate(bool result, string errorMessage)
+        {
+            if (result) return true;
+#if STRICT_VERIFICATION
+            throw new Exception(errorMessage);
+#else
+            Debug.LogError(errorMessage);
+            return false;
+#endif
+        }
+    }
+
     public abstract class TableLoaderBase<TTable, TData> where TData : struct
     {
         private Dictionary<int, TData> _dict;
@@ -31,6 +45,8 @@ namespace {{{ NAMESPACE }}}
         protected abstract int GetDataLength(TTable root);
         protected abstract TData GetData(TTable root, int index);
         protected abstract int GetDataId(TData data);
+        protected abstract bool VerifyIdentifier(ByteBuffer buffer);
+        protected abstract bool VerifyBuffer(ByteBuffer buffer);
 
         /// <summary>
         /// Initialize and load table data
@@ -59,37 +75,34 @@ namespace {{{ NAMESPACE }}}
             var handle = package.LoadAssetAsync<TextAsset>(AssetPath);
             await handle.ToUniTask();
 
-            if (handle.Status != EOperationStatus.Succeed)
-            {
-                Debug.LogError($"[TableLoader] Failed to load '{AssetPath}'");
-                _loadingTask = null;
-                return false;
-            }
-
-            var textAsset = handle.AssetObject as TextAsset;
-            var buffer = new ByteBuffer(textAsset.bytes);
-            
-#if STRICT_VERIFICATION
-            _root = GetTableRoot(buffer);
-#else
             try
             {
+                if (handle.Status != EOperationStatus.Succeed)
+                {
+                    Debug.LogError($"[TableLoader] Failed to load '{AssetPath}'");
+                    return false;
+                }
+
+                var textAsset = handle.AssetObject as TextAsset;
+                var buffer = new ByteBuffer(textAsset.bytes);
+            
+                if (!TableValidator.Validate(VerifyIdentifier(buffer),
+                        $"[TableLoader] Mismatched identifier for '{AssetPath}'")
+                    || !TableValidator.Validate(VerifyBuffer(buffer),
+                        $"[TableLoader] Failed to verify buffer for '{AssetPath}'"))
+                {
+                    return false;
+                }
+            
                 _root = GetTableRoot(buffer);
+                LoadDataFromTableRoot(_root);
+                return true;
             }
-            catch (Exception e)
+            finally
             {
-                Debug.LogError($"[TableLoader] Failed to verify '{AssetPath}': {e.Message}");
-                _loadingTask = null;
                 handle.Release();
-                return false;
+                _loadingTask = null;
             }
-#endif
-
-            LoadDataFromTableRoot(_root);
-
-            handle.Release();
-            _loadingTask = null;
-            return true;
         }
 
         /// <summary>

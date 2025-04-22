@@ -12,19 +12,11 @@ namespace {{{ NAMESPACE }}}
         public static readonly {{{ TABLE_LOADER_CLASS }}} Instance = new();
 
         protected override string AssetPath => "{{{ TABLE_NAME }}}";
-        protected override {{{ TABLE_CLASS }}} GetTableRoot(ByteBuffer buffer) {
-            if (!{{{ TABLE_CLASS }}}.{{{ TABLE_CLASS }}}BufferHasIdentifier(buffer))
-            {
-                throw new Exception($"Mismatched identifier for '{AssetPath}'");
-            }
-            if (!{{{ TABLE_CLASS }}}.Verify{{{ TABLE_CLASS }}}(buffer))
-            {
-                throw new Exception($"Verify{{{ TABLE_CLASS }}} failed for '{AssetPath}'");
-            }
-            return {{{ TABLE_CLASS }}}.GetRootAs{{{ TABLE_CLASS }}}(buffer);
-        }
+        protected override {{{ TABLE_CLASS }}} GetTableRoot(ByteBuffer buffer) => {{{ TABLE_CLASS }}}.GetRootAs{{{ TABLE_CLASS }}}(buffer);
         protected override int GetDataLength({{{ TABLE_CLASS }}} root) => root.{{{ DATA_CLASS_SNAKE_UPPER_CASE }}}sLength;
         protected override {{{ DATA_CLASS }}} GetData({{{ TABLE_CLASS }}} root, int index) => root.{{{ DATA_CLASS_SNAKE_UPPER_CASE }}}s(index).Value;
         protected override int GetDataId({{{ DATA_CLASS }}} data) => data.Id;
+        protected override bool VerifyIdentifier(ByteBuffer buffer) => {{{ TABLE_CLASS }}}.{{{ TABLE_CLASS }}}BufferHasIdentifier(buffer);
+        protected override bool VerifyBuffer(ByteBuffer buffer) => {{{ TABLE_CLASS }}}.Verify{{{ TABLE_CLASS }}}(buffer);
     }
 }
