@@ -754,7 +754,6 @@ function formatProperties(propertyJson, dataJson, options, tableName) {
             attrs.unshift('key');
         }
         if (attrs.includes('key')) {
-            console.log(dataJson);
             dataJson.sort((a, b) => {
                 const valA = a[comment] ?? '';
                 const valB = b[comment] ?? '';

@@ -590,13 +590,13 @@ async void Start()
     await Xls.ItemTable.Instance.LoadAsync();
     await Xls.ModuleTable.Instance.LoadAsync();
 
-    // 如果配置了 $tables.xlsx 中的 merge 字段，可以直接加载合并表。
+    // 通过合并表接口加载 $tables.xlsx 中配置了 merge 字段的表
     await Xls.MergeTableLoader.LoadAllAsync();  
-    // 这行和上面两行单张表的加载是等价的，具体可以看 MergeTableLoader.cs 中的实现。
+    // 这行和上面两行单独加载 item 和 module 是等价的，具体可以看 MergeTableLoader.cs 中的实现
 
     // 获取单行数据
     var item = Xls.ItemTable.Instance.Get(101);
-    Debug.Log(item.Name);
+    Debug.Log(item.HasValue ? item.Value.Name : "Nope");
 
     // 获取所有数据
     var items = Xls.ItemTable.Instance.GetAll();
@@ -606,8 +606,19 @@ async void Start()
     }
 
     // 获取常量定义指向的数据
-    var module = Xls.ModuleTable.Instance.Get(Xls.ModuleConst.CHAT_PANEL);
-    Debug.Log(module.Name);
+    if (Xls.ModuleTable.Instance.TryGet(Xls.ModuleConst.CHAT_PANEL, out var module))
+    {
+        Debug.Log(module.Name);
+    }
+    else
+    {
+        Debug.LogError("Cant find chat panel");
+    }
+
+    await Xls.DomainTable.Instance.LoadAsync();
+    // 暴露了 FlatBuffers 的 Root 对象，可以用于表中配置的 key 属性获取数据
+    var google = Xls.DomainTable.Instance.Root.DomainDataInfosByKey("google");
+    Debug.Log(google.HasValue ? google.Value.Ip + google.Value.Port : "Nope");
 }
 ```
 
