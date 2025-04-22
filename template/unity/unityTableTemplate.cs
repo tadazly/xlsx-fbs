@@ -7,7 +7,7 @@ using Google.FlatBuffers;
 
 namespace {{{ NAMESPACE }}}
 {
-    public class {{{ TABLE_LOADER_CLASS }}} : TableLoader<{{{ TABLE_CLASS }}}, {{{ DATA_CLASS }}}>
+    public class {{{ TABLE_LOADER_CLASS }}} : TableLoaderBase<{{{ TABLE_CLASS }}}, {{{ DATA_CLASS }}}>
     {
         public static readonly {{{ TABLE_LOADER_CLASS }}} Instance = new();
 

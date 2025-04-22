@@ -11,7 +11,7 @@ using YooAsset;
 
 namespace {{{ NAMESPACE }}}
 {
-    public abstract class TableLoader<TTable, TData> where TData : struct
+    public abstract class TableLoaderBase<TTable, TData> where TData : struct
     {
         private Dictionary<int, TData> _dict;
         private TData[] _items;
