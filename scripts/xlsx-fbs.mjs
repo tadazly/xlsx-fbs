@@ -38,9 +38,14 @@ async function main() {
         .option('--python', 'Python')
         .option('--...', '\n');
 
-    // 隐藏一些不对外的选项
-    program.addOption(new Option('--censored-table', i18n.censoredTable).hideHelp());
-    program.addOption(new Option('--legacy-mode', i18n.legacyMode).hideHelp());
+    // 隐藏不对外和不实用的选项
+    program
+        .addOption(new Option('--censored-table', i18n.censoredTable).hideHelp())
+        .addOption(new Option('--legacy-mode', i18n.legacyMode).hideHelp())
+        .addOption(new Option('--enable-streaming-read', i18n.enableStreamingRead).hideHelp())
+        .addOption(new Option('--allow-wild-table', i18n.allowWildTable).hideHelp());
+
+    // 隐藏拷贝代码输出的选项，保留 csharp 来作为示例
     Object.keys(LANGUAGE_EXTENSIONS).forEach(key => {
         if (key === 'csharp') return;
         program.addOption(new Option(`--output-${key} <path>`, '').hideHelp());
@@ -67,11 +72,9 @@ async function main() {
         .option('--empty-string', i18n.emptyString)
         .option('--disable-merge-table', i18n.disableMergeTable)
         .option('--disable-incremental', i18n.disableIncremental)
-        .option('--enable-streaming-read', i18n.enableStreamingRead)
         .option('--data-class-suffix <suffix>', i18n.dataClassSuffix, (value) => {
             return toUpperCamelCase(value.trim());
         }, 'Info')
-        .option('--allow-wild-table', i18n.allowWildTable)
         .option('--multi-thread <number>', i18n.multiThread, (value) => {
             let num = parseInt(value);
             if (isNaN(num) || num < 1) {
