@@ -85,5 +85,6 @@
     "errorSubTableDataNotFound": "❌ Error: 子表数据不存在",
     "errorEnumDefaultValueMissing": "❌ Error: 枚举类型缺少默认值，请配置默认值",
     "errorEnumNotFound": "❌ Error: 枚举类型不存在，请检查表格格式是否正确",
-    "errorStructNotFound": "❌ Error: 结构体类型不存在，请检查表格格式是否正确"
+    "errorStructNotFound": "❌ Error: 结构体类型不存在，请检查表格格式是否正确",
+    "errorMultipleKeyField": "❌ Error: 表中存在多个 key 属性字段，请修正"
 }

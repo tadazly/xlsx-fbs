@@ -377,6 +377,9 @@ async function batchConvert(input, flatcArgs) {
     if (xlsxFbsOptions.generateFbsHash) {
         commonArgs.push('--generate-fbs-hash');
     }
+    if (xlsxFbsOptions.csharpUnityLoader) {
+        commonArgs.push('--csharp-unity-loader');
+    }
 
     // 限制最大并发数
     const maxThreads = Math.min(os.cpus().length, xlsxFbsOptions.multiThread);

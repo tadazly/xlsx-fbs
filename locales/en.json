@@ -85,5 +85,6 @@
     "errorSubTableDataNotFound": "❌ Error: Sub-table data not found",
     "errorEnumDefaultValueMissing": "❌ Error: Enum type missing default value, please configure the default value",
     "errorEnumNotFound": "❌ Error: Enum type not found, please check if the table format is correct",
-    "errorStructNotFound": "❌ Error: Struct type not found, please check if the table format is correct"
+    "errorStructNotFound": "❌ Error: Struct type not found, please check if the table format is correct",
+    "errorMultipleKeyField": "❌ Error: Table contains multiple key attribute fields, please fix it"
 }

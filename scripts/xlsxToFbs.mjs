@@ -295,28 +295,6 @@ export async function xlsxToFbs(filePath, options = {}) {
 
     const fullDataJson = formatDataJson(parsedResult.dataJson, fbsProperty, options, tableClass); // 生成一份用于转换 bin 的 json 文件。
 
-    if (options.defaultKey) {
-        // 使用 key 关键字必须对数据进行排序
-        const keyField = toSnakeCase(options.defaultKey);
-        fullDataJson.sort((a, b) => {
-            const valA = a[keyField] ?? '';
-            const valB = b[keyField] ?? '';
-
-            const isNumberA = typeof valA === 'number';
-            const isNumberB = typeof valB === 'number';
-
-            if (isNumberA && isNumberB) {
-                return valA - valB;
-            }
-
-            return String(valA).localeCompare(
-                String(valB),
-                'en',
-                { sensitivity: 'base', numeric: true } // 数字感知
-            );
-        });
-    }
-
     if (checkReservedKeyword(tableClass)) {
         warn(`${i18n.warningReservedKeyword} => tableName: ${tableClass}`);
     }
@@ -652,15 +630,24 @@ async function parseWithExcelJS(filePath) {
 }
 
 /**
- * 获取属性页的属性数据，并在这里就预处理好错误数据
- * @param {any} propertyJson 
- * @param {any} dataJson 
+ * 获取属性页的属性数据，并在这里预处理数据
+ * @param {Record<string, any>[]} propertyJson 
+ * @param {Record<string, any>[]} dataJson 
  * @param {XlsxToFbsOptions} options 
  * @param {string} tableName 表名
  * @returns {FbsFieldProperty[]}
  */
 function formatProperties(propertyJson, dataJson, options, tableName) {
     const properties = [];
+    // 获取标记 key 的字段
+    const keyFieldList = propertyJson.map(property => {
+        let [comment, field, type, defaultValue, attribute] = options.propertyOrder.map(order => property[order]);
+        return attribute && attribute.includes('key') ? field : null;
+    }).filter(Boolean);
+    if (keyFieldList.length > 1) {
+        error(`${i18n.errorMultipleKeyField}. table: ${tableName}, keyField: ${keyFieldList.join(', ')}`);
+    }   
+    const keyField = keyFieldList[0] || options.defaultKey;
     propertyJson.forEach(property => {
         let [comment, field, type, defaultValue, attribute] = options.propertyOrder.map(order => property[order]);
         if (!comment || !field || !type) {
@@ -722,7 +709,7 @@ function formatProperties(propertyJson, dataJson, options, tableName) {
             }
         }
 
-        if (fbsField === 'id' && type !== 'int' && type !== 'int32') {
+        if (fbsField === 'id' && type !== 'int' && type !== 'int32' && options.csharpUnityLoader) { // 使用 csharpUnityLoader 时，基础 id 字段必须为 int 类型
             warn(`${i18n.warningUnityIdType}. table: ${tableName}, field: ${comment}[${field}] => type: ${type}`);
             type = 'int';
         }
@@ -763,8 +750,28 @@ function formatProperties(propertyJson, dataJson, options, tableName) {
             attrs.push(...parsed);
         }
         // attribute 填充命令行传入的默认主键
-        if (options.defaultKey === field && !attrs.includes('key')) {
+        if (keyField === field && !attrs.includes('key')) {
             attrs.unshift('key');
+        }
+        if (attrs.includes('key')) {
+            console.log(dataJson);
+            dataJson.sort((a, b) => {
+                const valA = a[comment] ?? '';
+                const valB = b[comment] ?? '';
+    
+                const isNumberA = typeof valA === 'number';
+                const isNumberB = typeof valB === 'number';
+    
+                if (isNumberA && isNumberB) {
+                    return valA - valB;
+                }
+                
+                // FlatBuffers 的排序是按照 字节顺序（UTF-8）进行的比较，使用代码构建可以用 Monster.CreateSortedVectorOfMonster
+                // JS 默认的 < / > 字符串比较方式，其实就是按照字符码位逐个比较，等价于 FlatBuffers 的行为（UTF-8 → 转成 JS string → 按码位比）
+                const strA = String(valA);
+                const strB = String(valB);
+                return strA < strB ? -1 : strA > strB ? 1 : 0;
+            });
         }
         attribute = attrs.join(', ');
 
