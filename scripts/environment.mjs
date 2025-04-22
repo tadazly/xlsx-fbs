@@ -51,7 +51,6 @@ export const xlsxFbsOptions = {
     enableStreamingRead: false,
     legacyMode: false,
     dataClassSuffix: 'Info',
-    generateFbsHash: false,
     allowWildTable: false,
     propertyOrder: [ 'A', 'B', 'C', 'D', 'E' ],
     multiThread: 6,
@@ -79,17 +78,6 @@ export const getFbsPath = (filePath) => {
         return path.join(xlsxFbsOptions.output, 'fbs', `${getTableName(filePath)}.fbs`);
     }
     return path.join(xlsxFbsOptions.output, 'fbs');
-}
-/** .fbs hash文件路径 */
-export const getFbsHashPath = (filePath) => {
-    if (filePath) {
-        return path.join(xlsxFbsOptions.output, 'fbs', `${getTableName(filePath)}.hash`);
-    }
-    return path.join(xlsxFbsOptions.output, 'fbs');
-}
-/** .fbs hash 表路径 */
-export const getFbsHashTablePath = () => {
-    return path.join(xlsxFbsOptions.output, 'fbs_hash_table.json');
 }
 /** .bin 输出路径 */
 export const getBinPath = (filePath) => {

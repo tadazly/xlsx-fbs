@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 // 👆Help to Link to Global
 
-import { getCSharpPath, getFbsHashPath, getFbsHashTablePath, getJsPath, getTableHashPath, getTsPath, i18n } from './environment.mjs'
+import { getCSharpPath, getJsPath, getTableHashPath, getTsPath, i18n } from './environment.mjs'
 import { program, Option } from 'commander';
 import fsAsync from 'fs/promises';
 import * as fsUtil from './utils/fsUtil.mjs';
 import path from 'path';
-import { generateFbsHash, xlsxToFbs } from './xlsxToFbs.mjs';
+import { xlsxToFbs } from './xlsxToFbs.mjs';
 import { xlsxToJson } from './xlsxToJson.mjs';
 import { fbsToCode, generateCSharpConst, generateCSharpUnityLoader, generateJSBundle, generateTsConst, generateTsMain, LANGUAGE_EXTENSIONS } from './fbsToCode.mjs';
 import { xlsxFbsOptions, getFbsPath, getBinPath, getJsonPath, getGenerateScriptPath, getOrganizedScriptPath } from './environment.mjs';
@@ -71,7 +71,6 @@ async function main() {
         .option('--data-class-suffix <suffix>', i18n.dataClassSuffix, (value) => {
             return toUpperCamelCase(value.trim());
         }, 'Info')
-        .option('--generate-fbs-hash', i18n.generateFbsHash)
         .option('--allow-wild-table', i18n.allowWildTable)
         .option('--multi-thread <number>', i18n.multiThread, (value) => {
             let num = parseInt(value);
@@ -197,16 +196,6 @@ async function main() {
  */
 async function singleConvert(input, flatcArgs) {
     async function generateOutput(input, fbs, xlsxData) {
-        // 在生成的文件中添加 .fbs 文件的 hash 值，并在批量打表时生成 fbs_hash_table.json 文件用于运行时校验表的数据结构是否匹配
-        if (xlsxFbsOptions.generateFbsHash) {
-            const hash = await generateFbsHash(fbs);
-            xlsxData['fbs_hash'] = Array.from(hash);
-            const fbsHashPath = getFbsHashPath(input);
-            await fsUtil.writeFile(fbsHashPath, hash.toString('hex'), 'utf-8');
-        } else {
-            fbs = fbs.replace('  fbs_hash:[uint8];\n', '');
-        }
-
         const fbsOutputPath = getFbsPath(input);
         await fsUtil.writeFile(fbsOutputPath, fbs);
         log(`${i18n.successGenerateFbs}: ${getFbsPath(input)}`);
@@ -374,9 +363,6 @@ async function batchConvert(input, flatcArgs) {
     if (xlsxFbsOptions.dataClassSuffix) {
         commonArgs.push('--data-class-suffix', xlsxFbsOptions.dataClassSuffix);
     }
-    if (xlsxFbsOptions.generateFbsHash) {
-        commonArgs.push('--generate-fbs-hash');
-    }
     if (xlsxFbsOptions.csharpUnityLoader) {
         commonArgs.push('--csharp-unity-loader');
     }
@@ -434,30 +420,6 @@ async function batchConvert(input, flatcArgs) {
             xlsxFbsOptions.output = originalOutput;
         }
         info(`${i18n.successGenerateMergeTable}`);
-    }
-
-    // 生成 fbsHashTable.json
-    if (xlsxFbsOptions.generateFbsHash) {
-        async function generateFbsHashTable() {
-            const fbsHashTablePath = getFbsHashTablePath();
-            const fbsHashFiles = await fsUtil.findFiles(getFbsHashPath(), /\.hash$/);
-            const fbsHashTable = {};
-            for (const fbsHashFile of fbsHashFiles) {
-                const tableName = path.basename(fbsHashFile, '.hash');
-                const fbsHashContent = await fsAsync.readFile(fbsHashFile, 'utf-8');
-                fbsHashTable[tableName] = fbsHashContent;
-            }
-            await fsUtil.writeFile(fbsHashTablePath, JSON.stringify(fbsHashTable, null, 2), 'utf-8');
-            info(`${i18n.successGenerateFbsHashTable}: ${fbsHashTablePath}`);
-        }
-        await generateFbsHashTable();
-        if (xlsxFbsOptions.censoredOutput) {
-            console.log('generate censored fbs_hash_table.json ...');
-            const originalOutput = xlsxFbsOptions.output;
-            xlsxFbsOptions.output = xlsxFbsOptions.censoredOutput;
-            await generateFbsHashTable();
-            xlsxFbsOptions.output = originalOutput;
-        }
     }
 
     // 生成 C# 相关代码

@@ -1,5 +1,7 @@
 // {{{ FILE_NAME }}}
 
+file_identifier "{{{ FILE_IDENTIFIER }}}";
+
 {{{ FILE_EXTENSION }}}namespace {{{ NAMESPACE }}};
 
 {{{ ENUM_LIST }}}{{{ STRUCT_LIST }}}{{{ SUB_TABLE_LIST }}}table {{{ DATA_CLASS }}} {
@@ -8,7 +10,6 @@
 
 table {{{ TABLE_CLASS }}} {
   {{{ DATA_CLASS_SNAKE_CASE }}}s:[{{{ DATA_CLASS }}}];
-  fbs_hash:[uint8];
 }
 
 root_type {{{ TABLE_CLASS }}};

@@ -68,7 +68,23 @@ namespace {{{ NAMESPACE }}}
 
             var textAsset = handle.AssetObject as TextAsset;
             var buffer = new ByteBuffer(textAsset.bytes);
+            
+#if STRICT_VERIFICATION
             _root = GetTableRoot(buffer);
+#else
+            try
+            {
+                _root = GetTableRoot(buffer);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[TableLoader] Failed to verify '{AssetPath}': {e.Message}");
+                _loadingTask = null;
+                handle.Release();
+                return false;
+            }
+#endif
+
             LoadDataFromTableRoot(_root);
 
             handle.Release();

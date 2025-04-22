@@ -274,8 +274,6 @@ Excel 文件路径或 Excel 所在的文件夹路径，传入文件则转换单�
 
 - `--data-class-suffix <suffix>` 生成的表格数据类名后缀，默认是 `Info`。比如 `item.xlsx` 表生成的每行数据的类名就是 `ItemInfo`；必须避免出现使用类后缀结尾命名的表，比如批量打表时，目录下同时有 `drop.xlsx` 和 `dropInfo.xlsx`，那么第一张表的数据类名会和第二张表的主类名冲突，BOOM💥。
 
-- `--generate-fbs-hash` 在二进制中添加 fbs_hash 值，可用 fbs_hash_table.json 校验数据结构是否匹配。
-
 - `--multi-thread <number>` 批量打表时的多线程数量，默认 6 。
 
 - `--minimal-info` 最小化输出信息，可选范围 `log < info < warn < error`，默认 `info`。
@@ -506,6 +504,10 @@ bit_flags|枚举值可组合
 
 - 没有配置 `censoredTable` 或 `censoredFields` 字段，只会输出一份 `output/`。
 
+## 关于 file_identifier
+
+x2f 使用 fbs 内容的 hash 作为 .fbs 的 file_identifier，可用生成代码中的 `BufferHasIdentifier` 接口来校验二进制与代码是否匹配。
+
 ## Unity Loader 用法
 
 #### Unity 项目依赖
@@ -621,6 +623,10 @@ async void Start()
     Debug.Log(google.HasValue ? google.Value.Ip + google.Value.Port : "Nope");
 }
 ```
+
+#### 严格校验标识 STRICT_VERIFICATION
+
+- 设置 `STRICT_VERIFICATION` 时，会在 `LoadAsync` 时严格校验 file_identifier ，不匹配时会抛出异常，否则只会在控制台打印错误。
 
 #### 关于 Assembly Definition References
 

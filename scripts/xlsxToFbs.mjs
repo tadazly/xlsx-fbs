@@ -6,7 +6,7 @@ import { toUpperCamelCase, toSnakeCase, checkReservedKeyword, cleanAtTag, parseA
 import path from 'path';
 import { getFbsFieldTemplate, getFbsTemplate, fillTemplate, getFbsEnumTemplate, getFbsStructTemplate, getFbsTableTemplate, getFbsStructFieldTemplate } from './template.mjs';
 import { error, log, warn } from './utils/logUtil.mjs';
-
+import { createHash } from 'crypto';
 /**
  * @typedef {Object} XlsxToFbsOptions
  * @property {string[]} [propertyOrder] 属性顺序
@@ -18,7 +18,6 @@ import { error, log, warn } from './utils/logUtil.mjs';
  * @property {boolean} [enableStreamingRead] 是否开启流式读取，仅支持 xlsx 格式
  * @property {boolean} [emptyString] 是否生成空字符串
  * @property {string} [dataClassSuffix] 数据类后缀
- * @property {boolean} [generateFbsHash] 是否生成 fbs 文件的 hash 值
  * @property {boolean} [csharpUnityLoader] 是否生成 Unity 的表格加载类
  * @property {string} [csharpUnityLoaderSuffix] 表格加载类后缀
  */
@@ -986,7 +985,7 @@ function formatFbs(property) {
     const subTables = subTableProperties.length ? subTableProperties.map(formatFbsSubTable).join('\n\n') + '\n\n' : '';
     const fields = fieldProperties.map(formatFbsField).join('\n');
 
-    return fillTemplate(getFbsTemplate(), {
+    const templateArgs = {
         FILE_NAME: fileName,
         FILE_EXTENSION: fileExtensionString,
         NAMESPACE: namespace,
@@ -998,6 +997,15 @@ function formatFbs(property) {
         DATA_CLASS: dataClass,
         DATA_CLASS_SNAKE_CASE: toSnakeCase(dataClass),
         FIELD_LIST: fields,
+    }
+
+    const fbsContentBase = fillTemplate(getFbsTemplate(), templateArgs);
+
+    const identifier = generateFbsHash(fbsContentBase);
+
+    return fillTemplate(getFbsTemplate(), {
+        FILE_IDENTIFIER: identifier,
+        ...templateArgs,
     });
 }
 
@@ -1005,7 +1013,9 @@ function formatFbs(property) {
  * 获取 fbs 文件的 hash 值
  * @param {string} fbsContent
  */
-export async function generateFbsHash(fbsContent) {
-    const { createHash } = await import('crypto');
-    return createHash('sha256').update(fbsContent).digest();
+export function generateFbsHash(fbsContent) {
+    const hash = createHash('sha256').update(fbsContent).digest();
+    return [...hash.subarray(0, 2)]
+        .map(b => b.toString(16).padStart(2, '0').toUpperCase())
+        .join('');
 }

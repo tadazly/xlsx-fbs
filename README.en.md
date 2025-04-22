@@ -171,7 +171,6 @@ See [FlatBuffers Docs](https://flatbuffers.dev/flatc/) — common ones:
 | `--disable-incremental` * | Disable incremental updates |
 | `--enable-streaming-read` | Enable streaming read (buggy, enjoy at your risk) |
 | `--data-class-suffix` | Suffix for row data class (default: `Info`) |
-| `--generate-fbs-hash` * | Generate fbs schema hash table |
 | `--multi-thread` | Number of threads (default: 6) |
 | `--minimal-info` | Log level: `log < info < warn < error` |
 | `--allow-wild-table` * | Include rogue tables not listed in index |

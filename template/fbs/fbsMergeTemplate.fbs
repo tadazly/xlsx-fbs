@@ -1,10 +1,11 @@
 {{{ INCLUDE_LIST }}}
+
+file_identifier "{{{ FILE_IDENTIFIER }}}";
 {{{ FILE_EXTENSION }}}
 namespace {{{ NAMESPACE }}};
 
 table MergeTable {
 {{{ MERGE_FIELD_LIST }}}
-  fbs_hash:[uint8];
 }
 
 root_type MergeTable;
