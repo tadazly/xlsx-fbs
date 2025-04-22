@@ -8,7 +8,7 @@ import * as fsUtil from './utils/fsUtil.mjs';
 import path from 'path';
 import { xlsxToFbs } from './xlsxToFbs.mjs';
 import { xlsxToJson } from './xlsxToJson.mjs';
-import { fbsToCode, generateCSharpConst, generateCSharpUnityLoader, generateJSBundle, generateTsConst, generateTsMain, LANGUAGE_EXTENSIONS } from './fbsToCode.mjs';
+import { fbsToCode, generateCSharpConst, generateCSharpUnityLoader, generateJSBundle, generateTsConst, generateTsMain, LANGUAGE_EXTENSIONS, organizeCSharpGenOneFile } from './fbsToCode.mjs';
 import { xlsxFbsOptions, getFbsPath, getBinPath, getJsonPath, getGenerateScriptPath, getOrganizedScriptPath } from './environment.mjs';
 import { generateMergeFbsBin, jsonToBin } from './generateFbsBin.mjs';
 import { encodeHtml, toUpperCamelCase } from './utils/stringUtil.mjs';
@@ -442,6 +442,11 @@ async function batchConvert(input, flatcArgs) {
                 const configs = isCensored ? tablesConfig.filter(config => !config.censoredTable) : tablesConfig;
                 const csharpUnityPaths = await generateCSharpUnityLoader(csharpOutputPath, namespace, configs, xlsxFbsOptions);
                 logGenerateFiles(csharpUnityPaths, i18n.successGenerateCSharpUnityLoader);
+            }
+
+            // 整理合并输出的代码至命名空间文件夹
+            if (flatcArgs.includes('--gen-onefile')) {
+                await organizeCSharpGenOneFile(csharpOutputPath, namespace);
             }
         }
         await generateCSharp();

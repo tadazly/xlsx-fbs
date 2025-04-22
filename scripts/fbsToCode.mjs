@@ -197,6 +197,27 @@ export async function generateCSharpConst(csharpPath, jsonPath, namespace, confi
 }
 
 /**
+ * 整理 C# 合并输出的代码至命名空间文件夹
+ * @param {string} csharpPath 
+ * @param {string} namespace 
+ */
+export async function organizeCSharpGenOneFile(csharpPath, namespace) {
+    const namespaceStyled = toUpperCamelCase(namespace);
+    const scriptsPath = path.join(csharpPath, ...namespaceStyled.split('.'));
+    
+    const files = await fsAsync.readdir(csharpPath, { withFileTypes: true });
+    for (const file of files) {
+        if (file.isFile() && file.name.endsWith('.cs')) {
+            const fileName = file.name.replace(/\.cs$/, '');
+            const tableName = fileName.split('_generate')[0];
+            const srcPath = path.join(csharpPath, file.name);
+            const destPath = path.join(scriptsPath, `${toUpperCamelCase(tableName)}.cs`);
+            await fsAsync.rename(srcPath, destPath);
+        }
+    }
+}
+
+/**
  * 生成 Unity 的表格加载类
  * @param {string} csharpPath 
  * @param {string} namespace 
