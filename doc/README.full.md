@@ -327,13 +327,13 @@ Excel 文件路径或 Excel 所在的文件夹路径，传入文件则转换单�
 
 ```
 output[_censored]/
-├── fbs/         # 生成的 .fbs 文件
-├── bin/         # 生成的二进制文件
-├── scripts/     # 生成的代码文件
+├── fbs/         # 生成的 .fbs
+├── bin/         # 生成的二进制
+├── scripts/     # 生成的代码
 │   ├── cpp/     # C++ 代码
 │   ├── csharp/  # C# 代码
 │   └── ts/      # TypeScript 代码
-└── json/        # 由二进制文件生成的 json
+└── json/        # 由 Excel 生成的 json
 ```
 
 # 附录
@@ -436,7 +436,7 @@ PS: 如果能保证上线的代码与数据一致，那你应该知道可以做�
 - 使用 `struct@StructName` 作为类型名称，用 `{ key: value, key: [value] … }` 这种 json 结构来填写数据，填写时必须按照结构定义，**完整填写数据**。在同名 Sheet 下配置结构定义：
     
     - 第一列是字段名，第二列是类型
-    - 类型仅支持标量和定长数组，如 `int, [float] ...`
+    - 类型仅支持标量和定长数组，如 `int, [float:3] ...`
 
 #### 结构表/子表 Tables
 
