@@ -134,3 +134,7 @@ async void Start()
 ### Custom Unity Template Code
 
 - Modify the .cs files under the `template/unity` directory as needed.
+
+### Hot Update Suggestions
+
+- Use `LZ4` compression for bundles to significantly reduce binary size.

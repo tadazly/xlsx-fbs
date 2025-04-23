@@ -135,3 +135,7 @@ async void Start()
 ### 自定义 Unity 模板代码
 
 - 参考修改 `template/unity` 下的 .cs 文件。
+
+### 热更新建议
+
+- 打包时，使用 `LZ4` 压缩，可以显著减少二进制大小。
