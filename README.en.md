@@ -4,6 +4,17 @@ xlsx-fbs (a.k.a. x2f) is a command-line tool for batch converting Excel spreadsh
 
 Designed for shared client/server table serialization workflows, it supports advanced features like custom field attributes, nested structures, sensitive field filtering, and bulk conversion.
 
+## Supported FlatBuffers Types 
+
+- Scalars (int, float, bool, etc.)
+- Vectors ([int], [float], [string], [struct@xxx], [table@xxx], etc.)
+- Strings (string)
+- Structs (struct@xxx)
+- Tables (table@xxx)
+- Enums (enum@xxx)
+
+There is a simple [Unity Example](./doc/Unity_Example.en.md) in the documentation.
+
 ## Installing xlsx-fbs
 
 0. Clone the project (yes, the obvious step)
@@ -170,11 +181,14 @@ See [FlatBuffers Docs](https://flatbuffers.dev/flatc/) — common ones:
 | `--disable-merge-table` * | Disable mergeTable generation |
 | `--disable-incremental` * | Disable incremental updates |
 | `--enable-streaming-read` | Enable streaming read (buggy, enjoy at your risk) |
+| `--table-class-suffix` | Suffix for table class (default: `""`) |
 | `--data-class-suffix` | Suffix for row data class (default: `Info`) |
 | `--multi-thread` | Number of threads (default: 6) |
 | `--minimal-info` | Log level: `log < info < warn < error` |
 | `--allow-wild-table` * | Include rogue tables not listed in index |
 | `--property-order` | Custom column mapping order like `AABDE` |
+| `--csharp-unity-loader` | Generate Unity code |
+| `--csharp-unity-loader-suffix` | Suffix for Unity class (default: `Table`) |
 | `--js` / `--js-sourcemap` | Output JavaScript and source maps |
 | `--js-exclude-flatbuffers` | Exclude flatbuffers code from JS |
 | `--js-browser-target` / `--js-node-target` | Target environment |

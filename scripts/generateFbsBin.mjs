@@ -44,23 +44,23 @@ export async function generateMergeFbsBin(tableConfigs, options, flatcArgs) {
         : '';
     for (const config of tableConfigs) {
         const { tableName } = config;
-        const tableClassName = toUpperCamelCase(tableName);
-        const tableNameSnakeCase = toSnakeCase(tableName);
+        const tableClass = toUpperCamelCase(tableName) + options.tableClassSuffix;
+        const tableClassSnakeCase = toSnakeCase(tableClass);
 
         includeList.push(fillTemplate(getFbsIncludeTemplate(), {
             TABLE_NAME: tableName
         }));
 
         mergeFieldList.push(fillTemplate(getFbsMergeFieldTemplate(), {
-            TABLE_CLASS: tableClassName,
-            TABLE_CLASS_SNAKE_CASE: tableNameSnakeCase,
+            TABLE_CLASS: tableClass,
+            TABLE_CLASS_SNAKE_CASE: tableClassSnakeCase,
         }));
 
         const jsonPath = getJsonPath(tableName);
         const jsonContent = await fsAsync.readFile(jsonPath, 'utf-8');
 
         const jsonData = JSON.parse(jsonContent);
-        mergeData[tableNameSnakeCase] = jsonData;
+        mergeData[tableClassSnakeCase] = jsonData;
     }
     // 生成 fbs 文件
     const mergeFbsPath = getFbsPath('mergeTable');

@@ -2,7 +2,7 @@
 
 **xlsx-fbs**（a.k.a. `x2f`）是一个将 Excel 表格批量转换为 [FlatBuffers](https://flatbuffers.dev/) 的命令行工具，支持生成 结构定义 `.fbs` 、表数据`.json` 、 FlatBuffers 二进制 `.bin` 和 多语言数据类（如 `.ts`、`.cs`、`.h` 等）。适用于客户端/服务端通用表格打包场景，支持自定义字段属性、嵌套结构、敏感字段过滤、批量转换等高级玩法。
 
-> 🇨🇳 [完整文档](./README.original.md) | 🇺🇸 [English Documentation](./README.en.md)
+> 🇨🇳 [完整文档](./doc/README.full.md) | 🇺🇸 [English Documentation](./README.en.md)
 
 ![License](https://img.shields.io/github/license/tadazly/xlsx-fbs)
 ![Node](https://img.shields.io/badge/node-%3E=22.12.0-green)
@@ -13,14 +13,14 @@
 
 配表支持类型如下：
 
-- [标量（Scalars）](./README.original.md#标量-scalars)
-- [向量（Vectors）](./README.original.md#向量-vectors)
-- [字符串（Strings）](./README.original.md#字符串-strings)
-- [结构体（Structs）](./README.original.md#结构体-structs)
-- [结构表/子表（Tables）](./README.original.md#结构表子表-tables)
-- [枚举（Enums）](./README.original.md#枚举-enums)
+- [标量（Scalars）](./doc/README.full.md#标量-scalars)
+- [向量（Vectors）](./doc/README.full.md#向量-vectors)
+- [字符串（Strings）](./doc/README.full.md#字符串-strings)
+- [结构体（Structs）](./doc/README.full.md#结构体-structs)
+- [结构表/子表（Tables）](./doc/README.full.md#结构表子表-tables)
+- [枚举（Enums）](./doc/README.full.md#枚举-enums)
 
-完整文档包含一个简单的 [Unity Example](./README.original.md#unity-loader-用法)。
+文档包含一个简单的 [Unity Example](./doc/Unity_Example.cn.md)。
 
 ## 安装 xlsx-fbs 
 
@@ -188,11 +188,14 @@ xlsx-fbs [ input ] [ flatc options ] [ xlsx-fbs options ]
 `--disable-merge-table` * | 禁用索引表中的 `merge` 功能
 `--disable-incremental` * | 禁用增量打表
 `--enable-streaming-read` | 开启流式读取，慎用！乱码预警
+`--table-class-suffix <suffix>` | 表格类名后缀，默认空字符串 `""`
 `--data-class-suffix <suffix>` | 表格数据类名后缀，默认 `Info`
 `--multi-thread <number>` | 多线程数量，默认 6
 `--minimal-info <level>` | 控制输出日志等级，默认 `info`
 `--allow-wild-table` * | 允许打野表（索引表中未配置的表）
 `--property-order <order>` | [属性页顺序](#属性页的默认值)自定义，默认 `ABCDE`
+`--csharp-unity-loader` | 生成 Unity 代码
+`--csharp-unity-loader-suffix <suffix>` | Unity 类名后缀，默认 `Table`
 `--js`/`--js-sourcemap` | 输出 JS 代码及映射
 `--js-exclude-flatbuffers` | 排除 flatbuffers 代码
 `--js-browser-target/ <target>` | [JS 编译目标](https://esbuild.github.io/api/#target)，默认 `es2017`

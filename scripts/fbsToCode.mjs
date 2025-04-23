@@ -200,8 +200,9 @@ export async function generateCSharpConst(csharpPath, jsonPath, namespace, confi
  * 整理 C# 合并输出的代码至命名空间文件夹
  * @param {string} csharpPath 
  * @param {string} namespace 
+ * @param {import('./xlsxToFbs.mjs').XlsxToFbsOptions} options 
  */
-export async function organizeCSharpGenOneFile(csharpPath, namespace) {
+export async function organizeCSharpGenOneFile(csharpPath, namespace, options) {
     const namespaceStyled = toUpperCamelCase(namespace);
     const scriptsPath = path.join(csharpPath, ...namespaceStyled.split('.'));
     
@@ -210,8 +211,9 @@ export async function organizeCSharpGenOneFile(csharpPath, namespace) {
         if (file.isFile() && file.name.endsWith('.cs')) {
             const fileName = file.name.replace(/\.cs$/, '');
             const tableName = fileName.split('_generate')[0];
+            const tableClass = toUpperCamelCase(tableName) + options.tableClassSuffix;
             const srcPath = path.join(csharpPath, file.name);
-            const destPath = path.join(scriptsPath, `${toUpperCamelCase(tableName)}.cs`);
+            const destPath = path.join(scriptsPath, `${tableClass}.cs`);
             await fsAsync.rename(srcPath, destPath);
         }
     }
@@ -250,9 +252,10 @@ export async function generateCSharpUnityLoader(csharpPath, namespace, configs, 
     for (const config of configs) {
         const { tableName, merge } = config;
 
-        const tableClass = toUpperCamelCase(tableName);
-        const dataClass =  tableClass + options.dataClassSuffix;
-        const tableLoaderClass = tableClass + options.csharpUnityLoaderSuffix;
+        const tableClassBase = toUpperCamelCase(tableName);
+        const tableClass = tableClassBase + options.tableClassSuffix;
+        const dataClass =  tableClassBase + options.dataClassSuffix;
+        const tableLoaderClass = tableClassBase + options.csharpUnityLoaderSuffix;
 
         // 字段名需要先转换成蛇形命名，再转换成大驼峰，来与 flatc 的命名规则进行匹配
         const tableClassSnakeUpperCase = toUpperCamelCase(toSnakeCase(tableClass));

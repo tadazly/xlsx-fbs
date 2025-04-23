@@ -72,9 +72,8 @@ async function main() {
         .option('--empty-string', i18n.emptyString)
         .option('--disable-merge-table', i18n.disableMergeTable)
         .option('--disable-incremental', i18n.disableIncremental)
-        .option('--data-class-suffix <suffix>', i18n.dataClassSuffix, (value) => {
-            return toUpperCamelCase(value.trim());
-        }, 'Info')
+        .option('--table-class-suffix <suffix>', i18n.tableClassSuffix)
+        .option('--data-class-suffix <suffix>', i18n.dataClassSuffix)
         .option('--multi-thread <number>', i18n.multiThread, (value) => {
             let num = parseInt(value);
             if (isNaN(num) || num < 1) {
@@ -129,7 +128,11 @@ async function main() {
     }
 
     Object.keys(xlsxFbsOptions)
-        .forEach(key => xlsxFbsOptions[key] = options[key] || xlsxFbsOptions[key]);
+        .forEach(key => {
+            if (options[key] !== undefined) {
+                xlsxFbsOptions[key] = options[key];
+            }
+        });
 
     xlsxFbsOptions.output = path.resolve(xlsxFbsOptions.output);
     if ((xlsxFbsOptions.censoredTable || xlsxFbsOptions.censoredFields.length) && !xlsxFbsOptions.censoredOutput) {
@@ -363,6 +366,9 @@ async function batchConvert(input, flatcArgs) {
     if (xlsxFbsOptions.minimalInfo) {
         commonArgs.push('--minimal-info', xlsxFbsOptions.minimalInfo);
     }
+    if (xlsxFbsOptions.tableClassSuffix) {
+        commonArgs.push('--table-class-suffix', xlsxFbsOptions.tableClassSuffix);
+    }
     if (xlsxFbsOptions.dataClassSuffix) {
         commonArgs.push('--data-class-suffix', xlsxFbsOptions.dataClassSuffix);
     }
@@ -431,7 +437,7 @@ async function batchConvert(input, flatcArgs) {
             const namespace = xlsxFbsOptions.namespace;
             const csharpOutputPath = getCSharpPath();
             const jsonOutputPath = getJsonPath();
-            
+
             if (constFieldsTableConfigs.length > 0) {
                 const configs = isCensored ? constFieldsTableConfigs.filter(config => !config.censoredTable) : constFieldsTableConfigs;
                 const csharpConstPaths = await generateCSharpConst(csharpOutputPath, jsonOutputPath, namespace, configs);
@@ -446,7 +452,7 @@ async function batchConvert(input, flatcArgs) {
 
             // 整理合并输出的代码至命名空间文件夹
             if (flatcArgs.includes('--gen-onefile')) {
-                await organizeCSharpGenOneFile(csharpOutputPath, namespace);
+                await organizeCSharpGenOneFile(csharpOutputPath, namespace, xlsxFbsOptions);
             }
         }
         await generateCSharp();
@@ -458,7 +464,7 @@ async function batchConvert(input, flatcArgs) {
             xlsxFbsOptions.output = originalOutput;
         }
     }
-    
+
     // 生成 ts 代码的入口文件 main.ts
     if (flatcArgs.includes('--ts')) {
         async function generateTsJs() {
@@ -631,14 +637,38 @@ async function getTablesConfig(rootDir) {
 
     /** 递归搜索目录下的所有 excel 文件（不包含 ~$ 和 $ 开头的文件） */
     const tables = await fsUtil.findFiles(rootDir, /^(?!~\$|\$).*\.(xls|xlsx|xlsm)$/i);
-    // const tables = await fsUtil.findFiles(rootDir, /.*\.xlsx?$/);
+
+    // 第一遍循环检查类名冲突
+    const classNameToTable = {};
+    const classSuffixList = [xlsxFbsOptions.tableClassSuffix, xlsxFbsOptions.dataClassSuffix];
+    if (xlsxFbsOptions.csharpUnityLoader) {
+        classSuffixList.push(xlsxFbsOptions.csharpUnityLoaderSuffix);
+    }
+    for (const table of tables) {
+        const tableName = path.basename(table, path.extname(table));
+        const tableClassBase = toUpperCamelCase(tableName);
+        classSuffixList.forEach(suffix => {
+            const className = tableClassBase + suffix;
+            if (classNameToTable[className]) {
+                classNameToTable[className].push(tableName);
+            } else {
+                classNameToTable[className] = [tableName];
+            }
+        });
+    }
+
+    const duplicates = Object.entries(classNameToTable).filter(([, tables]) => tables.length > 1);
+    if (duplicates.length > 0) {
+        const errorMsg = `${i18n.errorClassSuffixConflict}\n` +
+            duplicates.map(([className, tables]) =>
+                `class '${className}' from tables: ${tables.join(", ")}`
+            ).join('\n');
+        error(errorMsg);
+        process.exit(1);
+    }
 
     for (const table of tables) {
         const tableName = path.basename(table, path.extname(table));
-        if (tableName.endsWith(xlsxFbsOptions.dataClassSuffix)) {
-            error(`${i18n.errorTableNameDataClassSuffixConflict}: ${tableName}`);
-            process.exit(1);
-        }
         if (tablesConfigMap.has(tableName)) {
             const tableConfig = tablesConfigMap.get(tableName);
             tableConfig.filePath = table;

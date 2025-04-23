@@ -17,6 +17,7 @@ import { createHash } from 'crypto';
  * @property {string} [defaultKey] 默认主键
  * @property {boolean} [enableStreamingRead] 是否开启流式读取，仅支持 xlsx 格式
  * @property {boolean} [emptyString] 是否生成空字符串
+ * @property {string} [tableClassSuffix] 表格类名后缀
  * @property {string} [dataClassSuffix] 数据类后缀
  * @property {boolean} [csharpUnityLoader] 是否生成 Unity 的表格加载类
  * @property {string} [csharpUnityLoaderSuffix] 表格加载类后缀
@@ -183,7 +184,9 @@ function inferNumberType(values) {
         const maxValue = Math.max(...uniqueValues);
         const minValue = Math.min(...uniqueValues);
         type = inferNumberTypeRange(minValue, maxValue * 2); // 最大值乘以2，避免未来配表溢出
-        // console.log(`inferNumberTypeRange: ${minValue} ~ ${maxValue} => ${type}`);
+        // if (type === 'uint16') {
+        //     console.log(`inferNumberTypeRange: ${minValue} ~ ${maxValue} => ${type}`);
+        // }
     } else {
         type = 'float32'; // 'float64' 类型请手配
     }
@@ -274,8 +277,9 @@ export async function xlsxToFbs(filePath, options = {}) {
 
     const fileName = path.basename(filePath);
     const namespace = options.namespace;
-    const tableClass = toUpperCamelCase(path.basename(filePath, path.extname(filePath)));
-    const dataClass = tableClass + options.dataClassSuffix;
+    const tableClassBase = toUpperCamelCase(path.basename(filePath, path.extname(filePath)));
+    const tableClass = tableClassBase + options.tableClassSuffix;
+    const dataClass = tableClassBase + options.dataClassSuffix;
 
     const fieldProperties = formatProperties(parsedResult.propertyJson, parsedResult.dataJson, options, tableClass);
 

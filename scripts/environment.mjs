@@ -50,6 +50,7 @@ export const xlsxFbsOptions = {
     disableIncremental: false,
     enableStreamingRead: false,
     legacyMode: false,
+    tableClassSuffix: '',
     dataClassSuffix: 'Info',
     allowWildTable: false,
     propertyOrder: [ 'A', 'B', 'C', 'D', 'E' ],
