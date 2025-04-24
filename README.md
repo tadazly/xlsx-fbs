@@ -2,7 +2,7 @@
 
 **xlsx-fbs**（a.k.a. `x2f`）是一个将 Excel 表格批量转换为 [FlatBuffers](https://flatbuffers.dev/) 的命令行工具，支持生成 结构定义 `.fbs` 、表数据`.json` 、 FlatBuffers 二进制 `.bin` 和 多语言数据类（如 `.ts`、`.cs`、`.h` 等）。适用于客户端/服务端通用表格打包场景，支持自定义字段属性、嵌套结构、敏感字段过滤、批量转换等高级玩法。
 
-> 🇨🇳 [完整文档](./doc/README.full.md) | 🇺🇸 [English Documentation](./README.en.md)
+> 🇨🇳 [完整文档](https://tadazly.github.io/x2f-docs/docs/intro) | 🇺🇸 [English Documentation](https://tadazly.github.io/x2f-docs/en/docs/intro)
 
 ![License](https://img.shields.io/github/license/tadazly/xlsx-fbs)
 ![Node](https://img.shields.io/badge/node-%3E=22.12.0-green)
@@ -86,7 +86,7 @@ x2f --ts --csharp
 💡 存在 `$tables.xlsx` 时，只打你配置的表； 🧪 没有它？默认全打。可以自己试试删掉再跑一遍，看会不会变得“更刺激”。
 
 
-## 说明书：不会用是你的事，我的文档没问题
+## 说明书
 
 ### 一、 创建符合规范的 Excel
 
@@ -348,7 +348,3 @@ bit_flags|枚举值可组合
 - [ts-morph](https://www.npmjs.com/package/ts-morph): 读取ts文件。
 
 - [xlsx](https://www.npmjs.com/package/xlsx): 一口气吃完内存的表格砖家。
-
----
-
-> 文档写完了，但你要是不看，那就没人能救你。
