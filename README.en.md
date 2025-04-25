@@ -58,7 +58,7 @@ The `example/` folder is your playground.
 ```
 example/
 ├── singleConvert/       # Example of converting one sheet
-│   └── item.xlsx        
+│   └── itemTable.xlsx        
 └── batchConvert/        # Example of batch conversion
     ├── anyFolder/       
     └── $tables.xlsx     # Index file (optional but recommended)
@@ -68,7 +68,7 @@ example/
 
 ```shell
 cd example/singleConvert
-xlsx-fbs item.xlsx --cpp --rust
+xlsx-fbs itemTable.xlsx --cpp --rust
 ```
 
 ### 🎯 Batch Table Conversion

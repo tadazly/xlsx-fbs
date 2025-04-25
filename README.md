@@ -63,7 +63,7 @@
 ```
 example/
 ├── singleConvert/       # 打单张表示例
-│   └── item.xlsx/        
+│   └── itemTable.xlsx/        
 └── batchConvert/        # 批量打表示例
     ├── 任意目录/           
     └── $tables.xlsx     # 索引表（可选，但建议有）
@@ -73,7 +73,7 @@ example/
 
 ```shell
 cd example/singleConvert
-x2f item.xlsx --cpp --rust
+x2f itemTable.xlsx --cpp --rust
 ```
 
 ### 🎯 批量打表

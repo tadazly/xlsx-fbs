@@ -28,7 +28,7 @@ npm install
 npm link  # 注册全局命令
 
 # 打单张表
-xlsx-fbs item.xlsx --ts --csharp
+xlsx-fbs itemTable.xlsx --ts --csharp
 
 # 批量打表
 xlsx-fbs ./your_folder --cpp --rust -n GameData -k id
@@ -128,7 +128,7 @@ x2f -h        # 简写（同样好用）
 ```
 example/
 ├── singleConvert/       # 打单张表示例
-│   └── item.xlsx/        
+│   └── itemTable.xlsx/        
 └── batchConvert/        # 批量打表示例
     ├── 任意目录/           
     └── $tables.xlsx     # 索引表-批量打表配置（可省略）
@@ -141,7 +141,7 @@ example/
     cd example/singleConvert
 
     # 打表
-    xlsx-fbs item.xlsx --cpp --rust
+    xlsx-fbs itemTable.xlsx --cpp --rust
     ```
 
 - 批量打表
