@@ -88,7 +88,7 @@ async function main() {
                 value = 'log';
             }
             return value;
-        }, 'info')
+        })
         .option('--property-order <order>', i18n.propertyOrder, (value) => {
             if (!/^[A-Za-z]{5}$/.test(value)) {
                 error(i18n.errorInvalidPropertyOrder);
@@ -122,7 +122,7 @@ async function main() {
     // 获取定义的选项
     const options = program.opts();
 
-    if (args.length === 0 && Object.keys(options).length <= 2) {
+    if (args.length === 0 && Object.keys(options).length <= 0) {
         program.outputHelp();
         process.exit(0);
     }
