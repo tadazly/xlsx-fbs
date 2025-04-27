@@ -41,10 +41,10 @@ namespace {{{ NAMESPACE }}}
             var textAsset = handle.AssetObject as TextAsset;
             var buffer = new ByteBuffer(textAsset.bytes);
 
-            if (!TableValidator.Validate(MergeTable.MergeTableBufferHasIdentifier(buffer),
-                    $"[TableLoader] Mismatched identifier for '{AssetPath}'")
-                || !TableValidator.Validate(MergeTable.VerifyMergeTable(buffer),
-                    $"[TableLoader] Failed to verify buffer for '{AssetPath}'"))
+             if (!TableValidator.Validate(
+                    () => MergeTable.MergeTableBufferHasIdentifier(buffer),
+                    () => MergeTable.VerifyMergeTable(buffer),
+                    AssetPath))
             {
                 return false;
             }

@@ -13,15 +13,29 @@ namespace {{{ NAMESPACE }}}
 {
     public static class TableValidator
     {
-        public static bool Validate(bool result, string errorMessage)
+        public static bool Validate(Func<bool> verifyIdentifier, Func<bool> verifyBuffer, string assetPath)
         {
-            if (result) return true;
+            if (!verifyIdentifier())
+            {
 #if STRICT_VERIFICATION
-            throw new Exception(errorMessage);
+                throw new Exception($"[TableLoader] Mismatched identifier for '{assetPath}'");
 #else
-            Debug.LogError(errorMessage);
-            return false;
+                Debug.LogError($"[TableLoader] Mismatched identifier for '{assetPath}'");
+                return false;
 #endif
+            }
+            
+            if (!verifyBuffer())
+            {
+#if STRICT_VERIFICATION
+                throw new Exception($"[TableLoader] Failed to verify buffer for '{assetPath}'");
+#else
+                Debug.LogError($"[TableLoader] Failed to verify buffer for '{assetPath}'");
+                return false;
+#endif
+            }
+            
+            return true;
         }
     }
 
@@ -86,10 +100,10 @@ namespace {{{ NAMESPACE }}}
                 var textAsset = handle.AssetObject as TextAsset;
                 var buffer = new ByteBuffer(textAsset.bytes);
             
-                if (!TableValidator.Validate(VerifyIdentifier(buffer),
-                        $"[TableLoader] Mismatched identifier for '{AssetPath}'")
-                    || !TableValidator.Validate(VerifyBuffer(buffer),
-                        $"[TableLoader] Failed to verify buffer for '{AssetPath}'"))
+                if (!TableValidator.Validate(
+                        () => VerifyIdentifier(buffer),
+                        () => VerifyBuffer(buffer),
+                        AssetPath))
                 {
                     return false;
                 }
