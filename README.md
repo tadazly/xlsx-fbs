@@ -329,7 +329,7 @@ bit_flags|枚举值可组合
 
 - Node.js >= 22.12.0, 推荐配合 [VOLTA](https://docs.volta.sh/guide/getting-started) 使用。
 
-- FlatBuffers CLR 工具 `flatc`
+- FlatBuffers v25.2.10 工具 `flatc`
 
 > 项目里带的编译工具跑不动？自己去 [FlatBuffers Releases](https://github.com/google/flatbuffers/releases) 下载，放到 `bin` 文件夹。
 
