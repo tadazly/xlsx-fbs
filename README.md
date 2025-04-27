@@ -4,23 +4,24 @@
 
 > 🇨🇳 [完整文档](https://tadazly.github.io/x2f-docs/docs/intro) | 🇺🇸 [English Documentation](https://tadazly.github.io/x2f-docs/en/docs/intro)
 
-![License](https://img.shields.io/github/license/tadazly/xlsx-fbs)
+[![License](https://img.shields.io/github/license/tadazly/xlsx-fbs)](https://github.com/tadazly/xlsx-fbs/blob/master/LICENSE)
 ![Node](https://img.shields.io/badge/node-%3E=22.12.0-green)
-![FlatBuffers](https://img.shields.io/badge/flatbuffers-supported-blue)
+[![FlatBuffers](https://img.shields.io/badge/flatbuffers-v25.2.10-blue)](https://flatbuffers.dev/)
 <!-- ![npm](https://img.shields.io/npm/v/xlsx-fbs) -->
 
 ### 🧬 FlatBuffers 类型支持
 
 配表支持类型如下：
 
-- [标量（Scalars）](./doc/README.full.md#标量-scalars)
-- [向量（Vectors）](./doc/README.full.md#向量-vectors)
-- [字符串（Strings）](./doc/README.full.md#字符串-strings)
-- [结构体（Structs）](./doc/README.full.md#结构体-structs)
-- [结构表/子表（Tables）](./doc/README.full.md#结构表子表-tables)
-- [枚举（Enums）](./doc/README.full.md#枚举-enums)
+- [标量（Scalars）](https://tadazly.github.io/x2f-docs/docs/tutorial/field_types#%E6%A0%87%E9%87%8F-scalars)
+- [向量（Vectors）](https://tadazly.github.io/x2f-docs/docs/tutorial/field_types#%E5%90%91%E9%87%8F-vectors)
+- [字符串（Strings）](https://tadazly.github.io/x2f-docs/docs/tutorial/field_types#%E5%AD%97%E7%AC%A6%E4%B8%B2-strings)
+- [结构体（Structs）](https://tadazly.github.io/x2f-docs/docs/tutorial/field_types#%E7%BB%93%E6%9E%84%E4%BD%93-structs)
+- [结构表/子表（Tables）](https://tadazly.github.io/x2f-docs/docs/tutorial/field_types#%E7%BB%93%E6%9E%84%E8%A1%A8%E5%AD%90%E8%A1%A8-tables)
+- [枚举（Enums）](https://tadazly.github.io/x2f-docs/docs/tutorial/field_types#%E6%9E%9A%E4%B8%BE-enums)
+- [定长数组 (Arrays)](https://tadazly.github.io/x2f-docs/docs/tutorial/field_types#%E7%BB%93%E6%9E%84%E4%BD%93-structs) - 仅结构体(struct)中可用
 
-文档包含一个简单的 [Unity Example](./doc/Unity_Example.cn.md)。
+文档包含一个简单的 [Unity Example](https://tadazly.github.io/x2f-docs/docs/tutorial/unity_example)。
 
 ## 安装 xlsx-fbs 
 
