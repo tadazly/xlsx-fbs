@@ -688,6 +688,9 @@ async function getTablesConfig(rootDir) {
         }
     }
 
+    // 使用表名进行排序，保证 mergeTable.fbs 的字段顺序不变
+    tablesConfig.sort((a, b) => a.tableName.localeCompare(b.tableName, 'en', { sensitivity: 'base' }));
+
     return tablesConfig;
 }
 

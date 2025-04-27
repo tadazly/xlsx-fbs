@@ -211,7 +211,7 @@ export async function organizeCSharpGenOneFile(csharpPath, namespace, options) {
         if (file.isFile() && file.name.endsWith('.cs')) {
             const fileName = file.name.replace(/\.cs$/, '');
             const tableName = fileName.split('_generate')[0];
-            const tableClass = toUpperCamelCase(tableName) + options.tableClassSuffix;
+            const tableClass = tableName === 'mergeTable' ? 'MergeTable' : toUpperCamelCase(tableName) + options.tableClassSuffix;
             const srcPath = path.join(csharpPath, file.name);
             const destPath = path.join(scriptsPath, `${tableClass}.cs`);
             await fsAsync.rename(srcPath, destPath);
