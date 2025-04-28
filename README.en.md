@@ -1,305 +1,349 @@
 # 🧾 xlsx-fbs / x2f - Excel To FlatBuffers
 
-xlsx-fbs (a.k.a. x2f) is a command-line tool for batch converting Excel spreadsheets into FlatBuffers assets. It generates .fbs schema definitions, .json table data, FlatBuffers binary .bin files, and multi-language data classes (such as .ts, .cs, .h, etc.).
+**xlsx-fbs** (a.k.a. `x2f`) is a command-line tool that converts Excel spreadsheets to [FlatBuffers](https://flatbuffers.dev/), supporting generation of structure definitions `.fbs`, table data `.json`, FlatBuffers binary `.bin`, and multi-language data classes (such as `.ts`, `.cs`, `.h`, etc.). Suitable for client/server common table packaging scenarios, supporting advanced features like custom field attributes, nested structures, sensitive field filtering, and batch conversion.
 
-Designed for shared client/server table serialization workflows, it supports advanced features like custom field attributes, nested structures, sensitive field filtering, and bulk conversion.
+> 🇺🇸 [Full Documentation](https://tadazly.github.io/x2f-docs/en/docs/intro)
 
-## Supported FlatBuffers Types 
+[![License](https://img.shields.io/github/license/tadazly/xlsx-fbs)](https://github.com/tadazly/xlsx-fbs/blob/master/LICENSE)
+![Node](https://img.shields.io/badge/node-%3E=22.12.0-green)
+[![FlatBuffers](https://img.shields.io/badge/flatbuffers-v25.2.10-blue)](https://flatbuffers.dev/)
+<!-- ![npm](https://img.shields.io/npm/v/xlsx-fbs) -->
 
-- Scalars (int, float, bool, etc.)
-- Vectors ([int], [float], [string], [struct@xxx], [table@xxx], etc.)
-- Strings (string)
-- Structs (struct@xxx)
-- Tables (table@xxx)
-- Enums (enum@xxx)
+### 🧬 FlatBuffers Type Support
 
-There is a simple [Unity Example](./doc/Unity_Example.en.md) in the documentation.
+The following types are supported in table configuration:
+
+- [Scalars](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#%E6%A0%87%E9%87%8F-scalars)
+- [Vectors](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#%E5%90%91%E9%87%8F-vectors)
+- [Strings](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#%E5%AD%97%E7%AC%A6%E4%B8%B2-strings)
+- [Structs](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#%E7%BB%93%E6%9E%84%E4%BD%93-structs)
+- [Tables](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#%E7%BB%93%E6%9E%84%E8%A1%A8%E5%AD%90%E8%A1%A8-tables)
+- [Enums](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#%E6%9E%9A%E4%B8%BE-enums)
+- [Fixed Arrays](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#%E7%BB%93%E6%9E%84%E4%BD%93-structs) - Only available in structs
+
+The documentation includes a simple [Unity Example](https://tadazly.github.io/x2f-docs/en/docs/tutorial/unity_example).
 
 ## Installing xlsx-fbs
 
-0. Clone the project (yes, the obvious step)
+0. Clone this project
 
-```shell
-git clone https://github.com/tadazly/xlsx-fbs.git
-cd xlsx-fbs
-```
+    ```shell
+    git clone https://github.com/tadazly/xlsx-fbs.git
+    cd xlsx-fbs
+    ```
 
-1. Initialize the project (npm install for good luck)
+1. Initialize the project (run npm install, can't skip the ceremony)
 
-```shell
-npm install
-```
+    ```shell
+    npm install
+    ```
 
-2. Link the global command (so your terminal knows it exists)
+2. Link global command (let your terminal meet this new friend)
 
-```shell
-npm link
-```
+    ```shell
+    npm link
+    ```
 
-3. Test it out, view help info (pretend you know what you’re doing)
+3. Test it out, check the help info (pretend you know how to use it)
 
-```shell
-xlsx-fbs -h     # Default command
-x2f -h          # Shortcut alias
-```
+    ```shell
+    xlsx-fbs -h     # default command
+    x2f -h          # shorthand command
+    ```
 
-Want out of this relationship? Just unlink:
+- Want to end this relationship? Just remove the global link:
 
-```shell
-npm unlink -g
-```
+    ```shell
+    npm unlink -g
+    ```
 
----
+## Quick Start: Three Minutes to Your First Table
 
-## Quick Start: Your First Table in 3 Minutes
-
-The `example/` folder is your playground.
+The `example/` folder in the project is your playground.
 
 ```
 example/
-├── singleConvert/       # Example of converting one sheet
-│   └── itemTable.xlsx        
-└── batchConvert/        # Example of batch conversion
-    ├── anyFolder/       
-    └── $tables.xlsx     # Index file (optional but recommended)
+├── singleConvert/       # Single table conversion example
+│   └── itemTable.xlsx/        
+└── batchConvert/        # Batch conversion example
+    ├── any directory/           
+    └── $tables.xlsx     # Index table (optional, but recommended)
 ```
 
 ### 🎯 Single Table Conversion
 
 ```shell
 cd example/singleConvert
-xlsx-fbs itemTable.xlsx --cpp --rust
+x2f itemTable.xlsx --cpp --rust
 ```
 
-### 🎯 Batch Table Conversion
+### 🎯 Batch Conversion
 
 ```shell
 cd example/batchConvert
-xlsx-fbs --ts --csharp
+x2f --ts --csharp
 ```
 
-> 💡 If `$tables.xlsx` exists, only the listed tables will be converted.
-> 🧪 Don’t want that? Delete it and try again to witness chaos.
+💡 When `$tables.xlsx` exists, only configured tables will be processed; 🧪 Without it? Everything gets processed. Try deleting it and running again to see if it gets "more exciting".
 
----
+## Manual
 
-## Manual: Because You’ll Pretend You Don’t Need It, Then Come Crawling Back
+### I. Create Excel Files Following the Specification
 
-### 1. Creating a Compliant Excel File
+#### Example Structure (See [Table Configuration Specification](./README.original.md#数据表-配表规范) for complete rules)
 
-#### Example Structure (Full spec: [Table Rules](#data-table-spec))
+**item.xls:**
 
-**item.xlsx**
+- **Data Sheet (item)**: Field names in first row, order can be random, aliases must match.
 
-- **Data Sheet (`item`)**: First row = field names. Order doesn’t matter, mapping does.
+    A|B|C|D|E
+    -|-|-|-|-
+    Item ID|Item Name|Description|Max Count|Daily Limit
+    101|Bean|Basic currency for trading|99999999|100000
+    102|Diamond|Currency for rare items|99999999|
+    1001|HP Potion|With this you can be reckless|9999|99
 
-```
-ID|Name|Description|Max|DailyLimit
-101|Beans|Basic trading currency|99999999|100000
-102|Diamonds|Rare item currency|99999999|
-1001|HP Potion|Let's you go wild again|9999|99
-```
+- **Property Sheet (property)**: Structure definition + behavior rules.
 
-- **Property Sheet (`property`)**: The rules and metadata live here.
+    A - **Field Name**, B - **Variable Name**, C - **Type**, D - **Default Value** (optional), E - **Attributes** (optional).
 
-```
-A        |B     |C      |D    |E        
-ID       |id    |int |     |Some note
-Name     |name  |string |     |required
-Desc     |desc  |string |     |
-Removed  |wtf   |uint   |     |deprecated
-Max      |max   |number |9999 |
-DailyLimit|dailyLimit|number|||
-```
+    A|B|C|D|E|F
+    -|-|-|-|-|-
+    Item ID|id|int|||Some functional comments
+    Item Name|name|string||required|
+    Description|desc|string|||
+    Secretly Deleted|wtf|uint||deprecated|Fields should be marked deprecated rather than deleted
+    Max Count|max|number|9999||Maximum count a player can own
+    Daily Limit|dailyLimit|number|||Daily acquisition limit
 
-> `number` will be inferred to the correct scalar type. Don’t overthink it unless you enjoy suffering.
+    > Field types automatically determine number types, but be careful, 64-bit will make you cry.
 
-#### Generated .fbs Example
+- Generated .fbs file
 
-```fbs
-namespace Xlsx;
+    ```
+    // item.xlsx
 
-table ItemInfo {
-  /// ID
-  id:int;
-  /// Name
-  name:string (required);
-  /// Description
-  desc:string;
-  /// Removed field
-  wtf:uint (deprecated);
-  /// Max
-  max:uint = 9999;
-  /// Daily limit
-  daily_limit:uint;
-}
+    namespace Xlsx;
 
-table Item {
-  item_infos:[ItemInfo];
-}
+    table ItemInfo {
+      /// Item ID
+      id:int;
+      /// Item Name
+      name:string (required);
+      /// Description
+      desc:string;
+      /// Secretly Deleted
+      wtf:uint (deprecated);
+      /// Max Count
+      max:uint = 9999;
+      /// Daily Limit
+      daily_limit:uint;
+    }
 
-root_type Item;
-```
+    table Item {
+      item_infos:[ItemInfo];
+    }
 
-> ⚠️ All field names are converted to snake_case. Code output will follow language conventions.
+    root_type Item;
+    ```
 
----
+    > ⚠️ Automatically converted to snake_case naming, final code generated according to language conventions.
 
-### 2. Using `xlsx-fbs`
+### II. Using `xlsx-fbs` for Conversion
 
 ```shell
 xlsx-fbs [ input ] [ flatc options ] [ xlsx-fbs options ]
 ```
 
-#### Input Path
+#### input path
 
-- File: convert one Excel
-- Folder: recursively convert all tables
-- None: convert everything in current folder
+- File: Convert single table
 
-#### Flatc Options (passed directly to flatc)
+- Directory: Recursively convert all tables
 
-See [FlatBuffers Docs](https://flatbuffers.dev/flatc/) — common ones:
-- `--cpp --csharp --ts --java`
+- Not provided: Default converts all tables in current directory
 
-#### xlsx-fbs Custom Options
+#### flatc compilation options
 
-| Option | Description |
-|--------|-------------|
-| `-o, --output` | Output folder (default: `output/`) |
-| `-n, --namespace` | Namespace for generated code (default: `Xlsx`) |
-| `-k, --default-key` | Fallback key field |
-| `--binary-extension` | File extension for binaries (default: `bin`) |
-| `--censored-fields` | Remove fields, generate censored version |
-| `--censored-output` | Output path for censored files |
-| `--output-bin` * | Copy output bin to specified path |
-| `--output-csharp` * | Copy output code to specified path |
-| `--censored-output-bin` * | Copy censored bin to specified path |
-| `--censored-output-csharp` * | Copy censored code to specified path |
-| `--clean-output` * | Clear output folder before writing |
-| `--empty-string` | Use empty string instead of null for strings |
-| `--disable-merge-table` * | Disable mergeTable generation |
-| `--disable-incremental` * | Disable incremental updates |
-| `--enable-streaming-read` | Enable streaming read (buggy, enjoy at your risk) |
-| `--table-class-suffix` | Suffix for table class (default: `""`) |
-| `--data-class-suffix` | Suffix for row data class (default: `Info`) |
-| `--multi-thread` | Number of threads (default: 6) |
-| `--minimal-info` | Log level: `log < info < warn < error` |
-| `--allow-wild-table` * | Include rogue tables not listed in index |
-| `--property-order` | Custom column mapping order like `AABDE` |
-| `--csharp-unity-loader` | Generate Unity code |
-| `--csharp-unity-loader-suffix` | Suffix for Unity class (default: `Table`) |
-| `--js` / `--js-sourcemap` | Output JavaScript and source maps |
-| `--js-exclude-flatbuffers` | Exclude flatbuffers code from JS |
-| `--js-browser-target` / `--js-node-target` | Target environment |
+Refer to [FlatBuffers Documentation](https://flatbuffers.dev/flatc/), common ones:
 
-> Marked * are only effective for batch conversion
+- `--cpp --csharp --ts --java --rust`
 
-#### Property Sheet Default Values
+#### xlsx-fbs custom options
 
-> - A: Field name in data sheet 
-> - B: Field name in property sheet (fbs schema field name)
-> - C: Field type (`short`, `int`, `string` ...)
-> - D: Field default value (fbs schema default value)
-> - E: Field attribute (fbs schema attribute)
+Parameter|Purpose
+-|-
+`-o, --output <path>` | Output path, default `output/`
+`-n, --namespace <name>` | Namespace, default `Xlsx`
+`-k, --default-key <field>` | If key attribute not configured in table, use provided field as key attribute
+`--binary-extension <ext>` | Binary output extension, default `bin`
+`--censored-fields <fields>` | Delete fields, generate censored version
+`--censored-output <path>` | Custom censored version output path, default `${output}_censored/`
+`--output-bin <path>` * | Copy output bin to specified path
+`--output-csharp <path>` * | Copy output code to specified path, using C# as example
+`--censored-output-bin <path>` * | Copy censored bin to specified path
+`--censored-output-csharp <path>` * | Copy censored code to specified path, using C# as example
+`--clean-output` * | Clear output directory before batch processing, use with caution
+`--empty-string` | Use empty string instead of null for strings
+`--disable-merge-table` * | Disable `merge` functionality in index table
+`--disable-incremental` * | Disable incremental table processing
+`--enable-streaming-read` | Enable streaming read, use with caution! Warning: may cause garbled text
+`--table-class-suffix <suffix>` | Table class name suffix, default empty string `""`
+`--data-class-suffix <suffix>` | Table data class name suffix, default `Info`
+`--multi-thread <number>` | Number of threads, default 6
+`--minimal-info <level>` | Control output log level, default `info`
+`--allow-wild-table` * | Allow processing tables not configured in index table
+`--property-order <order>` | Custom [property sheet order](#property-sheet-default-values), default `ABCDE`
+`--csharp-unity-loader` | Generate Unity code
+`--csharp-unity-loader-suffix <suffix>` | Unity class name suffix, default `Table`
+`--js`/`--js-sourcemap` | Output JS code and sourcemap
+`--js-exclude-flatbuffers` | Exclude flatbuffers code
+`--js-browser-target/ <target>` | [JS compilation target](https://esbuild.github.io/api/#target), default `es2017`
+`--js-node-target <target>` | Node compilation target, default `node20`
+
+> Marked * only effective for batch processing
+
+#### Property Sheet Default Values:
+>    - A: Data sheet field name (can be freely filled, maps to property sheet, used as field name comments in generated .fbs)
+>    - B: Field variable name (corresponds to .fbs field and code member field name)
+>    - C: Field type (`short`, `int`, `string` ... etc.)
+>    - D: Field default value (corresponds to .fbs default value)
+>    - E: Field attributes (corresponds to .fbs Attributes)
 
 #### Examples
 
-```shell
-xlsx-fbs item.xlsx --cpp --csharp -o ./output
-xlsx-fbs ./data --ts --csharp -n myNamespace -k id
+```
+# Single table
+x2f item.xlsx --ts -n xls -o ./output
+
+# Batch
+x2f ./example/batchConvert --csharp -n CustomData -k id -o ./all --censored-output ./censored
 ```
 
----
-
-### 3. Output Directory Structure
+### III. Output Directory Structure
 
 ```
 output[_censored]/
 ├── fbs/         # .fbs files
 ├── bin/         # Binary files
-├── scripts/     # Code files by language
+├── scripts/     # Language-specific code
 │   ├── cpp/
 │   ├── csharp/
 │   └── ts/
-└── json/        # JSON converted from binaries
+└── json/        # JSON files (converted from bin)
 ```
-
----
 
 ## Appendix
 
-### Naming Rules
+### Table Naming Conventions
 
-- Use English, lowerCamelCase for filenames.
-- No emojis or symbols. Stop trying to be ✨cute✨.
-- Table name = class name. Don't use keywords.
+- Use English camelCase for filenames, no Emojis (do I really need to say this?)
+
+- Table name is the class name, so avoid C++ keywords
 
 ### Property Sheet Notes
 
-- Column order defines field order. Don’t mess with it.
-- Field names can’t be keywords, and can’t start with `add`.
-- Add new fields only at the bottom.
-- Deprecated fields? Mark with `deprecated`, don’t delete.
-- Renamed a field? Update your code.
-- Changed type or default? You live with the consequences.
+- Field order = .fbs field order, cannot be changed arbitrarily!
 
----
+- Don't use keywords for field names, and don't start with `add`!
 
-### Supported Types (Scalar, Vectors, Structs, Subtables, Enums)
+- New fields can only be added at the last row (historical inertia)
 
-| Size  | Signed    | Unsigned  | Floating |
-|-------|-----------|-----------|----------|
-| 8-bit | byte/bool | ubyte     | -        |
-| 16-bit| short     | ushort    | -        |
-| 32-bit| int       | uint      | float    |
-| 64-bit| long      | ulong     | double   |
+- Want to delete a field? Mark it as `deprecated`, don't delete directly.
 
-> Avoid 64-bit unless you *love* debugging JavaScript number precision issues.
+- Changed a field name? Remember to update the code accordingly.
 
----
+- Changed type/default value? You're on your own.
 
-### uint64 Precision Issue
+### Supported Types (Scalars, Vectors, Structs, Tables, Enums)
 
-Use text format in Excel to store large numbers safely. Don’t blame JavaScript later.
+For field **types** (Column C), it's best to use *explicit types*, such as:
 
----
+- Strings: `string`
 
-### Index File ($tables.xlsx) Structure
+- Scalars: like `byte`, `short`, `int`, see table below:
 
-| Field Name | Purpose |
-|------------|---------|
-| tableName | Name of the table (no name = skipped) |
-| merge | Merge into large combined table |
-| censoredTable | Sensitive table (excluded from censored output) |
-| censoredFields | Remove sensitive fields only |
-| constFields | Export constants (only TS / C# supported) |
+    Size|Signed|Unsigned|Floating Point
+    -|-|-|-
+    8-bit|byte, bool|ubyte (uint8)|
+    16-bit|short (int16)|ushort (uint16)|
+    32-bit|int (int32)|uint (uint32)|float (float32)
+    64-bit|long (int64)|ulong (uint64)|double (float64)
 
-> No `$tables.xlsx`? We’ll convert every table. Your funeral.
+    Don't touch 64-bit types unless you want your data to explode.
 
----
+- Enums: Use `enum@EnumName` as type name, **must configure default value**.
+
+- Structs: Use `struct@StructName` as type name, use `{ key: value, key: [value] … }` JSON structure for data, must fill complete data according to structure definition.
+
+- Tables: Use `table@SubTableName` as type name, follow same rules as data sheet and property sheet above, fill index id in data sheet.
+
+- Vectors: Vector of any above type (use `[type]` notation), any number of elements in vector.
+
+> #### About Type Inference
+>
+> For fields with **numeric** values, when using *ambiguous type* `number`, program determines **scalar** type. Enums and structs **do not support** automatic type inference.
+>
+
+#### uint64/int64 Precision Issues
+
+Store large numbers in text format in tables, like 9007199254740993.
+
+#### Default Values
+
+Field **default values** (Column D), if not filled, scalar types default to `0`, other types to `null`.
+
+**Important:** Only **scalars** and **enums** can have default values, guess why.
+
+### Attributes
+
+Field **attributes** (Column E), refer to [FlatBuffers Documentation](https://flatbuffers.dev/schema/#attributes), if filled will be added to .fbs file field right side, commonly used ones are `deprecated` and `required`. Common ones:
+
+Attribute|Purpose
+-|-
+deprecated|Deprecated field
+required|Required field, used for non-scalars, errors if no data
+key|Key field for sorting and finding in vectors
+id|Custom field number (for version compatibility)
+force_align|Force alignment
+bit_flags|Enum values can be combined
+
+### Index Table $tables.xlsx Configuration
+
+Field Name|Description
+-|-
+**tableName** | Table name (not processed if empty)
+**merge** | Whether to merge into large table `mergeTable` for preloading
+**censoredTable** | Sensitive table (no censored version output)
+**censoredFields** | Sensitive fields (only delete fields)
+**constFields** | Export constant class (supports TS / C#)
+
+> No `$tables.xlsx`? Then everything gets processed, good luck.
 
 ## Dependencies
 
-### Requirements
-- Node.js >= 22.12.0 (consider using [VOLTA](https://docs.volta.sh/))
-- FlatBuffers compiler: `flatc`
+### Environment Requirements
 
-> Having trouble? Go grab a binary from [FlatBuffers Releases](https://github.com/google/flatbuffers/releases).
+- Node.js >= 22.12.0, recommended to use with [VOLTA](https://docs.volta.sh/guide/getting-started).
 
-### Key Libraries
+- FlatBuffers v25.2.10 tool `flatc`
 
-| Library | Purpose |
-|---------|---------|
-| chalk | Colored CLI output |
-| commander | CLI argument parsing |
-| esbuild | TS compilation and bundling |
-| ExcelJS | Spreadsheet reading (streaming = unstable) |
-| p-limit | Controls concurrency |
-| ts-morph | Parses TS files |
-| xlsx | Memory-hungry but reliable sheet reader |
+> Can't run the compilation tools in the project? Download from [FlatBuffers Releases](https://github.com/google/flatbuffers/releases) and put in `bin` folder.
+
+### Core Dependencies
+
+- [chalk](https://www.npmjs.com/package/chalk): Terminal colors.
+
+- [commander](https://www.npmjs.com/package/commander): Command line syntax sugar.
+
+- [esbuild](https://github.com/evanw/esbuild): ts compilation and bundling.
+
+- [ExcelJS](https://www.npmjs.com/package/exceljs): Handles streaming table data processing (only supports .xlsx).
+
+- [p-limit](https://www.npmjs.com/package/p-limit): Concurrency limiting.
+
+- [ts-morph](https://www.npmjs.com/package/ts-morph): ts file reading.
+
+- [xlsx](https://www.npmjs.com/package/xlsx): Memory-guzzling table expert.
 
 ---
-
-> You made it to the end. Either you're very curious, very lost, or procrastinating. No judgment. Okay, maybe a little.
-
