@@ -21,7 +21,7 @@ The following types are supported in table configuration:
 - [Enums](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#enums)
 - [Fixed Arrays](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#structs) - Only available in structs
 
-The documentation includes a simple [Unity Example](https://tadazly.github.io/x2f-docs/en/docs/tutorial/unity_example).
+The documentation includes a simple and complete [Unity Table Hot-Update Example](https://tadazly.github.io/x2f-docs/en/docs/tutorial/unity_example).
 
 ## Installing xlsx-fbs
 
