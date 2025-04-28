@@ -2,10 +2,10 @@
 
 **xlsx-fbs** (a.k.a. `x2f`) is a command-line tool that converts Excel spreadsheets to [FlatBuffers](https://flatbuffers.dev/), supporting generation of structure definitions `.fbs`, table data `.json`, FlatBuffers binary `.bin`, and multi-language data classes (such as `.ts`, `.cs`, `.h`, etc.). Suitable for client/server common table packaging scenarios, supporting advanced features like custom field attributes, nested structures, sensitive field filtering, and batch conversion.
 
-> 🇺🇸 [Full Documentation](https://tadazly.github.io/x2f-docs/en/docs/intro)
+## 🇺🇸 [Full Documentation](https://tadazly.github.io/x2f-docs/en/docs/intro)
 
 [![License](https://img.shields.io/github/license/tadazly/xlsx-fbs)](https://github.com/tadazly/xlsx-fbs/blob/master/LICENSE)
-![Node](https://img.shields.io/badge/node-%3E=22.12.0-green)
+[![Node](https://img.shields.io/badge/node-%3E=22.12.0-green)](https://nodejs.org/)
 [![FlatBuffers](https://img.shields.io/badge/flatbuffers-v25.2.10-blue)](https://flatbuffers.dev/)
 <!-- ![npm](https://img.shields.io/npm/v/xlsx-fbs) -->
 
