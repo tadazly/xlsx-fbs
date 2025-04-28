@@ -21,7 +21,7 @@
 - [枚举（Enums）](https://tadazly.github.io/x2f-docs/docs/tutorial/field_types#%E6%9E%9A%E4%B8%BE-enums)
 - [定长数组 (Arrays)](https://tadazly.github.io/x2f-docs/docs/tutorial/field_types#%E7%BB%93%E6%9E%84%E4%BD%93-structs) - 仅结构体(struct)中可用
 
-文档包含一个简单完整的 [Unity 配表热更新示例](https://tadazly.github.io/x2f-docs/docs/tutorial/unity_example)。
+文档包含一个简单完整的 [Unity 热更新配表示例](https://tadazly.github.io/x2f-docs/docs/unity_example)。
 
 ## 安装 xlsx-fbs 
 
