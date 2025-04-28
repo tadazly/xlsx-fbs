@@ -13,13 +13,13 @@
 
 The following types are supported in table configuration:
 
-- [Scalars](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#%E6%A0%87%E9%87%8F-scalars)
-- [Vectors](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#%E5%90%91%E9%87%8F-vectors)
-- [Strings](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#%E5%AD%97%E7%AC%A6%E4%B8%B2-strings)
-- [Structs](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#%E7%BB%93%E6%9E%84%E4%BD%93-structs)
-- [Tables](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#%E7%BB%93%E6%9E%84%E8%A1%A8%E5%AD%90%E8%A1%A8-tables)
-- [Enums](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#%E6%9E%9A%E4%B8%BE-enums)
-- [Fixed Arrays](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#%E7%BB%93%E6%9E%84%E4%BD%93-structs) - Only available in structs
+- [Scalars](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#scalars)
+- [Vectors](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#vectors)
+- [Strings](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#strings)
+- [Structs](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#structs)
+- [Tables](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#tables)
+- [Enums](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#enums)
+- [Fixed Arrays](https://tadazly.github.io/x2f-docs/en/docs/tutorial/field_types#structs) - Only available in structs
 
 The documentation includes a simple [Unity Example](https://tadazly.github.io/x2f-docs/en/docs/tutorial/unity_example).
 
